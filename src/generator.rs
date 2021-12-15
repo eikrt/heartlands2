@@ -1,20 +1,5 @@
-mod world_structs;
 use simdnoise::*;
-/*BIOMES = [ 
-
-    {'name': 'glacier', 'height':1, 'temperature': 5, 'temperature_margin': 5, 'tile_types': ['ice']},
-    {'name': 'tundra', 'height':1, 'temperature': 10,  'temperature_margin': 5,'tile_types': ['permafrost']},
-    {'name': 'taiga', 'height':1, 'temperature': 15, 'temperature_margin': 5,'tile_types': ['grass']},
-    {'name': 'forest' , 'height':1, 'temperature': 20, 'temperature_margin': 5,'tile_types': ['grass']},
-    {'name': 'grasslands', 'height':1, 'temperature': 25, 'temperature_margin': 5, 'tile_types': ['grass']},
-    {'name': 'mediterraean', 'height':1, 'temperature': 25, 'temperature_margin': 5,'tile_types': ['coarse_land']},
-
-    {'name': 'savannah', 'height':1, 'temperature': 30, 'temperature_margin': 5,'tile_types': ['savannah_land']},
-    {'name': 'desert', 'height':1, 'temperature': 35, 'temperature_margin': 5,'tile_types': ['sand']},
-    {'name': 'red desert', 'height':1, 'temperature': 40 , 'temperature_margin': 5, 'tile_types': ['red_sand']},
-    {'name': 'rainforest','height':1, 'temperature': 45, 'temperature_margin': 5, 'tile_types': ['grass']},
-]*/
-
+use crate::world_structs;
 
 
 
