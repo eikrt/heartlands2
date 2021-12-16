@@ -69,14 +69,14 @@ let biomes: Vec<world_structs::Biome> = vec![
     println!("Generating world...");
     let mut world_chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
     let ground_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
-        .with_freq(0.05)
+        .with_freq(100.05)
         .with_octaves(3.0 as u8)
         .with_gain(2.0)
         .with_seed(seed)
         .with_lacunarity(16.0)
         .generate_scaled(0.0,512.0);
     let sea_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
-        .with_freq(0.05)
+        .with_freq(0.15)
         .with_octaves(16.0 as u8)
         .with_gain(2.0)
         .with_seed(seed)
