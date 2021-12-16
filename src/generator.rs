@@ -105,8 +105,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                     chunk_points[k].push(world_structs::Point {
                                             x: rx,
                                             y: ry,
-                                            z: rz
-                                        });
+                                            z: rz });
                 }
 
             }
