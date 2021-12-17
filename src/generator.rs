@@ -1,10 +1,11 @@
 use simdnoise::*;
 use crate::world_structs;
-
+use std::num;
 
 
 pub fn generate(seed:i32,  width:usize, height:usize, chunk_size:usize, sea_level:f32, name: String) -> world_structs::World {
-
+let temperature_margin = 5;
+let tile_size = 32;
 let biomes: Vec<world_structs::Biome> = vec![
     world_structs::Biome {
         name: "glacier".to_string(),
@@ -69,14 +70,14 @@ let biomes: Vec<world_structs::Biome> = vec![
     println!("Generating world...");
     let mut world_chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
     let ground_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
-        .with_freq(100.05)
+        .with_freq(500.05)
         .with_octaves(3.0 as u8)
-        .with_gain(2.0)
+        .with_gain(20.0)
         .with_seed(seed)
-        .with_lacunarity(16.0)
+        .with_lacunarity(2.0)
         .generate_scaled(0.0,512.0);
     let sea_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
-        .with_freq(0.15)
+        .with_freq(1000.15)
         .with_octaves(16.0 as u8)
         .with_gain(2.0)
         .with_seed(seed)
@@ -91,6 +92,9 @@ let biomes: Vec<world_structs::Biome> = vec![
         .generate_scaled(0.0,512.0);
     let apply_seas = true;
     let apply_ground = true;
+
+
+    // BIOMES and adding tiles
     for i in 0..width {
         world_chunks.push(vec![]);
         for j in 0..height {
@@ -100,12 +104,27 @@ let biomes: Vec<world_structs::Biome> = vec![
                 for h in 0..chunk_size {
                     let rx = ((i*chunk_size) as usize + k) as f32;
                     let ry = ((j*chunk_size) as usize + h) as f32;
-                    //let rz = biome_noise[(rx + j * chunk_size) as usize]; 
                     let rz = 0.0;
+                    let mut biome_val = biome_noise[(rx as usize + j * chunk_size) as usize]; 
+                    let dist_from_equator = ((ry.powf(2.0) + ((height*chunk_size)/2).pow(2) as f32)).sqrt();
+                    let rel =  1.0- (dist_from_equator /  ((height*chunk_size)/2) as f32);
+                    biome_val += rel;              
+
+                    let temp = biome_val as i32 * max_temp;
+                    let mut biome = &biomes[0];
+                    for b in biomes.iter() { 
+                        if temp > b.temperature - temperature_margin && temp < b.temperature + temperature_margin { 
+                            biome = b;           
+                            break;                     
+
+                    }
+                    }
+                    let biome_tile_type = &biome.tile_type;
                     chunk_points[k].push(world_structs::Point {
                                             x: rx,
                                             y: ry,
-                                            z: rz });
+                                            z: rz,
+                                            tile_type: biome_tile_type.to_string()});
                 }
 
             }
@@ -116,14 +135,16 @@ let biomes: Vec<world_structs::Biome> = vec![
 
         }
     }
+
+    // SEAS AND BIG SHAPES
     if apply_seas {
         for i in 0..width {
             for j in 0..height {
                 for k in 0..chunk_size {
                     for h in 0..chunk_size {
-                        let rx = ((i*chunk_size) as usize + k) as f32;
-                        let ry = ((j*chunk_size) as usize + h) as f32;
-                        let rz = sea_noise[(rx as usize  + j as usize * chunk_size) as usize]; 
+                        let rx = ((i*chunk_size) + k);
+                        let ry = ((j*chunk_size) + h);
+                        let rz = sea_noise[h + (k*width*chunk_size)]; 
                         world_chunks[i as usize][j as usize].points[k][h].z = rz;
 
                 }
@@ -133,6 +154,8 @@ let biomes: Vec<world_structs::Biome> = vec![
         }
     }
     }
+
+    // DETAILS
     if apply_ground { 
         for i in 0..width {
             for j in 0..height {
