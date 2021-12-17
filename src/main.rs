@@ -2,6 +2,7 @@ mod generator;
 mod server;
 mod client;
 mod world_structs;
+mod graphics_utils;
 fn main() {
     let seed = 64;
     let width = 16;

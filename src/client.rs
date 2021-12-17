@@ -8,6 +8,7 @@ use std::str::from_utf8;
 use std::{thread, time};
 use std::time::{SystemTime};
 use crate::world_structs;
+use crate::graphics_utils;
 use serde_json;
 use lerp::Lerp;
 use std::collections::HashMap;
@@ -15,16 +16,8 @@ const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 const TILE_SIZE: f32 = 32.0;
 
-struct TileGraphics {
-    sc: Color,
-    tc: Color
-}
-struct Camera {
-    x: f32,
-    y: f32,
-    zoom: f32,
-    speed: f32,
-}
+
+
 fn main_loop() -> Result<(), String> {
 
 
@@ -36,60 +29,16 @@ fn main_loop() -> Result<(), String> {
         .expect("could not initialize video subsystem");
     let mut canvas = window.into_canvas().build()
         .expect("could not make a canvas");
-    let mut camera = Camera{
+    let tile_gs = graphics_utils::tile_graphics();
+
+    let mut camera = graphics_utils::Camera{
         x: 0.0,
         y: 0.0,
         zoom: 1.0,
         speed: 5120.0
     };
     let bg_color = Color::RGB(0, 0, 0);
-    let tile_gs = HashMap::from([
-        ("grass".to_string(),
-        TileGraphics {
 
-           sc: Color::RGB(128,64,55),
-           tc: Color::RGB(128,128,55)
-        }),
-    
-        ("water".to_string(),
-        TileGraphics {
-           sc: Color::RGB(0,20,55),
-           tc: Color::RGB(0,20,255)
-        }),
-    
-        ("ice".to_string(),
-        TileGraphics {
-           sc: Color::RGB(128,64,55),
-           tc: Color::RGB(128,128,55)
-        }),
-    
-        ("permafrost".to_string(),
-        TileGraphics {
-           sc: Color::RGB(128,64,55),
-           tc: Color::RGB(128,128,55)
-        }),
-    
-        ("coarse_land".to_string(),
-        TileGraphics {
-           sc: Color::RGB(128,64,55),
-           tc: Color::RGB(128,128,55)
-        }),
-        ("savannah_land".to_string(),
-        TileGraphics {
-           sc: Color::RGB(128,64,55),
-           tc: Color::RGB(128,128,55)
-        }),
-    
-        ("sand".to_string(),
-        TileGraphics {
-           sc: Color::RGB(128,64,55),
-           tc: Color::RGB(128,128,55)
-        }),
-        ("red_sand".to_string(),
-        TileGraphics {
-           sc: Color::RGB(128,64,55),
-           tc: Color::RGB(128,128,55)
-        })]);
     let mut stream = TcpStream::connect("localhost:5000").unwrap();
     let mut w = false;
     let mut a = false;
