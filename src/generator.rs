@@ -66,25 +66,25 @@ let biomes: Vec<world_structs::Biome> = vec![
 
     println!("Generating world...");
     let mut world_chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
-    let _ground_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
-        .with_freq(0.05)
-        .with_octaves(3.0 as u8)
-        .with_gain(20.0)
+    let ground_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.15)
+        .with_octaves(9.0 as u8)
+        .with_gain(2.0)
         .with_seed(seed)
-        .with_lacunarity(2.0)
+        .with_lacunarity(0.8)
         .generate_scaled(0.0,512.0);
     let sea_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
         .with_freq(1000.15)
         .with_octaves(16.0 as u8)
         .with_gain(2.0)
-        .with_seed(seed)
-        .with_lacunarity(0.5)
+        .with_seed(seed*2)
+        .with_lacunarity(0.4)
         .generate_scaled(0.0,512.0);
     let biome_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
         .with_freq(0.000003)
         .with_octaves(16)
         .with_gain(1.0)
-        .with_seed(seed)
+        .with_seed(seed*3)
         .with_lacunarity(2.0)
         .generate_scaled(-0.5,0.5);
     let apply_seas = true;
@@ -161,7 +161,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                     for h in 0..chunk_size {
                         let _rx = ((i*chunk_size) as usize + k) as f32;
                         let _ry = ((j*chunk_size) as usize + h) as f32;
-                        let _rz = sea_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
+                        let _rz = ground_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
                         world_chunks[i as usize][j as usize].points[k][h].z += _rz;
 
                 }
@@ -182,6 +182,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                         let _ry = ((j*chunk_size) as usize + h) as f32;
 
                         if world_chunks[i as usize][j as usize].points[k][h].z < sea_level {
+                            world_chunks[i as usize][j as usize].points[k][h].z = 512.0 - world_chunks[i as usize][j as usize].points[k][h].z;
                             world_chunks[i as usize][j as usize].points[k][h].tile_type = "water".to_string();
 
 

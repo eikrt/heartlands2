@@ -297,9 +297,10 @@ fn main_loop() -> Result<(), String> {
 
                         continue;
                     }
-                    let r_result = (tile_gs.get(&p.tile_type).unwrap().sc.r as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.r as f32, p.z/512.0) as u8;
-                    let g_result = (tile_gs.get(&p.tile_type).unwrap().sc.g as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.g as f32, p.z/512.0) as u8;
-                    let b_result = (tile_gs.get(&p.tile_type).unwrap().sc.b as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.b as f32, p.z/512.0) as u8;
+                    let light = 1.0;
+                    let r_result = ((tile_gs.get(&p.tile_type).unwrap().sc.r as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.r as f32, p.z/512.0) / light) as u8;
+                    let g_result = ((tile_gs.get(&p.tile_type).unwrap().sc.g as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.g as f32, p.z/512.0) / light) as u8;
+                    let b_result = ((tile_gs.get(&p.tile_type).unwrap().sc.b as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.b as f32, p.z/512.0) /light) as u8;
                     canvas.set_draw_color(Color::RGB(r_result,g_result,b_result));
                     
                              match canvas.fill_rect(Rect::new(tx as i32,ty as i32,(TILE_SIZE * camera.zoom) as u32,(TILE_SIZE * camera.zoom) as u32)) {
