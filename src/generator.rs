@@ -87,10 +87,25 @@ let biomes: Vec<world_structs::Biome> = vec![
         .with_seed(seed*3)
         .with_lacunarity(2.0)
         .generate_scaled(-0.5,0.5);
+    let river_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.02)
+        .with_octaves(9)
+        .with_gain(1.2)
+        .with_seed(seed*4)
+        .with_lacunarity(1.3)
+        .generate_scaled(0.0,1.0);
+    let river_area_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(100.0)
+        .with_octaves(9)
+        .with_gain(1.2)
+        .with_seed(seed*5)
+        .with_lacunarity(0.2)
+        .generate_scaled(0.0,1.0);
+    let river_threshhold = 0.5;
     let apply_seas = true;
     let apply_ground = true;
     let apply_water = true;
-
+    let apply_rivers = true;
     // BIOMES and adding tiles
     for i in 0..width {
         world_chunks.push(vec![]);
@@ -171,7 +186,27 @@ let biomes: Vec<world_structs::Biome> = vec![
         }
     }
     }
+    // RIVERS
+    if apply_rivers { 
+        for i in 0..width {
+            for j in 0..height {
+                for k in 0..chunk_size {
+                    for h in 0..chunk_size {
+                        let _rx = ((i*chunk_size) as usize + k) as f32;
+                        let _ry = ((j*chunk_size) as usize + h) as f32;
+                        let _rz = river_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
+                        let ra_value = river_area_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
+                        if ra_value > 0.5 && _rz > river_threshhold && world_chunks[i as usize][j as usize].points[k][h].z > sea_level {
 
+                            world_chunks[i as usize][j as usize].points[k][h].z = _rz *512.0;
+                        }
+            
+
+                }
+            }
+        }
+        }
+    }
     // DETAILS
     if apply_water { 
         for i in 0..width {
@@ -182,7 +217,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                         let _ry = ((j*chunk_size) as usize + h) as f32;
 
                         if world_chunks[i as usize][j as usize].points[k][h].z < sea_level {
-                            world_chunks[i as usize][j as usize].points[k][h].z = 512.0 - world_chunks[i as usize][j as usize].points[k][h].z;
+                            world_chunks[i as usize][j as usize].points[k][h].z = (512.0 - world_chunks[i as usize][j as usize].points[k][h].z);
                             world_chunks[i as usize][j as usize].points[k][h].tile_type = "water".to_string();
 
 
@@ -194,6 +229,7 @@ let biomes: Vec<world_structs::Biome> = vec![
         }
         }
     }
+
     return world_structs::World {
         chunks: world_chunks,
         world_data: world_structs::WorldData {
