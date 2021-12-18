@@ -19,9 +19,10 @@ pub struct Point {
 
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Chunk_point {
+pub struct WorldRequest {
     pub x: i32,
     pub y: i32,
+    pub req_type: String
 }
 
 #[derive(Clone)]
@@ -31,14 +32,19 @@ pub struct Chunk {
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]
-pub struct World {
+pub struct WorldData {
+
     pub name: String,
-    pub chunks: Vec<Vec<Chunk>>,
-    pub chunk_size: usize,
-    pub sea_level: f32
-
-
+    pub sea_level: f32,
+    pub width: usize,
+    pub height: usize,
+    pub chunk_size: usize 
 }
-
+#[derive(Clone)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct World {
+    pub chunks: Vec<Vec<Chunk>>,
+    pub world_data: WorldData,
+}
 
 

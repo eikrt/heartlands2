@@ -67,7 +67,7 @@ let biomes: Vec<world_structs::Biome> = vec![
     println!("Generating world...");
     let mut world_chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
     let _ground_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
-        .with_freq(500.05)
+        .with_freq(0.05)
         .with_octaves(3.0 as u8)
         .with_gain(20.0)
         .with_seed(seed)
@@ -81,12 +81,12 @@ let biomes: Vec<world_structs::Biome> = vec![
         .with_lacunarity(0.5)
         .generate_scaled(0.0,512.0);
     let biome_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
-        .with_freq(0.05)
-        .with_octaves(8)
-        .with_gain(2.0)
+        .with_freq(0.000003)
+        .with_octaves(16)
+        .with_gain(1.0)
         .with_seed(seed)
         .with_lacunarity(2.0)
-        .generate_scaled(0.0,512.0);
+        .generate_scaled(-0.5,0.5);
     let apply_seas = true;
     let apply_ground = true;
     let apply_water = true;
@@ -102,12 +102,12 @@ let biomes: Vec<world_structs::Biome> = vec![
                     let rx = ((i*chunk_size) as usize + k) as f32;
                     let ry = ((j*chunk_size) as usize + h) as f32;
                     let rz = 0.0;
-                    let mut biome_val = biome_noise[(rx as usize + j * chunk_size) as usize]; 
-                    let dist_from_equator = ((ry.powf(2.0) + ((height*chunk_size)/2).pow(2) as f32)).sqrt();
-                    let rel =  1.0- (dist_from_equator /  ((height*chunk_size)/2) as f32);
-                    biome_val += rel;              
-
-                    let temp = biome_val as i32 * max_temp;
+                    let mut biome_val = biome_noise[(ry + rx*width as f32 *chunk_size as f32) as usize]; 
+                    
+                    let dist_from_equator = ((ry - (height as f32 *chunk_size as f32 )/2.0).powf(2.0) as f32).sqrt();
+                    let rel = 1.0 - (dist_from_equator /  ((height*chunk_size)/2) as f32);
+                    biome_val += rel;
+                    let temp =(biome_val * max_temp as f32) as i32;
                     let mut biome = &biomes[0];
                     for b in biomes.iter() { 
                         if temp > b.temperature - temperature_margin && temp < b.temperature + temperature_margin { 
@@ -141,7 +141,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                     for h in 0..chunk_size {
                         let _rx = (i*chunk_size) + k;
                         let _ry = (j*chunk_size) + h;
-                        let _rz = sea_noise[h + k*width*chunk_size]; 
+                        let _rz = sea_noise[_ry + _rx*width*chunk_size];
+                        //let _rz = sea_noise[h + k*width*chunk_size + i*chunk_size]; 
                         world_chunks[i as usize][j as usize].points[k][h].z = _rz;
 
                 }
@@ -160,7 +161,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                     for h in 0..chunk_size {
                         let _rx = ((i*chunk_size) as usize + k) as f32;
                         let _ry = ((j*chunk_size) as usize + h) as f32;
-                        let _rz = sea_noise[(_rx as usize + j * chunk_size) as usize]; 
+                        let _rz = sea_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
                         world_chunks[i as usize][j as usize].points[k][h].z += _rz;
 
                 }
@@ -193,10 +194,15 @@ let biomes: Vec<world_structs::Biome> = vec![
         }
     }
     return world_structs::World {
-        chunk_size: chunk_size,
         chunks: world_chunks,
-        name: name,
-        sea_level: sea_level 
+        world_data: world_structs::WorldData {
+            name: name,
+            sea_level: sea_level, 
+            width: width,
+            height: height,
+            chunk_size: chunk_size
+
+        }
     };
 
 }

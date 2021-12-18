@@ -15,12 +15,22 @@ fn handle(mut stream: TcpStream, world: Arc<world_structs::World>) {
                 Ok(_v) => _v,
                 Err(e) => panic!("Invalid sequence: {}", e),
             }.replace("\0", "").replace("\n", "").to_string();
-            let res_obj: world_structs::Chunk_point = match serde_json::from_str(&res) {
+            let res_obj: world_structs::WorldRequest = match serde_json::from_str(&res) {
                 Ok(v) => v,
                 Err(e) => panic!("Invalid sequence: {}", e),
             };
-            let msg = serde_json::to_string(&world_clone.chunks[res_obj.x as usize][res_obj.y as usize]).unwrap(); 
-            stream.write(msg.as_bytes()).unwrap();
+            if res_obj.req_type == "chunk" {
+                let msg = serde_json::to_string(&world_clone.chunks[res_obj.x as usize][res_obj.y as usize]).unwrap();
+
+                stream.write(msg.as_bytes()).unwrap();
+            }
+
+            else if res_obj.req_type == "data" {
+                let msg = serde_json::to_string(&world_clone.world_data).unwrap();
+                stream.write(msg.as_bytes()).unwrap();
+            }
+
+        data = [0 as u8; 256];
             true
         },
         Err(_) => {
