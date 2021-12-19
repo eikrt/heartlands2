@@ -156,7 +156,7 @@ fn main_loop() -> Result<(), String> {
             Ok(v) => v,
             Err(e) => panic!("Invalid sequence: {}", e),
         }.replace("\0", "").replace("\n", "").to_string();
-        let mut chunk: Option<world_structs::Chunk> =  None;
+        let mut response: Option<world_structs::WorldResponse> =  None;
         if update_data {
                         
             world_data = Some(match serde_json::from_str(&res) {
@@ -166,14 +166,14 @@ fn main_loop() -> Result<(), String> {
         }
         else {
 
-            chunk = Some(match serde_json::from_str(&res) {
+            response = Some(match serde_json::from_str(&res) {
                  Ok(v) => v,
                  Err(e) => panic!("Invalid sequence: {}", e),
             });
             let mut already_in_chunks = false;
             for chnk in &chunks {
-                match chunk {
-                Some(ref c) => {if chnk.points[0][0].x == c.points[0][0].x && chnk.points[0][0].y == c.points[0][0].y{
+                match response {
+                Some(ref r) => {if chnk.points[0][0].x == r.chunk.points[0][0].x && chnk.points[0][0].y == r.chunk.points[0][0].y{
                     already_in_chunks = true;
                 }
 
@@ -183,8 +183,8 @@ fn main_loop() -> Result<(), String> {
                 };
             }
             if !already_in_chunks {
-                match chunk {
-                Some(c) => chunks.push(c),
+                match response {
+                Some(r) => chunks.push(r.chunk),
                 None => ()
             };
         }

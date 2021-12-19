@@ -66,6 +66,7 @@ let biomes: Vec<world_structs::Biome> = vec![
 
     println!("Generating world...");
     let mut world_chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
+    let mut world_entities: Vec<world_structs::Entity> = Vec::new();
     let ground_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
         .with_freq(0.15)
         .with_octaves(9.0 as u8)
@@ -106,6 +107,9 @@ let biomes: Vec<world_structs::Biome> = vec![
     let apply_ground = true;
     let apply_water = true;
     let apply_rivers = true;
+    let apply_entities = true;
+    let apply_trees= true;
+
     // BIOMES and adding tiles
     for i in 0..width {
         world_chunks.push(vec![]);
@@ -229,16 +233,40 @@ let biomes: Vec<world_structs::Biome> = vec![
         }
         }
     }
+    if apply_entities {
+        if apply_trees {
+            
+            for i in 0..width {
+                for j in 0..height {
+                    for k in 0..chunk_size {
+                        for h in 0..chunk_size {
+                            let _rx = ((i*chunk_size) as usize + k) as f32;
+                            let _ry = ((j*chunk_size) as usize + h) as f32;
+
+                            world_entities.push(world_structs::Entity {
+                                x: 0.0,
+                                y: 0.0
+                            })
+
+                        }
+                
+
+                    }
+                }
+            }
+            }
+        }
 
     return world_structs::World {
         chunks: world_chunks,
+        entities: world_entities,
         world_data: world_structs::WorldData {
             name: name,
             sea_level: sea_level, 
             width: width,
             height: height,
             chunk_size: chunk_size
-
+            
         }
     };
 
