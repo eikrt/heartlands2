@@ -28,7 +28,8 @@ pub struct WorldRequest {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Entity {
     pub x: f32,
-    pub y: f32
+    pub y: f32,
+    pub entity_type: String
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]

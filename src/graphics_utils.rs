@@ -64,6 +64,12 @@ return HashMap::from([
        tc: Color::RGB(5,85,5)
     }),
 
+    ("cold_land".to_string(),
+    TileGraphics {
+
+       sc: Color::RGB(58,132,56),
+       tc: Color::RGB(5,85,5)
+    }),
     ("water".to_string(),
     TileGraphics {
        sc: Color::RGB(65,65,195),

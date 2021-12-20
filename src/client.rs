@@ -64,6 +64,11 @@ fn main_loop() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
+    let birch_texture = texture_creator.load_texture("res/birch.png")?;
+    let appletree_texture = texture_creator.load_texture("res/appletree.png")?;
+    let pine_texture = texture_creator.load_texture("res/pine.png")?;
+    let spruce_texture = texture_creator.load_texture("res/spruce.png")?;
+    let cactus_texture = texture_creator.load_texture("res/cactus.png")?;
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
     let _delta_as_millis = delta.as_millis()/10;
@@ -349,7 +354,23 @@ fn main_loop() -> Result<(), String> {
             canvas.set_draw_color(Color::RGB(0,0,0));
             let position = Point::new(tx as i32 + (32.0/2.0 * camera.zoom) as i32 ,ty as i32 + (32.0/2.0 * camera.zoom) as i32);
             let sprite = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
-            graphics_utils::render(&mut canvas, &oak_texture, position, sprite);
+            if entity.entity_type == "oak" {
+                graphics_utils::render(&mut canvas, &oak_texture, position, sprite);
+
+            } 
+
+            else if entity.entity_type == "spruce" {
+                graphics_utils::render(&mut canvas, &spruce_texture, position, sprite);
+
+            }
+            else if entity.entity_type == "pine" {
+                graphics_utils::render(&mut canvas, &pine_texture, position, sprite);
+
+            }
+            else if entity.entity_type == "birch" {
+                graphics_utils::render(&mut canvas, &birch_texture, position, sprite);
+
+            }
         }
         canvas.present();
         compare_time = SystemTime::now();

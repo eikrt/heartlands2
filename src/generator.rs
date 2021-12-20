@@ -20,13 +20,13 @@ let biomes: Vec<world_structs::Biome> = vec![
     world_structs::Biome {
         name: "taiga".to_string(),
         temperature: 10,
-        tile_type: "grass".to_string()
+        tile_type: "cold_land".to_string()
     },
     
     world_structs::Biome {
         name: "forest".to_string(),
         temperature: 15,
-        tile_type: "grass".to_string()
+        tile_type: "cold_land".to_string()
     },
     
     world_structs::Biome {
@@ -423,13 +423,36 @@ let biomes: Vec<world_structs::Biome> = vec![
                             let _ry = ((j*chunk_size) as usize + h) as f32;
                             let chunk = &mut world_chunks[i as usize][j as usize];
                             let point = &mut chunk.points[k][h];
+                            let mut entity_type = "oak";
+                            let mut tree_rand = rng.gen_range(0..2);
+                            if point.tile_type == "grass" {
+                                if tree_rand == 0 {
+                                entity_type = "oak";
+
+                                }
+                                else if tree_rand == 1 {
+                                    entity_type = "birch";
+                                }
+
+                            }
+                         else if point.tile_type == "cold_land" {
+                                if tree_rand == 0 {
+                                entity_type = "spruce";
+                            
+
+                            }
+                                else if tree_rand == 1 {
+                                    entity_type = "pine";
+                                }
+                            }
                             let tree_val = tree_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
-                            if tree_val > tree_threshold && point.tile_type == "grass" {
+                            if tree_val > tree_threshold && (point.tile_type == "grass" || point.tile_type == "cold_land"){
 
                             world_entities.push(world_structs::Entity {
                                 
                                 x: _rx * tile_size as f32,
-                                y: _ry * tile_size as f32
+                                y: _ry * tile_size as f32,
+                                entity_type: entity_type.to_string()
                             });
 
                         }
