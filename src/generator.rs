@@ -1,7 +1,8 @@
 use simdnoise::*;
 use crate::world_structs;
-
+use rand::Rng;
 pub fn generate(seed:i32,  width:usize, height:usize, chunk_size:usize, sea_level:f32, name: String) -> world_structs::World {
+let tile_size = 32;
 let temperature_margin = 5;
 let biomes: Vec<world_structs::Biome> = vec![
     world_structs::Biome {
@@ -67,6 +68,7 @@ let biomes: Vec<world_structs::Biome> = vec![
     println!("Generating world...");
     let mut world_chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
     let mut world_entities: Vec<world_structs::Entity> = Vec::new();
+    let mut rng = rand::thread_rng();
     let ground_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
         .with_freq(0.15)
         .with_octaves(9.0 as u8)
@@ -102,15 +104,61 @@ let biomes: Vec<world_structs::Biome> = vec![
         .with_seed(seed*5)
         .with_lacunarity(0.2)
         .generate_scaled(0.0,1.0);
+    let tree_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.1)
+        .with_octaves(9)
+        .with_gain(0.1)
+        .with_seed(seed*6)
+        .with_lacunarity(5.0)
+        .generate_scaled(0.0,0.9);
+
+    let village_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.01)
+        .with_octaves(6)
+        .with_gain(1.0)
+        .with_seed(seed*7)
+        .with_lacunarity(2.5)
+        .generate_scaled(0.0,1.0);
+
+    let city_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.1)
+        .with_octaves(16)
+        .with_gain(1.0)
+        .with_seed(seed*8)
+        .with_lacunarity(2.0)
+        .generate_scaled(0.0,1.0);
+    let village_building_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.1)
+        .with_octaves(32)
+        .with_gain(0.0)
+        .with_seed(seed*9)
+        .with_lacunarity(9.0)
+        .generate_scaled(0.0,1.0);
+
+    let city_building_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.1)
+        .with_octaves(32)
+        .with_gain(0.0)
+        .with_seed(seed*10)
+        .with_lacunarity(5.0)
+        .generate_scaled(0.0,1.0);
+    let tree_threshold = 0.4;
+    let village_threshold = 0.8;
+    let city_threshold = 0.7;
+
+    let village_building_threshold = 0.1;
+    let city_building_threshold = 0.1;
     let river_threshhold = 0.5;
     let apply_seas = true;
     let apply_ground = true;
     let apply_water = true;
     let apply_rivers = true;
     let apply_entities = true;
+    let apply_settlements = true;
+    let apply_villages = true;
+    let apply_cities = false;
     let apply_trees= true;
-
-    // BIOMES and adding tiles
+    // biomes and adding tiles
     for i in 0..width {
         world_chunks.push(vec![]);
         for j in 0..height {
@@ -161,8 +209,9 @@ let biomes: Vec<world_structs::Biome> = vec![
                         let _rx = (i*chunk_size) + k;
                         let _ry = (j*chunk_size) + h;
                         let _rz = sea_noise[_ry + _rx*width*chunk_size];
-                        //let _rz = sea_noise[h + k*width*chunk_size + i*chunk_size]; 
-                        world_chunks[i as usize][j as usize].points[k][h].z = _rz;
+                            let chunk = &mut world_chunks[i as usize][j as usize];
+                        let point = &mut chunk.points[k][h];
+                        point.z = _rz;
 
                 }
             
@@ -181,7 +230,9 @@ let biomes: Vec<world_structs::Biome> = vec![
                         let _rx = ((i*chunk_size) as usize + k) as f32;
                         let _ry = ((j*chunk_size) as usize + h) as f32;
                         let _rz = ground_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
-                        world_chunks[i as usize][j as usize].points[k][h].z += _rz;
+                            let chunk = &mut world_chunks[i as usize][j as usize];
+                        let point = &mut chunk.points[k][h];
+                        point.z += _rz;
 
                 }
             
@@ -199,10 +250,12 @@ let biomes: Vec<world_structs::Biome> = vec![
                         let _rx = ((i*chunk_size) as usize + k) as f32;
                         let _ry = ((j*chunk_size) as usize + h) as f32;
                         let _rz = river_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
+                            let chunk = &mut world_chunks[i as usize][j as usize];
+                        let point = &mut chunk.points[k][h];
                         let ra_value = river_area_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize]; 
-                        if ra_value > 0.5 && _rz > river_threshhold && world_chunks[i as usize][j as usize].points[k][h].z > sea_level {
+                        if ra_value > 0.5 && _rz > river_threshhold && point.z > sea_level {
 
-                            world_chunks[i as usize][j as usize].points[k][h].z = _rz *512.0;
+                            point.z = _rz *512.0;
                         }
             
 
@@ -219,10 +272,12 @@ let biomes: Vec<world_structs::Biome> = vec![
                     for h in 0..chunk_size {
                         let _rx = ((i*chunk_size) as usize + k) as f32;
                         let _ry = ((j*chunk_size) as usize + h) as f32;
+                            let chunk = &mut world_chunks[i as usize][j as usize];
+                            let point = &mut chunk.points[k][h];
 
-                        if world_chunks[i as usize][j as usize].points[k][h].z < sea_level {
-                            world_chunks[i as usize][j as usize].points[k][h].z = (512.0 - world_chunks[i as usize][j as usize].points[k][h].z);
-                            world_chunks[i as usize][j as usize].points[k][h].tile_type = "water".to_string();
+                        if point.z < sea_level {
+                            point.z = (512.0 - point.z);
+                            point.tile_type = "water".to_string();
 
 
                     }
@@ -233,7 +288,131 @@ let biomes: Vec<world_structs::Biome> = vec![
         }
         }
     }
+
+    if apply_settlements {
+
+        if apply_villages {
+
+            for i in 0..width {
+                for j in 0..height {
+                    for k in 0..chunk_size {
+                        for h in 0..chunk_size {
+                            let _rx = ((i*chunk_size) as usize + k) as f32;
+                            let _ry = ((j*chunk_size) as usize + h) as f32;
+                            let chunk = &mut world_chunks[i as usize][j as usize];
+                            let point = &mut chunk.points[k][h];
+                            
+                            let village_val = village_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
+                            let village_building_val = village_building_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
+                            if village_val > village_threshold { 
+                                if village_building_val > village_building_threshold && point.tile_type != "water" && point.tile_type != "ice" && point.tile_type != "sand" && point.tile_type != "red_sand"{
+                                point.tile_type = "mud_hive_floor".to_string();
+                                let mut sp_1 = k;
+                                let mut sp_2 = h;
+                                let mut ep_1 = k;
+                                let mut ep_2 = h;
+                                ep_1 = k+4;
+                                ep_2 = h+4;
+
+                                // floor
+                                for x in sp_1..ep_1 {
+                                    for y in sp_2..ep_2{
+                                        if x < chunk_size && y < chunk_size {
+                                            chunk.points[x][y].tile_type = "mud_hive_floor".to_string();
+
+                                    }
+                                }
+
+                            }
+                                let side = rng.gen_range(0..4);
+                                let mut door_x = 0;
+                                let mut door_y = 0;
+                                match side {
+                                0 => {
+                                    door_x = rng.gen_range(sp_1+1..ep_1-1);
+
+                                    door_y = sp_2;
+
+                                    },
+                                1 => {
+                                    door_y = rng.gen_range(sp_2+1..ep_2-1);
+
+                                    door_x = sp_1;
+
+                                    },
+                                2 => {
+                                    door_x = rng.gen_range(sp_1+1..ep_1-1);
+
+                                    door_y = sp_2;
+
+                                    },
+                                3 => {
+                                    door_y = rng.gen_range(sp_2+1..ep_2-1);
+
+                                    door_x = ep_1;
+
+                                    },
+                                _ => {}
+                                }
+                                // wall
+                                for x in sp_1..ep_1 {
+                                    for y in sp_2..ep_2{
+                                        if x < chunk_size-1 && y < chunk_size-1 && x > 0 && y > 0 && !(x == door_x && y == door_y) {
+                                            if (chunk.points[x-1][y].tile_type != "mud_hive_floor" && chunk.points[x-1][y].tile_type != "mud_hive_wall") || (chunk.points[x+1][y].tile_type != "mud_hive_floor" && chunk.points[x+1][y].tile_type != "mud_hive_wall") || (chunk.points[x][y-1].tile_type != "mud_hive_floor" && chunk.points[x][y-1].tile_type != "mud_hive_wall") || (chunk.points[x][y+1].tile_type != "mud_hive_floor" && chunk.points[x][y+1].tile_type != "mud_hive_wall")   {
+
+                                            chunk.points[x][y].tile_type = "mud_hive_wall".to_string();
+
+                                    }
+                                
+                                        } else if (x == chunk_size-1 || x == 0) && y < chunk_size {
+                                                chunk.points[x][y].tile_type = "mud_hive_wall".to_string();
+                                        }else if (y == chunk_size-1 || y == 0)  && x < chunk_size {
+                                                chunk.points[x][y].tile_type = "mud_hive_wall".to_string();
+                                        }
+
+
+                            }
+                
+
+                    }
+                }
+
+            }
+            }
+        }
+        }
+        }}
+        if apply_cities {
+
+            for i in 0..width {
+                for j in 0..height {
+                    for k in 0..chunk_size {
+                        for h in 0..chunk_size {
+                            let _rx = ((i*chunk_size) as usize + k) as f32;
+                            let _ry = ((j*chunk_size) as usize + h) as f32;
+
+                            let point = &world_chunks[i as usize][j as usize].points[k][h];
+                            
+                            let city_val = city_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
+                            let city_building_val = city_building_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
+                            if city_val > city_threshold{
+                                if city_building_val > city_threshold && point.tile_type != "water" && point.tile_type != "ice" && point.tile_type != "sand" && point.tile_type != "red_sand"{
+                                world_chunks[i as usize][j as usize].points[k][h].tile_type = "stone_hive_floor".to_string();
+
+                            }
+                        } 
+
+                    }
+                }
+
+            }
+            }
+        }
+    } 
+    // ENTITIES
     if apply_entities {
+
+        // TREES
         if apply_trees {
             
             for i in 0..width {
@@ -242,20 +421,29 @@ let biomes: Vec<world_structs::Biome> = vec![
                         for h in 0..chunk_size {
                             let _rx = ((i*chunk_size) as usize + k) as f32;
                             let _ry = ((j*chunk_size) as usize + h) as f32;
+                            let chunk = &mut world_chunks[i as usize][j as usize];
+                            let point = &mut chunk.points[k][h];
+                            let tree_val = tree_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
+                            if tree_val > tree_threshold && point.tile_type == "grass" {
 
                             world_entities.push(world_structs::Entity {
-                                x: 0.0,
-                                y: 0.0
-                            })
+                                
+                                x: _rx * tile_size as f32,
+                                y: _ry * tile_size as f32
+                            });
 
                         }
                 
 
                     }
                 }
+
             }
             }
         }
+    }
+
+// SETTLEMENTS
 
     return world_structs::World {
         chunks: world_chunks,
@@ -265,8 +453,8 @@ let biomes: Vec<world_structs::Biome> = vec![
             sea_level: sea_level, 
             width: width,
             height: height,
-            chunk_size: chunk_size
-            
+            chunk_size: chunk_size,
+            tile_size: tile_size       
         }
     };
 

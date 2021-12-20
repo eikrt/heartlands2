@@ -1,7 +1,9 @@
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::rect::Rect;
+use sdl2::rect::{Point,Rect};
+use sdl2::render::{WindowCanvas, Texture};
+use sdl2::image::{LoadTexture, InitFlag};
 use std::net::{TcpStream};
 use std::io::{Read, Write};
 use std::str::from_utf8;
@@ -14,6 +16,7 @@ use lerp::Lerp;
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 const TILE_SIZE: f32 = 32.0;
+
 
 
 
@@ -57,6 +60,10 @@ fn main_loop() -> Result<(), String> {
     let mut chunk_fetch_x = -1;
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
+    let mut entities: Vec<world_structs::Entity> = Vec::new();
+    let texture_creator = canvas.texture_creator();
+    let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
+    let oak_texture = texture_creator.load_texture("res/oak.png")?;
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
     let _delta_as_millis = delta.as_millis()/10;
@@ -147,7 +154,7 @@ fn main_loop() -> Result<(), String> {
 
         // receive data from server
         
-        let mut buf = [0; 40048];
+        let mut buf = [0; 65536];
         match stream.read(&mut buf) {
             Ok(_v) => _v,
             Err(_v) => 0
@@ -170,11 +177,11 @@ fn main_loop() -> Result<(), String> {
                  Ok(v) => v,
                  Err(e) => panic!("Invalid sequence: {}", e),
             });
-            let mut already_in_chunks = false;
+            let mut chunk_already_in_chunks = false;
             for chnk in &chunks {
                 match response {
                 Some(ref r) => {if chnk.points[0][0].x == r.chunk.points[0][0].x && chnk.points[0][0].y == r.chunk.points[0][0].y{
-                    already_in_chunks = true;
+                    chunk_already_in_chunks = true;
                 }
 
 
@@ -182,9 +189,35 @@ fn main_loop() -> Result<(), String> {
                 None => ()
                 };
             }
-            if !already_in_chunks {
+            if !chunk_already_in_chunks {
                 match response {
-                Some(r) => chunks.push(r.chunk),
+                Some(ref r) => chunks.push(r.chunk.clone()),
+                None => ()
+            };
+        }
+
+            let mut entity_already_in_entities= false;
+            for entity in &entities {
+                match response {
+                Some(ref r) => {
+                    for e in &r.entities {
+                        if entity.x == e.x && entity.y == e.y {
+                            entity_already_in_entities = true;
+                        }
+                    }
+                }
+                None => ()
+                };
+            }
+            if !entity_already_in_entities {
+                match response {
+                Some(ref r) => {
+                    if r.entities.len() > 0 {
+                        for e in r.entities.iter() {
+                            entities.push(e.clone());
+                        
+                    }
+                }},
                 None => ()
             };
         }
@@ -310,8 +343,14 @@ fn main_loop() -> Result<(), String> {
                     
                     }
                 }}
-
-            
+        for entity in entities.iter() {
+            let tx = entity.x * camera.zoom - camera.x;
+            let ty = entity.y * camera.zoom - camera.y;
+            canvas.set_draw_color(Color::RGB(0,0,0));
+            let position = Point::new(tx as i32 + (32.0/2.0 * camera.zoom) as i32 ,ty as i32 + (32.0/2.0 * camera.zoom) as i32);
+            let sprite = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
+            graphics_utils::render(&mut canvas, &oak_texture, position, sprite);
+        }
         canvas.present();
         compare_time = SystemTime::now();
         thread::sleep(time::Duration::from_millis(20));

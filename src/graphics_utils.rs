@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use sdl2::pixels::Color;
-
+use sdl2::rect::{Point,Rect};
+use sdl2::render::{WindowCanvas, Texture};
+use sdl2::image::{LoadTexture, InitFlag};
 pub struct Camera {
     pub x: f32,
     pub y: f32,
@@ -37,6 +39,22 @@ pub struct TileGraphics {
     pub sc: Color,
     pub tc: Color
 }
+
+pub struct EntityGraphics {
+    pub src: String,
+    pub color: Color,
+    pub position: Point,
+    pub sprite: Rect,
+}
+
+    pub fn render(canvas: &mut WindowCanvas, texture: &Texture, position: Point, sprite: Rect) -> Result<(), String> {
+        let (width, height) = canvas.output_size()?;
+        let screen_rect = Rect::from_center(position, sprite.width(), sprite.height());
+        canvas.copy(texture, sprite, screen_rect)?;
+
+        
+        Ok(())
+    }
 pub fn tile_graphics() -> HashMap<String, TileGraphics>{
 return HashMap::from([
     ("grass".to_string(),
@@ -60,8 +78,8 @@ return HashMap::from([
 
     ("permafrost".to_string(),
     TileGraphics {
-       sc: Color::RGB(63,61,65),
-       tc: Color::RGB(130,130,130)
+       sc: Color::RGB(58,125,50),
+       tc: Color::RGB(95,110,95)
     }),
 
     ("coarse_land".to_string(),
@@ -84,5 +102,27 @@ return HashMap::from([
     TileGraphics {
        sc: Color::RGB(190,130,80),
        tc: Color::RGB(150,90,35)
-    })]);
+    }),
+    ("mud_hive_wall".to_string(),
+    TileGraphics {
+       sc: Color::RGB(90,90,60),
+       tc: Color::RGB(90,90,60)
+    }),
+    ("mud_hive_floor".to_string(),
+    TileGraphics {
+       sc: Color::RGB(120,120,75),
+       tc: Color::RGB(120,120,75)
+    }),
+
+    ("stone_hive_wall".to_string(),
+    TileGraphics {
+       sc: Color::RGB(110,110,110),
+       tc: Color::RGB(110,110,110)
+    }),
+    ("stone_hive_floor".to_string(),
+    TileGraphics {
+       sc: Color::RGB(50,50,50),
+       tc: Color::RGB(50,50,50)
+    })
+]);
 }

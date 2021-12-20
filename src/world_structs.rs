@@ -49,7 +49,8 @@ pub struct WorldData {
     pub sea_level: f32,
     pub width: usize,
     pub height: usize,
-    pub chunk_size: usize 
+    pub chunk_size: usize, 
+    pub tile_size: i32 
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]
@@ -62,13 +63,17 @@ pub struct World {
 impl World {
     pub fn get_entities_for_chunk(&self, chunk: Chunk) -> Vec<Entity> {
        let mut filtered_entities = Vec::new();
-
        for e in self.entities.iter() {
-           if e.x > chunk.points[0][0].x && e.x < chunk.points[self.world_data.chunk_size][self.world_data.chunk_size].x && e.y > chunk.points[0][0].x && e.y < chunk.points[self.world_data.chunk_size][self.world_data.chunk_size].y {
+           let rx = e.x / self.world_data.tile_size as f32;
+           let ry = e.y / self.world_data.tile_size as f32;
+           let l_u_corner_x = chunk.points[0][0].x;
+           let l_u_corner_y = chunk.points[0][0].y;
+           let r_b_corner_x = chunk.points[self.world_data.chunk_size  - 1 ][self.world_data.chunk_size - 1].x;
+           let r_b_corner_y = chunk.points[self.world_data.chunk_size  - 1 ][self.world_data.chunk_size - 1].y;
+           if rx >= l_u_corner_x && rx <= r_b_corner_x && ry >= l_u_corner_y && ry <= r_b_corner_y { 
                filtered_entities.push(e.clone());
            }
        }
-
        return filtered_entities; 
 
     }
