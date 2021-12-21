@@ -2,15 +2,18 @@ use crate::world_structs;
 use std::thread;
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::io::{Read, Write};
+use std::time::{SystemTime};
 use std::sync::Arc;
 use std::str::from_utf8;
 use serde_json;
 fn handle(mut stream: TcpStream, world: Arc<world_structs::World>) {
+
+    let mut compare_time = SystemTime::now();
     let mut data = [0 as u8; 256];
     let world_clone = &*world;
     while match stream.read(&mut data) {
         Ok(_size) => {
-
+            // network stuff
             let res = match from_utf8(&data) {
                 Ok(_v) => _v,
                 Err(e) => panic!("Invalid sequence: {}", e),
@@ -33,8 +36,21 @@ fn handle(mut stream: TcpStream, world: Arc<world_structs::World>) {
                 let msg = serde_json::to_string(&world_clone.world_data).unwrap();
                 stream.write(msg.as_bytes()).unwrap();
             }
+            // game tick
+            
+            let delta = SystemTime::now().duration_since(compare_time).unwrap();
+            let _delta_as_millis = delta.as_millis()/10;
+                if delta.as_millis()/10 != 0 {
+                 //   println!("FPS: {}", 100 / (delta.as_millis()/10));
+                }
 
-        data = [0 as u8; 256];
+            
+
+
+            // end stuff
+            compare_time = SystemTime::now();
+
+            data = [0 as u8; 256];
             true
         },
         Err(_) => {

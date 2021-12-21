@@ -2,7 +2,7 @@ use simdnoise::*;
 use crate::world_structs;
 use rand::Rng;
 pub fn generate(seed:i32,  width:usize, height:usize, chunk_size:usize, sea_level:f32, name: String) -> world_structs::World {
-let tile_size = 32;
+let tile_size = 16;
 let temperature_margin = 5;
 let biomes: Vec<world_structs::Biome> = vec![
     world_structs::Biome {
@@ -112,11 +112,18 @@ let biomes: Vec<world_structs::Biome> = vec![
         .with_lacunarity(5.0)
         .generate_scaled(0.0,0.9);
 
+    let vegetation_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
+        .with_freq(0.1)
+        .with_octaves(9)
+        .with_gain(0.1)
+        .with_seed(seed*7)
+        .with_lacunarity(5.0)
+        .generate_scaled(0.0,0.9);
     let village_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
         .with_freq(0.01)
         .with_octaves(6)
         .with_gain(1.0)
-        .with_seed(seed*7)
+        .with_seed(seed*8)
         .with_lacunarity(2.5)
         .generate_scaled(0.0,1.0);
 
@@ -124,14 +131,14 @@ let biomes: Vec<world_structs::Biome> = vec![
         .with_freq(0.1)
         .with_octaves(16)
         .with_gain(1.0)
-        .with_seed(seed*8)
+        .with_seed(seed*9)
         .with_lacunarity(2.0)
         .generate_scaled(0.0,1.0);
     let village_building_noise = NoiseBuilder::fbm_2d(chunk_size*width, chunk_size*height)
         .with_freq(0.1)
         .with_octaves(32)
         .with_gain(0.0)
-        .with_seed(seed*9)
+        .with_seed(seed*10)
         .with_lacunarity(9.0)
         .generate_scaled(0.0,1.0);
 
@@ -143,6 +150,7 @@ let biomes: Vec<world_structs::Biome> = vec![
         .with_lacunarity(5.0)
         .generate_scaled(0.0,1.0);
     let tree_threshold = 0.4;
+    let vegetation_threshold = 0.8;
     let village_threshold = 0.8;
     let city_threshold = 0.7;
 
@@ -158,6 +166,7 @@ let biomes: Vec<world_structs::Biome> = vec![
     let apply_villages = true;
     let apply_cities = false;
     let apply_trees= true;
+    let apply_vegetation= true;
     // biomes and adding tiles
     for i in 0..width {
         world_chunks.push(vec![]);
@@ -307,6 +316,15 @@ let biomes: Vec<world_structs::Biome> = vec![
                             if village_val > village_threshold { 
                                 if village_building_val > village_building_threshold && point.tile_type != "water" && point.tile_type != "ice" && point.tile_type != "sand" && point.tile_type != "red_sand"{
                                 point.tile_type = "mud_hive_floor".to_string();
+                                for l in 0..rng.gen_range(2..6) {
+
+                                    world_entities.push(world_structs::Entity {
+                                        
+                                        x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
+                                        y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
+                                        entity_type: "ant_worker".to_string()
+                                    });
+                                }
                                 let mut sp_1 = k;
                                 let mut sp_2 = h;
                                 let mut ep_1 = k;
@@ -324,7 +342,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 }
 
                             }
-                                let side = rng.gen_range(0..4);
+                                /*let side = rng.gen_range(0..4);
                                 let mut door_x = 0;
                                 let mut door_y = 0;
                                 match side {
@@ -353,7 +371,9 @@ let biomes: Vec<world_structs::Biome> = vec![
 
                                     },
                                 _ => {}
-                                }
+                                }*/
+                                let door_x = 999;
+                                let door_y = 999;
                                 // wall
                                 for x in sp_1..ep_1 {
                                     for y in sp_2..ep_2{
@@ -411,7 +431,39 @@ let biomes: Vec<world_structs::Biome> = vec![
     } 
     // ENTITIES
     if apply_entities {
+    // VEGETATION
+     if apply_vegetation {
+                
+                for i in 0..width {
+                    for j in 0..height {
+                        for k in 0..chunk_size {
+                            for h in 0..chunk_size {
+                                let _rx = ((i*chunk_size) as usize + k) as f32;
+                                let _ry = ((j*chunk_size) as usize + h) as f32;
+                                let chunk = &mut world_chunks[i as usize][j as usize];
+                                let point = &mut chunk.points[k][h];
+                                let mut entity_type = "cactus";
+                                if point.tile_type == "sand" {
+                                    entity_type = "cactus";
+                                }
+                                let vegetation_val = vegetation_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
+                                if vegetation_val > vegetation_threshold && (point.tile_type == "sand"){
+                                world_entities.push(world_structs::Entity {
+                                    
+                                    x: _rx * tile_size as f32,
+                                    y: _ry * tile_size as f32,
+                                    entity_type: entity_type.to_string()
+                                });
 
+                            }
+                    
+
+                        }
+                    }
+
+                }
+                }
+            }
         // TREES
         if apply_trees {
             
@@ -464,6 +516,7 @@ let biomes: Vec<world_structs::Biome> = vec![
             }
             }
         }
+
     }
 
 // SETTLEMENTS

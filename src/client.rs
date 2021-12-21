@@ -15,7 +15,7 @@ use serde_json;
 use lerp::Lerp;
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
-const TILE_SIZE: f32 = 32.0;
+const TILE_SIZE: f32 = 16.0;
 
 
 
@@ -69,6 +69,7 @@ fn main_loop() -> Result<(), String> {
     let pine_texture = texture_creator.load_texture("res/pine.png")?;
     let spruce_texture = texture_creator.load_texture("res/spruce.png")?;
     let cactus_texture = texture_creator.load_texture("res/cactus.png")?;
+    let ant_worker_texture = texture_creator.load_texture("res/ant1.png")?;
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
     let _delta_as_millis = delta.as_millis()/10;
@@ -349,26 +350,47 @@ fn main_loop() -> Result<(), String> {
                     }
                 }}
         for entity in entities.iter() {
-            let tx = entity.x * camera.zoom - camera.x;
-            let ty = entity.y * camera.zoom - camera.y;
+            let tx_ant = (entity.x) * camera.zoom - camera.x;
+            let ty_ant = (entity.y) * camera.zoom - camera.y;
+            let tx_tree = (entity.x + TILE_SIZE/2.0) * camera.zoom - camera.x;
+            let ty_tree = (entity.y - TILE_SIZE/4.0) * camera.zoom - camera.y;
             canvas.set_draw_color(Color::RGB(0,0,0));
-            let position = Point::new(tx as i32 + (32.0/2.0 * camera.zoom) as i32 ,ty as i32 + (32.0/2.0 * camera.zoom) as i32);
-            let sprite = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
+            
+            let sprite_32 = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
+            let sprite_16 = Rect::new(0,0,(16.0 * camera.zoom) as u32, (16.0 * camera.zoom) as u32);
+            // trees
             if entity.entity_type == "oak" {
-                graphics_utils::render(&mut canvas, &oak_texture, position, sprite);
+                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                graphics_utils::render(&mut canvas, &oak_texture, position, sprite_32);
 
             } 
 
             else if entity.entity_type == "spruce" {
-                graphics_utils::render(&mut canvas, &spruce_texture, position, sprite);
+                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                graphics_utils::render(&mut canvas, &spruce_texture, position, sprite_32);
 
             }
             else if entity.entity_type == "pine" {
-                graphics_utils::render(&mut canvas, &pine_texture, position, sprite);
+                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                graphics_utils::render(&mut canvas, &pine_texture, position, sprite_32);
 
             }
             else if entity.entity_type == "birch" {
-                graphics_utils::render(&mut canvas, &birch_texture, position, sprite);
+                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                graphics_utils::render(&mut canvas, &birch_texture, position, sprite_32);
+
+            }
+            // vegetation
+
+            else if entity.entity_type == "cactus" {
+                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                graphics_utils::render(&mut canvas, &cactus_texture, position, sprite_32);
+
+            }
+            // ants and other lifeforms
+            else if entity.entity_type == "ant_worker" {
+                let position = Point::new(tx_ant as i32 as i32 ,ty_ant as i32 as i32);
+                graphics_utils::render(&mut canvas, &ant_worker_texture, position, sprite_16);
 
             }
         }

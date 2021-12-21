@@ -5,8 +5,8 @@ mod world_structs;
 mod graphics_utils;
 fn main() {
     let seed = 64;
-    let width = 16;
-    let height = 16;
+    let width = 8;
+    let height = 8;
     let chunk_size = 16;
     let sealevel = 400.0;
     let name = "Land of Green".to_string();
