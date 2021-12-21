@@ -8,59 +8,59 @@ let biomes: Vec<world_structs::Biome> = vec![
     world_structs::Biome {
         name: "glacier".to_string(),
         temperature: 0,
-        tile_type: "ice".to_string()
+        tile_type: world_structs::TileType::ICE
     },
 
     world_structs::Biome {
         name: "tundra".to_string(),
         temperature: 5,
-        tile_type: "permafrost".to_string()
+        tile_type: world_structs::TileType::PERMAFROST
     },
     
     world_structs::Biome {
         name: "taiga".to_string(),
         temperature: 10,
-        tile_type: "cold_land".to_string()
+        tile_type: world_structs::TileType::COLD_LAND
     },
     
     world_structs::Biome {
         name: "forest".to_string(),
         temperature: 15,
-        tile_type: "cold_land".to_string()
+        tile_type: world_structs::TileType::COLD_LAND
     },
     
     world_structs::Biome {
         name: "grasslands".to_string(),
         temperature: 20,
-        tile_type: "grass".to_string()
+        tile_type: world_structs::TileType::GRASS
     },
     
     world_structs::Biome {
         name: "mediterraean".to_string(),
         temperature: 25,
-        tile_type: "coarse_land".to_string()
+        tile_type: world_structs::TileType::COARSE_LAND
     },
     
     world_structs::Biome {
         name: "savannah".to_string(),
         temperature: 30,
-        tile_type: "savannah_land".to_string()
+        tile_type: world_structs::TileType::SAVANNAH_LAND
     },
 
     world_structs::Biome {
         name: "desert".to_string(),
         temperature: 35,
-        tile_type: "sand".to_string()
+        tile_type: world_structs::TileType::SAND
     },
     world_structs::Biome {
         name: "red_desert".to_string(),
         temperature: 40,
-        tile_type: "red_sand".to_string()
+        tile_type: world_structs::TileType::RED_SAND
     },
     world_structs::Biome {
         name: "rainforest".to_string(),
         temperature: 45,
-        tile_type: "grass".to_string()
+        tile_type: world_structs::TileType::GRASS
     }
 ];
     let max_temp = 45;
@@ -192,12 +192,11 @@ let biomes: Vec<world_structs::Biome> = vec![
 
                     }
                     }
-                    let biome_tile_type = &biome.tile_type;
                     chunk_points[k].push(world_structs::Point {
                                             x: rx,
                                             y: ry,
                                             z: rz,
-                                            tile_type: biome_tile_type.to_string()});
+                                            tile_type: biome.tile_type.clone()});
                 }
 
             }
@@ -286,7 +285,7 @@ let biomes: Vec<world_structs::Biome> = vec![
 
                         if point.z < sea_level {
                             point.z = (512.0 - point.z);
-                            point.tile_type = "water".to_string();
+                            point.tile_type = world_structs::TileType::WATER;
 
 
                     }
@@ -314,15 +313,15 @@ let biomes: Vec<world_structs::Biome> = vec![
                             let village_val = village_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
                             let village_building_val = village_building_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
                             if village_val > village_threshold { 
-                                if village_building_val > village_building_threshold && point.tile_type != "water" && point.tile_type != "ice" && point.tile_type != "sand" && point.tile_type != "red_sand"{
-                                point.tile_type = "mud_hive_floor".to_string();
+                                if village_building_val > village_building_threshold && point.tile_type != world_structs::TileType::WATER && point.tile_type != world_structs::TileType::ICE && point.tile_type != world_structs::TileType::SAND && point.tile_type != world_structs::TileType::RED_SAND{
+                                point.tile_type = world_structs::TileType::MUD_HIVE_FLOOR;
                                 for l in 0..rng.gen_range(2..6) {
 
                                     world_entities.push(world_structs::Entity {
                                         
                                         x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                        entity_type: "ant_worker".to_string()
+                                        entity_type: world_structs::EntityType::WORKER_ANT
                                     });
                                 }
                                 let mut sp_1 = k;
@@ -336,7 +335,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 for x in sp_1..ep_1 {
                                     for y in sp_2..ep_2{
                                         if x < chunk_size && y < chunk_size {
-                                            chunk.points[x][y].tile_type = "mud_hive_floor".to_string();
+                                            chunk.points[x][y].tile_type = world_structs::TileType::MUD_HIVE_FLOOR;
 
                                     }
                                 }
@@ -378,16 +377,16 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 for x in sp_1..ep_1 {
                                     for y in sp_2..ep_2{
                                         if x < chunk_size-1 && y < chunk_size-1 && x > 0 && y > 0 && !(x == door_x && y == door_y) {
-                                            if (chunk.points[x-1][y].tile_type != "mud_hive_floor" && chunk.points[x-1][y].tile_type != "mud_hive_wall") || (chunk.points[x+1][y].tile_type != "mud_hive_floor" && chunk.points[x+1][y].tile_type != "mud_hive_wall") || (chunk.points[x][y-1].tile_type != "mud_hive_floor" && chunk.points[x][y-1].tile_type != "mud_hive_wall") || (chunk.points[x][y+1].tile_type != "mud_hive_floor" && chunk.points[x][y+1].tile_type != "mud_hive_wall")   {
+                                            if (chunk.points[x-1][y].tile_type != world_structs::TileType::MUD_HIVE_FLOOR && chunk.points[x-1][y].tile_type != world_structs::TileType::MUD_HIVE_WALL) || (chunk.points[x+1][y].tile_type !=  world_structs::TileType::MUD_HIVE_FLOOR && chunk.points[x+1][y].tile_type != world_structs::TileType::MUD_HIVE_FLOOR) || (chunk.points[x][y-1].tile_type != world_structs::TileType::MUD_HIVE_FLOOR && chunk.points[x][y-1].tile_type != world_structs::TileType::MUD_HIVE_WALL) || (chunk.points[x][y+1].tile_type != world_structs::TileType::MUD_HIVE_FLOOR && chunk.points[x][y+1].tile_type != world_structs::TileType::MUD_HIVE_WALL)   {
 
-                                            chunk.points[x][y].tile_type = "mud_hive_wall".to_string();
+                                            chunk.points[x][y].tile_type = world_structs::TileType::MUD_HIVE_WALL;
 
                                     }
                                 
                                         } else if (x == chunk_size-1 || x == 0) && y < chunk_size {
-                                                chunk.points[x][y].tile_type = "mud_hive_wall".to_string();
+                                                chunk.points[x][y].tile_type = world_structs::TileType::MUD_HIVE_WALL;
                                         }else if (y == chunk_size-1 || y == 0)  && x < chunk_size {
-                                                chunk.points[x][y].tile_type = "mud_hive_wall".to_string();
+                                                chunk.points[x][y].tile_type = world_structs::TileType::MUD_HIVE_WALL;
                                         }
 
 
@@ -416,8 +415,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                             let city_val = city_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
                             let city_building_val = city_building_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
                             if city_val > city_threshold{
-                                if city_building_val > city_threshold && point.tile_type != "water" && point.tile_type != "ice" && point.tile_type != "sand" && point.tile_type != "red_sand"{
-                                world_chunks[i as usize][j as usize].points[k][h].tile_type = "stone_hive_floor".to_string();
+                                if city_building_val > city_threshold && point.tile_type != world_structs::TileType::WATER && point.tile_type != world_structs::TileType::ICE && point.tile_type != world_structs::TileType::SAND && point.tile_type != world_structs::TileType::RED_SAND{
+                                world_chunks[i as usize][j as usize].points[k][h].tile_type = world_structs::TileType::STONE_HIVE_FLOOR;
 
                             }
                         } 
@@ -442,17 +441,17 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 let _ry = ((j*chunk_size) as usize + h) as f32;
                                 let chunk = &mut world_chunks[i as usize][j as usize];
                                 let point = &mut chunk.points[k][h];
-                                let mut entity_type = "cactus";
-                                if point.tile_type == "sand" {
-                                    entity_type = "cactus";
+                                let mut entity_type = world_structs::EntityType::CACTUS;
+                                if point.tile_type == world_structs::TileType::SAND {
+                                    entity_type = world_structs::EntityType::CACTUS;
                                 }
                                 let vegetation_val = vegetation_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
-                                if vegetation_val > vegetation_threshold && (point.tile_type == "sand"){
+                                if vegetation_val > vegetation_threshold && (point.tile_type == world_structs::TileType::SAND){
                                 world_entities.push(world_structs::Entity {
                                     
                                     x: _rx * tile_size as f32,
                                     y: _ry * tile_size as f32,
-                                    entity_type: entity_type.to_string()
+                                    entity_type: entity_type
                                 });
 
                             }
@@ -475,36 +474,36 @@ let biomes: Vec<world_structs::Biome> = vec![
                             let _ry = ((j*chunk_size) as usize + h) as f32;
                             let chunk = &mut world_chunks[i as usize][j as usize];
                             let point = &mut chunk.points[k][h];
-                            let mut entity_type = "oak";
+                            let mut entity_type = world_structs::EntityType::OAK;
                             let mut tree_rand = rng.gen_range(0..2);
-                            if point.tile_type == "grass" {
+                            if point.tile_type == world_structs::TileType::GRASS {
                                 if tree_rand == 0 {
-                                entity_type = "oak";
+                                entity_type = world_structs::EntityType::OAK;
 
                                 }
                                 else if tree_rand == 1 {
-                                    entity_type = "birch";
+                                    entity_type = world_structs::EntityType::BIRCH;
                                 }
 
                             }
-                         else if point.tile_type == "cold_land" {
+                         else if point.tile_type == world_structs::TileType::COLD_LAND {
                                 if tree_rand == 0 {
-                                entity_type = "spruce";
+                                entity_type = world_structs::EntityType::SPRUCE;
                             
 
                             }
                                 else if tree_rand == 1 {
-                                    entity_type = "pine";
+                                    entity_type = world_structs::EntityType::PINE;
                                 }
                             }
                             let tree_val = tree_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
-                            if tree_val > tree_threshold && (point.tile_type == "grass" || point.tile_type == "cold_land"){
+                            if tree_val > tree_threshold && (point.tile_type == world_structs::TileType::GRASS || point.tile_type == world_structs::TileType::COLD_LAND){
 
                             world_entities.push(world_structs::Entity {
                                 
                                 x: _rx * tile_size as f32,
                                 y: _ry * tile_size as f32,
-                                entity_type: entity_type.to_string()
+                                entity_type: entity_type
                             });
 
                         }

@@ -1,11 +1,53 @@
 use serde::{Serialize, Deserialize};
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+#[derive(PartialEq)]
+#[derive(Eq)]
+#[derive(Hash)]
+#[serde(tag = "TileType")]
+pub enum TileType {
+    GRASS,
+    COLD_LAND,
+    WATER,
+    ICE,
+    PERMAFROST,
+    COARSE_LAND,
+    SAVANNAH_LAND,
+    SAND,
+    RED_SAND,
+    MUD_HIVE_FLOOR,
+    MUD_HIVE_WALL,
+    STONE_HIVE_FLOOR,
+    STONE_HIVE_WALL
+}
+#[derive(PartialEq)]
+#[derive(Clone)]
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "EntityType")]
+pub enum EntityType {
+    OAK,
+    APPLETREE,
+    BIRCH,
+    PINE,
+    SPRUCE,
+    CACTUS,
+    WORKER_ANT,
 
+}
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+#[derive(PartialEq)]
+#[serde(tag = "RequestType")]
+pub enum RequestType {
+    CHUNK,
+    DATA,
+}
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Biome {
     pub name: String,
     pub temperature: i32,
-    pub tile_type: String,
+    pub tile_type: TileType,
 }
 
 #[derive(Clone)]
@@ -14,7 +56,7 @@ pub struct Point {
     pub x: f32,
     pub y: f32,
     pub z: f32,
-    pub tile_type: String
+    pub tile_type: TileType
 }
 
 #[derive(Clone)]
@@ -22,14 +64,19 @@ pub struct Point {
 pub struct WorldRequest {
     pub x: i32,
     pub y: i32,
-    pub req_type: String
+    pub req_type: RequestType
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Entity {
     pub x: f32,
     pub y: f32,
-    pub entity_type: String
+    pub entity_type: EntityType
+}
+impl Entity {
+    fn mov(&mut self, dir: f32) {
+        self.x += 1.0;
+    }
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]
@@ -78,4 +125,12 @@ impl World {
        return filtered_entities; 
 
     }
+
+    pub fn update_entities(&mut self, action_type: String) {
+       for e in self.entities.iter_mut() {
+                if e.entity_type == EntityType::BIRCH { 
+                e.mov(0.0);
+
 }
+}
+}}

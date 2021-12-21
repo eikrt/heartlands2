@@ -3,6 +3,17 @@ use sdl2::pixels::Color;
 use sdl2::rect::{Point,Rect};
 use sdl2::render::{WindowCanvas, Texture};
 use sdl2::image::{LoadTexture, InitFlag};
+use crate::world_structs;
+#[derive(PartialEq)]
+
+pub enum MoveDirection {
+    UP,
+    LEFT,
+    DOWN,
+    RIGHT,
+    ZOOMIN,
+    ZOOMOUT
+}
 pub struct Camera {
     pub x: f32,
     pub y: f32,
@@ -11,26 +22,26 @@ pub struct Camera {
     pub move_speed: f32,
 }
 impl Camera {
-    pub fn zoom(&mut self, dir: char) { // + is zoom, - is negative zoom
-        if dir == '+' {
+    pub fn zoom(&mut self, dir: MoveDirection) { // + is zoom, - is negative zoom
+        if dir == MoveDirection::ZOOMIN {
             self.zoom += self.zoom_speed;
         }
-        else if dir == '-' {
+        else if dir == MoveDirection::ZOOMOUT {
             self.zoom -= self.zoom_speed;
         }
     }
-    pub fn mov(&mut self, dir: u8) { // 0 = up, 1 = left, 2 = down, 3 = right
-        if dir == 0 {
+    pub fn mov(&mut self, dir: MoveDirection) { // 0 = up, 1 = left, 2 = down, 3 = right
+        if dir == MoveDirection::UP {
             self.y -= self.move_speed;
         }
-        else if dir == 1 {
+        else if dir == MoveDirection::LEFT {
             self.x -= self.move_speed;
         }
 
-        else if dir == 2 {
+        else if dir == MoveDirection::DOWN {
             self.y += self.move_speed;
         }
-        else if dir == 3 {
+        else if dir == MoveDirection::RIGHT {
             self.x += self.move_speed;
         }
     }
@@ -55,77 +66,77 @@ pub struct EntityGraphics {
         
         Ok(())
     }
-pub fn tile_graphics() -> HashMap<String, TileGraphics>{
+pub fn tile_graphics() -> HashMap<world_structs::TileType, TileGraphics>{
 return HashMap::from([
-    ("grass".to_string(),
+    (world_structs::TileType::GRASS ,
     TileGraphics {
 
        sc: Color::RGB(58,132,56),
        tc: Color::RGB(5,85,5)
     }),
 
-    ("cold_land".to_string(),
+    (world_structs::TileType::COLD_LAND ,
     TileGraphics {
 
        sc: Color::RGB(58,132,56),
        tc: Color::RGB(5,85,5)
     }),
-    ("water".to_string(),
+    (world_structs::TileType::WATER ,
     TileGraphics {
        sc: Color::RGB(65,65,195),
        tc: Color::RGB(17,17,87)
     }),
 
-    ("ice".to_string(),
+    (world_structs::TileType::ICE ,
     TileGraphics {
        sc: Color::RGB(255,255,255),
        tc: Color::RGB(200,200,250)
     }),
 
-    ("permafrost".to_string(),
+    (world_structs::TileType::PERMAFROST,
     TileGraphics {
        sc: Color::RGB(58,125,50),
        tc: Color::RGB(95,110,95)
     }),
 
-    ("coarse_land".to_string(),
+    (world_structs::TileType::COARSE_LAND,
     TileGraphics {
        sc: Color::RGB(150,145,105),
        tc: Color::RGB(90,85,45)
     }),
-    ("savannah_land".to_string(),
+    (world_structs::TileType::SAVANNAH_LAND,
     TileGraphics {
        sc: Color::RGB(186,165,80),
        tc: Color::RGB(150,150,105)
     }),
 
-    ("sand".to_string(),
+    (world_structs::TileType::SAND,
     TileGraphics {
        sc: Color::RGB(255,247,56),
        tc: Color::RGB(170,165,90)
     }),
-    ("red_sand".to_string(),
+    (world_structs::TileType::RED_SAND,
     TileGraphics {
        sc: Color::RGB(190,130,80),
        tc: Color::RGB(150,90,35)
     }),
-    ("mud_hive_wall".to_string(),
+    (world_structs::TileType::MUD_HIVE_WALL,
     TileGraphics {
        sc: Color::RGB(90,90,60),
        tc: Color::RGB(90,90,60)
     }),
-    ("mud_hive_floor".to_string(),
+    (world_structs::TileType::MUD_HIVE_FLOOR,
     TileGraphics {
        sc: Color::RGB(120,120,75),
        tc: Color::RGB(120,120,75)
     }),
 
-    ("stone_hive_wall".to_string(),
+    (world_structs::TileType::STONE_HIVE_WALL,
     TileGraphics {
        sc: Color::RGB(110,110,110),
        tc: Color::RGB(110,110,110)
     }),
-    ("stone_hive_floor".to_string(),
+    (world_structs::TileType::STONE_HIVE_FLOOR,
     TileGraphics {
        sc: Color::RGB(50,50,50),
        tc: Color::RGB(50,50,50)

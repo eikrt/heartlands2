@@ -83,7 +83,7 @@ fn main_loop() -> Result<(), String> {
         // send message to server
         let mut msg: Option<String> = None;
         if update_data {
-            msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: "data".to_string(), x: 0, y: 0}).unwrap());
+            msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::DATA, x: 0, y: 0}).unwrap());
         }
 
         else if !update_data {
@@ -151,7 +151,7 @@ fn main_loop() -> Result<(), String> {
                 
                 None => ()
             }
-            msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: "chunk".to_string(), x: chunk_x, y: chunk_y}).unwrap());
+            msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::CHUNK, x: chunk_x, y: chunk_y}).unwrap());
         }
         match msg {
             Some(m) => stream.write(m.as_bytes()),
@@ -304,22 +304,22 @@ fn main_loop() -> Result<(), String> {
             }
         }
         if w {
-            camera.mov(0);
+            camera.mov(graphics_utils::MoveDirection::UP);
         }
         if a {
-            camera.mov(1);
+            camera.mov(graphics_utils::MoveDirection::LEFT);
         }
         if s {
-            camera.mov(2);
+            camera.mov(graphics_utils::MoveDirection::DOWN);
         }
         if d {
-            camera.mov(3);
+            camera.mov(graphics_utils::MoveDirection::RIGHT);
         }
         if zoom_button_plus {
-            camera.zoom('+');
+            camera.zoom(graphics_utils::MoveDirection::ZOOMIN);
         }
         if zoom_button_minus {
-            camera.zoom('-');
+            camera.zoom(graphics_utils::MoveDirection::ZOOMOUT);
         }
         for chunk_in_chunks in chunks.iter() {
 
@@ -359,36 +359,36 @@ fn main_loop() -> Result<(), String> {
             let sprite_32 = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
             let sprite_16 = Rect::new(0,0,(16.0 * camera.zoom) as u32, (16.0 * camera.zoom) as u32);
             // trees
-            if entity.entity_type == "oak" {
+            if entity.entity_type == world_structs::EntityType::OAK {
                 let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
                 graphics_utils::render(&mut canvas, &oak_texture, position, sprite_32);
 
             } 
 
-            else if entity.entity_type == "spruce" {
+            else if entity.entity_type == world_structs::EntityType::SPRUCE {
                 let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
                 graphics_utils::render(&mut canvas, &spruce_texture, position, sprite_32);
 
             }
-            else if entity.entity_type == "pine" {
+            else if entity.entity_type == world_structs::EntityType::PINE {
                 let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
                 graphics_utils::render(&mut canvas, &pine_texture, position, sprite_32);
 
             }
-            else if entity.entity_type == "birch" {
+            else if entity.entity_type == world_structs::EntityType::BIRCH {
                 let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
                 graphics_utils::render(&mut canvas, &birch_texture, position, sprite_32);
 
             }
             // vegetation
 
-            else if entity.entity_type == "cactus" {
+            else if entity.entity_type == world_structs::EntityType::CACTUS {
                 let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
                 graphics_utils::render(&mut canvas, &cactus_texture, position, sprite_32);
 
             }
             // ants and other lifeforms
-            else if entity.entity_type == "ant_worker" {
+            else if entity.entity_type == world_structs::EntityType::WORKER_ANT {
                 let position = Point::new(tx_ant as i32 as i32 ,ty_ant as i32 as i32);
                 graphics_utils::render(&mut canvas, &ant_worker_texture, position, sprite_16);
 
