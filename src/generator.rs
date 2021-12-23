@@ -318,7 +318,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 for l in 0..rng.gen_range(2..6) {
 
                                     world_entities.push(world_structs::Entity {
-                                        
+                                        id: rng.gen_range(0..999999),  
                                         x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         entity_type: world_structs::EntityType::WORKER_ANT
@@ -448,7 +448,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 let vegetation_val = vegetation_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
                                 if vegetation_val > vegetation_threshold && (point.tile_type == world_structs::TileType::SAND){
                                 world_entities.push(world_structs::Entity {
-                                    
+                                 id: rng.gen_range(0..999999),    
                                     x: _rx * tile_size as f32,
                                     y: _ry * tile_size as f32,
                                     entity_type: entity_type
@@ -500,7 +500,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                             if tree_val > tree_threshold && (point.tile_type == world_structs::TileType::GRASS || point.tile_type == world_structs::TileType::COLD_LAND){
 
                             world_entities.push(world_structs::Entity {
-                                
+                             id: rng.gen_range(0..999999),    
                                 x: _rx * tile_size as f32,
                                 y: _ry * tile_size as f32,
                                 entity_type: entity_type

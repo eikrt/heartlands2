@@ -6,6 +6,7 @@ use sdl2::render::{WindowCanvas, Texture};
 use sdl2::image::{LoadTexture, InitFlag};
 use std::net::{TcpStream};
 use std::io::{Read, Write};
+use std::iter::FromIterator;
 use std::str::from_utf8;
 use std::{thread, time};
 use std::time::{SystemTime};
@@ -55,8 +56,8 @@ fn main_loop() -> Result<(), String> {
     let mut update_data = true;
     let mut world_data: Option<world_structs::WorldData> = None;
 
-    let mut chunk_fetch_width = 3;
-    let mut chunk_fetch_height= 3;
+    let mut chunk_fetch_width = 1;
+    let mut chunk_fetch_height= 1;
     let mut chunk_fetch_x = -1;
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
@@ -80,6 +81,7 @@ fn main_loop() -> Result<(), String> {
         canvas.set_draw_color(bg_color);
         canvas.clear();
 
+        // canvas.fill_rect(Rect::new(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)); 
         // send message to server
         let mut msg: Option<String> = None;
         if update_data {
@@ -201,32 +203,27 @@ fn main_loop() -> Result<(), String> {
                 None => ()
             };
         }
+            //let mut filtered_entities = Vec::new();
+            match response {
+                Some(ref mut  r) => {
+                    for re in r.entities.clone() {
+                            if !entities.is_empty() {
+                                let mut index_option = entities.iter().position(|x| x.id == re.id);
+                                if index_option != None {
+                                    let index = index_option.unwrap();
+                                    entities.remove(index);
+                                }
 
-            let mut entity_already_in_entities= false;
-            for entity in &entities {
-                match response {
-                Some(ref r) => {
-                    for e in &r.entities {
-                        if entity.x == e.x && entity.y == e.y {
-                            entity_already_in_entities = true;
                         }
                     }
-                }
+                    entities.append(&mut r.entities);
+                },
                 None => ()
-                };
             }
-            if !entity_already_in_entities {
-                match response {
-                Some(ref r) => {
-                    if r.entities.len() > 0 {
-                        for e in r.entities.iter() {
-                            entities.push(e.clone());
-                        
-                    }
-                }},
-                None => ()
-            };
-        }
+            //for e in filtered_entities {
+
+           // }
+            
         }
             update_data = false;
         for event in event_pump.poll_iter() {
@@ -349,7 +346,8 @@ fn main_loop() -> Result<(), String> {
                     
                     }
                 }}
-        for entity in entities.iter() {
+        entities.sort_by(|a,b| a.id.cmp(&b.id));
+        for entity in &entities {
             let tx_ant = (entity.x) * camera.zoom - camera.x;
             let ty_ant = (entity.y) * camera.zoom - camera.y;
             let tx_tree = (entity.x + TILE_SIZE/2.0) * camera.zoom - camera.x;

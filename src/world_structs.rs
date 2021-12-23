@@ -71,6 +71,7 @@ pub struct WorldRequest {
 pub struct Entity {
     pub x: f32,
     pub y: f32,
+    pub id: i32,
     pub entity_type: EntityType
 }
 impl Entity {
@@ -128,9 +129,9 @@ impl World {
 
     pub fn update_entities(&mut self, action_type: String) {
        for e in self.entities.iter_mut() {
-                if e.entity_type == EntityType::BIRCH { 
-                e.mov(0.0);
+                if e.entity_type == EntityType::WORKER_ANT { 
+                    e.mov(0.0);
 
-}
+                }
 }
 }}
