@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
+use rand::Rng;
 #[derive(Serialize, Deserialize, Debug)]
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -42,6 +44,14 @@ pub enum RequestType {
     CHUNK,
     DATA,
 }
+
+pub fn get_descriptions_for_tiles() -> HashMap<TileType, String> {
+    return HashMap::from([(TileType::GRASS,
+                            "Grass".to_string()
+                          )
+
+    ]);
+}
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Biome {
@@ -71,12 +81,24 @@ pub struct WorldRequest {
 pub struct Entity {
     pub x: f32,
     pub y: f32,
+    pub speed: f32,
+    pub dir: f32,
+    pub stopped: bool,
     pub id: i32,
     pub entity_type: EntityType
 }
 impl Entity {
-    fn mov(&mut self, dir: f32) {
-        self.x += 1.0;
+    pub fn mov(&mut self) {
+        if !self.stopped {
+            
+            let mut rng = rand::thread_rng();
+            self.x += self.dir.cos() * self.speed;
+            self.y += self.dir.sin() * self.speed;
+            self.dir = rng.gen_range(0.0..3.14*2.0);
+        }
+    }
+    pub fn stop(&mut self) {
+        self.stopped = true;
     }
 }
 #[derive(Clone)]
@@ -127,11 +149,9 @@ impl World {
 
     }
 
-    pub fn update_entities(&mut self, action_type: String) {
+    pub fn update_entities(&mut self) {
        for e in self.entities.iter_mut() {
-                if e.entity_type == EntityType::WORKER_ANT { 
-                    e.mov(0.0);
-
-                }
+            e.mov();
+        }
+    }
 }
-}}

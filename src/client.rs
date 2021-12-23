@@ -2,7 +2,8 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::{Point,Rect};
-use sdl2::render::{WindowCanvas, Texture};
+use sdl2::mouse::{MouseState};
+use sdl2::render::{WindowCanvas, Texture, BlendMode};
 use sdl2::image::{LoadTexture, InitFlag};
 use std::net::{TcpStream};
 use std::io::{Read, Write};
@@ -23,7 +24,7 @@ const TILE_SIZE: f32 = 16.0;
 
 fn main_loop() -> Result<(), String> {
 
-
+    // sdl stuff
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let window = video_subsystem.window("Heartlands", SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -32,6 +33,24 @@ fn main_loop() -> Result<(), String> {
         .expect("could not initialize video subsystem");
     let mut canvas = window.into_canvas().build()
         .expect("could not make a canvas");
+    canvas.set_blend_mode(BlendMode::Blend);
+
+    // texture stuff
+    let texture_creator = canvas.texture_creator();
+    let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
+    // font stuff
+    let desc_font_size = 40;
+    let ttf_context  = sdl2::ttf::init().map_err(|e| e.to_string())?;
+    let mut font = ttf_context.load_font("fonts/PixelOperator.ttf", desc_font_size)?;
+    let grass_text_surface = font
+        .render("Grass")
+        .blended(Color::RGBA(55, 185, 90, 255))
+        .map_err(|e| e.to_string())?;
+    let grass_text_texture = texture_creator
+        .create_texture_from_surface(&grass_text_surface)
+        .map_err(|e| e.to_string())?;
+    
+    let grass_text_sprite = Rect::new(0,0,(desc_font_size as f32 *1.3) as u32, (desc_font_size as f32 / 2.1) as u32);
     let tile_gs = graphics_utils::tile_graphics();
 
     let mut camera = graphics_utils::Camera{
@@ -55,15 +74,20 @@ fn main_loop() -> Result<(), String> {
     let mut compare_time = SystemTime::now();
     let mut update_data = true;
     let mut world_data: Option<world_structs::WorldData> = None;
-
-    let mut chunk_fetch_width = 1;
-    let mut chunk_fetch_height= 1;
+    // mouse
+    let mut mouse_not_moved_for = 0;
+    let mut mouse_state = MouseState::new(&event_pump);
+    let hover_time = 25;
+    // chunks and entities
+    let mut chunk_fetch_width = 2;
+    let mut chunk_fetch_height= 2;
     let mut chunk_fetch_x = -1;
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
     let mut entities: Vec<world_structs::Entity> = Vec::new();
-    let texture_creator = canvas.texture_creator();
-    let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
+
+    
+    // entity textures
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
     let appletree_texture = texture_creator.load_texture("res/appletree.png")?;
@@ -71,13 +95,26 @@ fn main_loop() -> Result<(), String> {
     let spruce_texture = texture_creator.load_texture("res/spruce.png")?;
     let cactus_texture = texture_creator.load_texture("res/cactus.png")?;
     let ant_worker_texture = texture_creator.load_texture("res/ant1.png")?;
+    let snail_texture = texture_creator.load_texture("res/snail.png")?;
+    // tile textures
+    let mut grass_texture = texture_creator.load_texture("res/grass.png")?;
+    let mut water_texture = texture_creator.load_texture("res/water.png")?;
+    let mut ice_texture = texture_creator.load_texture("res/ice.png")?;
+    let mut sand_texture = texture_creator.load_texture("res/sand.png")?;
+    // other texture stuff
+    
+    let sprite_16 = Rect::new(0,0,(16.0 * camera.zoom) as u32, (16.0 * camera.zoom) as u32);
+    let sprite_32 = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
+    // gameplay stuff
+    let tile_descriptions = world_structs::get_descriptions_for_tiles();
+
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
-    let _delta_as_millis = delta.as_millis()/10;
+    let delta_as_millis = delta.as_millis()/10;
         if delta.as_millis()/10 != 0 {
          //   println!("FPS: {}", 100 / (delta.as_millis()/10));
         }
-
+        mouse_not_moved_for += delta_as_millis;
         canvas.set_draw_color(bg_color);
         canvas.clear();
 
@@ -318,6 +355,13 @@ fn main_loop() -> Result<(), String> {
         if zoom_button_minus {
             camera.zoom(graphics_utils::MoveDirection::ZOOMOUT);
         }
+        
+        let current_mouse_state = event_pump.mouse_state();
+        if current_mouse_state != mouse_state {
+            mouse_not_moved_for = 0; 
+        }
+        mouse_state = current_mouse_state;
+        // iterate chunks
         for chunk_in_chunks in chunks.iter() {
 
             for i in 0..chunk_in_chunks.points.len() {
@@ -337,8 +381,25 @@ fn main_loop() -> Result<(), String> {
                     let r_result = ((tile_gs.get(&p.tile_type).unwrap().sc.r as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.r as f32, p.z/512.0) / light) as u8;
                     let g_result = ((tile_gs.get(&p.tile_type).unwrap().sc.g as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.g as f32, p.z/512.0) / light) as u8;
                     let b_result = ((tile_gs.get(&p.tile_type).unwrap().sc.b as f32).lerp(tile_gs.get(&p.tile_type).unwrap().tc.b as f32, p.z/512.0) /light) as u8;
-                    canvas.set_draw_color(Color::RGB(r_result,g_result,b_result));
+                    // canvas.set_draw_color(Color::RGB(r_result,g_result,b_result));
                     
+                    let tx = (p.x) * TILE_SIZE * camera.zoom - camera.x;
+                    let ty = (p.y) * TILE_SIZE * camera.zoom - camera.y;
+                    let position = Point::new(tx as i32,ty as i32);
+                    let mut texture = &grass_texture;
+                    if p.tile_type == world_structs::TileType::GRASS {
+                        texture = &grass_texture;
+                    }
+                    else if p.tile_type == world_structs::TileType::WATER {
+                        texture = &water_texture;
+                    }
+                    else if p.tile_type == world_structs::TileType::ICE {
+                        texture = &ice_texture;
+                    }
+                    else if p.tile_type == world_structs::TileType::SAND || p.tile_type == world_structs::TileType::RED_SAND {
+                        texture = &sand_texture;
+                    }
+                    graphics_utils::render_with_color(&mut canvas, texture, position, sprite_16, Color::RGBA(r_result,g_result,b_result, 125));
                              match canvas.fill_rect(Rect::new(tx as i32,ty as i32,(TILE_SIZE * camera.zoom) as u32,(TILE_SIZE * camera.zoom) as u32)) {
                         Ok(_v) => (),
                         Err(_v) => (),
@@ -346,6 +407,8 @@ fn main_loop() -> Result<(), String> {
                     
                     }
                 }}
+
+        //render entities
         entities.sort_by(|a,b| a.id.cmp(&b.id));
         for entity in &entities {
             let tx_ant = (entity.x) * camera.zoom - camera.x;
@@ -354,8 +417,7 @@ fn main_loop() -> Result<(), String> {
             let ty_tree = (entity.y - TILE_SIZE/4.0) * camera.zoom - camera.y;
             canvas.set_draw_color(Color::RGB(0,0,0));
             
-            let sprite_32 = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
-            let sprite_16 = Rect::new(0,0,(16.0 * camera.zoom) as u32, (16.0 * camera.zoom) as u32);
+
             // trees
             if entity.entity_type == world_structs::EntityType::OAK {
                 let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
@@ -391,6 +453,12 @@ fn main_loop() -> Result<(), String> {
                 graphics_utils::render(&mut canvas, &ant_worker_texture, position, sprite_16);
 
             }
+        }
+
+        let position = Point::new((mouse_state.x() - grass_text_sprite.width() as i32 / 2),(mouse_state.y() - grass_text_sprite.height() as i32));
+        if mouse_not_moved_for > hover_time {
+            graphics_utils::render_text(&mut canvas, &grass_text_texture, position, grass_text_sprite);
+            
         }
         canvas.present();
         compare_time = SystemTime::now();

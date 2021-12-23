@@ -46,7 +46,7 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
                 }
 
                         
-            world_clone.update_entities("move".to_string());
+            world_clone.update_entities();
 
             // end of tick stuff
             compare_time = SystemTime::now();

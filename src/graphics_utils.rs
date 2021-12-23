@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point,Rect};
-use sdl2::render::{WindowCanvas, Texture};
+use sdl2::render::{WindowCanvas, Texture, BlendMode};
 use sdl2::image::{LoadTexture, InitFlag};
 use crate::world_structs;
 #[derive(PartialEq)]
@@ -62,10 +62,25 @@ pub struct EntityGraphics {
         let (width, height) = canvas.output_size()?;
         let screen_rect = Rect::from_center(position, sprite.width(), sprite.height());
         canvas.copy(texture, sprite, screen_rect)?;
-
-        
         Ok(())
     }
+
+    pub fn render_with_color(canvas: &mut WindowCanvas, texture: &Texture, position: Point, sprite: Rect, color: Color) -> Result<(), String> {
+        let (width, height) = canvas.output_size()?;
+        let screen_rect = Rect::new(position.x,position.y, sprite.width(), sprite.height());
+        canvas.copy(texture, sprite, screen_rect)?;
+        canvas.set_draw_color(color);
+        match canvas.fill_rect(Rect::new(position.x as i32,position.y as i32,(sprite.width()) as u32,(sprite.height()) as u32)) {
+                    Ok(_v) => (),
+                    Err(_v) => (),
+                }
+        Ok(())
+    }
+pub fn render_text(canvas: &mut WindowCanvas, texture: &Texture, position: Point, sprite: Rect) {
+
+    let screen_rect = Rect::new(position.x,position.y, sprite.width(), sprite.height());
+    canvas.copy(texture, None, screen_rect);
+}
 pub fn tile_graphics() -> HashMap<world_structs::TileType, TileGraphics>{
 return HashMap::from([
     (world_structs::TileType::GRASS ,

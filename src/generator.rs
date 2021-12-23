@@ -181,9 +181,10 @@ let biomes: Vec<world_structs::Biome> = vec![
                     let mut biome_val = biome_noise[(ry + rx*width as f32 *chunk_size as f32) as usize]; 
                     
                     let dist_from_equator = ((ry - (height as f32 *chunk_size as f32 )/2.0).powf(2.0) as f32).sqrt();
-                    let rel = 1.0 - (dist_from_equator /  ((height*chunk_size)/2) as f32);
+                    let rel = 1.0 - (dist_from_equator /  ((height*chunk_size)/2) as f32)- 0.2;
                     biome_val += rel;
-                    let temp =(biome_val * max_temp as f32) as i32;
+                    let mut temp =(biome_val * max_temp as f32) as i32;
+
                     let mut biome = &biomes[0];
                     for b in biomes.iter() { 
                         if temp > b.temperature - temperature_margin && temp < b.temperature + temperature_margin { 
@@ -321,6 +322,9 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         id: rng.gen_range(0..999999),  
                                         x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
+                                        stopped: false,
+                                        speed: 0.5,
+                                        dir: 0.0,
                                         entity_type: world_structs::EntityType::WORKER_ANT
                                     });
                                 }
@@ -451,6 +455,9 @@ let biomes: Vec<world_structs::Biome> = vec![
                                  id: rng.gen_range(0..999999),    
                                     x: _rx * tile_size as f32,
                                     y: _ry * tile_size as f32,
+                                    dir: 0.0,
+                                    speed: 0.0,
+                                    stopped: true,
                                     entity_type: entity_type
                                 });
 
@@ -503,6 +510,9 @@ let biomes: Vec<world_structs::Biome> = vec![
                              id: rng.gen_range(0..999999),    
                                 x: _rx * tile_size as f32,
                                 y: _ry * tile_size as f32,
+                                speed: 0.0,
+                                dir: 0.0,
+                                stopped: true,
                                 entity_type: entity_type
                             });
 
