@@ -3,10 +3,14 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::{Point,Rect};
 use sdl2::mouse::{MouseState};
-use sdl2::render::{WindowCanvas, Texture, BlendMode};
+use sdl2::render::{WindowCanvas, Texture, TextureCreator, BlendMode};
 use sdl2::image::{LoadTexture, InitFlag};
+use sdl2::surface::{Surface};
+use sdl2::ttf::Font;
+use std::collections::HashMap;
 use std::net::{TcpStream};
 use std::io::{Read, Write};
+use std::option::{Option};
 use std::iter::FromIterator;
 use std::str::from_utf8;
 use std::{thread, time};
@@ -18,9 +22,6 @@ use lerp::Lerp;
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 const TILE_SIZE: f32 = 16.0;
-
-
-
 
 fn main_loop() -> Result<(), String> {
 
@@ -39,18 +40,10 @@ fn main_loop() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
     // font stuff
-    let desc_font_size = 40;
+    let desc_font_size = 20;
     let ttf_context  = sdl2::ttf::init().map_err(|e| e.to_string())?;
     let mut font = ttf_context.load_font("fonts/PixelOperator.ttf", desc_font_size)?;
-    let grass_text_surface = font
-        .render("Grass")
-        .blended(Color::RGBA(55, 185, 90, 255))
-        .map_err(|e| e.to_string())?;
-    let grass_text_texture = texture_creator
-        .create_texture_from_surface(&grass_text_surface)
-        .map_err(|e| e.to_string())?;
-    
-    let grass_text_sprite = Rect::new(0,0,(desc_font_size as f32 *1.3) as u32, (desc_font_size as f32 / 2.1) as u32);
+
     let tile_gs = graphics_utils::tile_graphics();
 
     let mut camera = graphics_utils::Camera{
@@ -103,10 +96,74 @@ fn main_loop() -> Result<(), String> {
     let mut sand_texture = texture_creator.load_texture("res/sand.png")?;
     // other texture stuff
     
+    // description stuff
+        
+    let entity_descriptions = HashMap::from([
+        (world_structs::EntityType::OAK,
+         graphics_utils::get_text("Oak".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::EntityType::BIRCH,
+         graphics_utils::get_text("Birch".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::EntityType::APPLETREE,
+         graphics_utils::get_text("Apple tree".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::EntityType::PINE,
+         graphics_utils::get_text("Pine".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::EntityType::SPRUCE,
+         graphics_utils::get_text("Spruce".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::EntityType::CACTUS,
+         graphics_utils::get_text("Cactus".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::EntityType::WORKER_ANT,
+         graphics_utils::get_text("Ant worker".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::EntityType::SNAIL,
+         graphics_utils::get_text("Snail".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+    ]);
+
+    let tile_descriptions = HashMap::from([
+        (world_structs::TileType::GRASS,
+         graphics_utils::get_text("Grass".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::COLD_LAND,
+         graphics_utils::get_text("Grass".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::ICE,
+         graphics_utils::get_text("Ice".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::WATER,
+         graphics_utils::get_text("Water".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::COARSE_LAND,
+         graphics_utils::get_text("Coarse grass".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::SAVANNAH_LAND,
+         graphics_utils::get_text("Savannah grass".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::SAND,
+         graphics_utils::get_text("Sand".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::RED_SAND,
+         graphics_utils::get_text("Red sand".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::PERMAFROST,
+         graphics_utils::get_text("Frozen ground".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+
+        (world_structs::TileType::MUD_HIVE_WALL,
+         graphics_utils::get_text("Mud wall".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+        (world_structs::TileType::MUD_HIVE_FLOOR,
+         graphics_utils::get_text("Mud floor".to_string(), desc_font_size, &font, &texture_creator).unwrap()
+         ),
+    ]); 
     let sprite_16 = Rect::new(0,0,(16.0 * camera.zoom) as u32, (16.0 * camera.zoom) as u32);
     let sprite_32 = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
     // gameplay stuff
-    let tile_descriptions = world_structs::get_descriptions_for_tiles();
 
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
@@ -455,16 +512,86 @@ fn main_loop() -> Result<(), String> {
             }
         }
 
-        let position = Point::new((mouse_state.x() - grass_text_sprite.width() as i32 / 2),(mouse_state.y() - grass_text_sprite.height() as i32));
+            let mut hovered_tiletype = world_structs::TileType::GRASS;
+            let mut hovered_tile: std::option::Option<world_structs::Point> = None;
+            let mut hovered_entity: std::option::Option<world_structs::Entity> = None;
+        let mut hovering_entity = false;
         if mouse_not_moved_for > hover_time {
-            graphics_utils::render_text(&mut canvas, &grass_text_texture, position, grass_text_sprite);
-            
-        }
+
+            match world_data {
+                Some(ref wd) => {
+
+                    let e_x = (((mouse_state.x() as f32 + camera.x)) as f32);
+                    let e_y = (((mouse_state.y() as f32 + camera.y)) as f32);
+                    for e in &entities {
+                        if e_x > e.x  && e_x < e.x + 16.0 && e_y > e.y && e_y < e.y+ 16.0{
+                            hovering_entity = true;
+                            hovered_entity = Some(e.clone());
+                            ()
+                        }
+                    }
+                    
+                    let tile_x = (((mouse_state.x() as f32 + camera.x) / TILE_SIZE) as f32).floor();
+                    let tile_y = (((mouse_state.y() as f32 + camera.y) / TILE_SIZE) as f32).floor();
+                    for c in &chunks {
+                        for row in &c.points {
+                            for p in row {
+                            if tile_x == p.x && tile_y == p.y {
+                                hovered_tile = Some(p.clone());
+                                
+                            } 
+                        }
+
+                    }
+                    }
+                    true
+
+                    }
+                None => false
+
+                };
+            }
+            if (!hovering_entity) {
+                match hovered_tile {
+                    Some(ht) => {
+                        match tile_descriptions.get(&ht.tile_type) {
+                            Some(tt) => {
+
+                                let position = Point::new((mouse_state.x() - tt.text_sprite.width() as i32 / 2),(mouse_state.y() - (tt.text_sprite.height()) as i32));
+                                graphics_utils::render_text(&mut canvas, &tt.text_texture, position, tt.text_sprite);
+
+
+                            },
+
+                            None => ()
+                    }
+                    },
+                    None => ()
+                }
+            }
+            else {
+                match hovered_entity {
+                    Some(he) => {
+
+                        match entity_descriptions.get(&he.entity_type) {
+                        Some(tt) => {
+                            let position = Point::new((mouse_state.x() - tt.text_sprite.width() as i32 / 2),(mouse_state.y() - (tt.text_sprite.height()) as i32));
+                            graphics_utils::render_text(&mut canvas, &tt.text_texture, position, tt.text_sprite);
+
+                        }
+                        None => ()
+                    }
+                },
+
+                None => ()
+            }
+            }
         canvas.present();
         compare_time = SystemTime::now();
         thread::sleep(time::Duration::from_millis(20));
 
-    } 
+        }
+
 
         println!("Socket connection ended.");
     Ok(())

@@ -24,6 +24,8 @@ pub enum TileType {
 }
 #[derive(PartialEq)]
 #[derive(Clone)]
+#[derive(Eq)]
+#[derive(Hash)]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "EntityType")]
 pub enum EntityType {
@@ -34,6 +36,7 @@ pub enum EntityType {
     SPRUCE,
     CACTUS,
     WORKER_ANT,
+    SNAIL,
 
 }
 #[derive(Serialize, Deserialize, Debug)]
@@ -47,8 +50,12 @@ pub enum RequestType {
 
 pub fn get_descriptions_for_tiles() -> HashMap<TileType, String> {
     return HashMap::from([(TileType::GRASS,
-                            "Grass".to_string()
-                          )
+                                "Grass".to_string(),
+                          ),
+                          (TileType::ICE,
+                                "Ice".to_string() 
+                           )
+
 
     ]);
 }
