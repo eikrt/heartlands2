@@ -1,7 +1,8 @@
 use sdl2::pixels::Color;
 use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use sdl2::rect::{Point,Rect};
+use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseWheelDirection;
 use sdl2::mouse::{MouseState};
 use sdl2::render::{WindowCanvas, Texture, TextureCreator, BlendMode};
 use sdl2::image::{LoadTexture, InitFlag};
@@ -360,6 +361,22 @@ fn main_loop() -> Result<(), String> {
                 zoom_button_minus = true;
             }
             
+            Event::MouseWheel{x,y, ..} => {
+                
+                if y > 0 {   
+                    zoom_button_minus = true;
+
+                }
+                else if y < 0 {   
+                    zoom_button_plus = true;
+
+                }
+            }
+            Event::MouseMotion{ ..} => {
+                
+                
+                mouse_not_moved_for = 0; 
+            }
             // WASD
             Event::KeyUp{keycode: Some(Keycode::W), ..} => {
                 
@@ -391,6 +408,7 @@ fn main_loop() -> Result<(), String> {
                 
                 zoom_button_minus = false;
             }
+
         _ => {}
             }
         }
@@ -408,16 +426,14 @@ fn main_loop() -> Result<(), String> {
         }
         if zoom_button_plus {
             camera.zoom(graphics_utils::MoveDirection::ZOOMIN);
+            zoom_button_plus = false;
         }
         if zoom_button_minus {
             camera.zoom(graphics_utils::MoveDirection::ZOOMOUT);
+            zoom_button_minus = false;
         }
-        
-        let current_mouse_state = event_pump.mouse_state();
-        if current_mouse_state != mouse_state {
-            mouse_not_moved_for = 0; 
-        }
-        mouse_state = current_mouse_state;
+         
+        mouse_state = event_pump.mouse_state();
         // iterate chunks
         for chunk_in_chunks in chunks.iter() {
 
@@ -588,7 +604,7 @@ fn main_loop() -> Result<(), String> {
             }
         canvas.present();
         compare_time = SystemTime::now();
-        thread::sleep(time::Duration::from_millis(20));
+        thread::sleep(time::Duration::from_millis(32));
 
         }
 

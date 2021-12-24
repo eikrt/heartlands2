@@ -92,7 +92,8 @@ pub struct Entity {
     pub dir: f32,
     pub stopped: bool,
     pub id: i32,
-    pub entity_type: EntityType
+    pub entity_type: EntityType,
+    pub faction: String, 
 }
 impl Entity {
     pub fn mov(&mut self) {
@@ -118,6 +119,7 @@ pub struct WorldResponse {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Chunk {
    pub points: Vec<Vec<Point>>,
+   pub name: String
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]

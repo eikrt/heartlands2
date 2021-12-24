@@ -1,6 +1,9 @@
 use simdnoise::*;
 use crate::world_structs;
 use rand::Rng;
+use rand::seq::IteratorRandom;
+use std::env;
+use std::fs;
 pub fn generate(seed:i32,  width:usize, height:usize, chunk_size:usize, sea_level:f32, name: String) -> world_structs::World {
 let tile_size = 16;
 let temperature_margin = 5;
@@ -203,7 +206,8 @@ let biomes: Vec<world_structs::Biome> = vec![
             }
         
             world_chunks[i as usize].push(world_structs::Chunk {
-                                            points: chunk_points 
+                                            points: chunk_points,
+                                            name: get_chunk_name()
                                           });
 
         }
@@ -325,7 +329,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         stopped: false,
                                         speed: 0.5,
                                         dir: 0.0,
-                                        entity_type: world_structs::EntityType::WORKER_ANT
+                                        entity_type: world_structs::EntityType::WORKER_ANT,
+                                        faction: chunk.name.clone()
                                     });
                                 }
                                 let mut sp_1 = k;
@@ -458,7 +463,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     dir: 0.0,
                                     speed: 0.0,
                                     stopped: true,
-                                    entity_type: entity_type
+                                    entity_type: entity_type,
+                                    faction: chunk.name.clone()
                                 });
 
                             }
@@ -513,7 +519,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 speed: 0.0,
                                 dir: 0.0,
                                 stopped: true,
-                                entity_type: entity_type
+                                entity_type: entity_type,
+                                faction: chunk.name.clone()
                             });
 
                         }
@@ -543,4 +550,20 @@ let biomes: Vec<world_structs::Biome> = vec![
         }
     };
 
+}
+fn get_chunk_name() -> String {
+    let mut rng = rand::thread_rng();
+    let mut name = String::new();
+    let filename = "words/words.txt";
+    let contents = fs::read_to_string(filename).expect("Failed to read file");
+    let content_vec: Vec<&str> = contents.split("\n").collect();
+    let mut word: String = content_vec[rng.gen_range(0..content_vec.len())-1].chars().rev().collect::<String>();
+    word.remove(word.len()-1);
+    let char_1 = rng.gen_range(b'A'..b'Z') as char;
+    word.push(char_1);
+    word.remove(rng.gen_range(0..word.len()-1));
+    word = word.to_lowercase();
+    let first_letter = word.chars().nth(0).unwrap();
+    word.replace_range(0..1,&first_letter.to_uppercase().nth(0).unwrap().to_string());
+    return word.to_string();
 }
