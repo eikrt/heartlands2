@@ -94,6 +94,7 @@ pub struct Entity {
     pub id: i32,
     pub entity_type: EntityType,
     pub faction: String, 
+    pub faction_id: i32, 
 }
 impl Entity {
     pub fn mov(&mut self) {
@@ -120,7 +121,13 @@ pub struct WorldResponse {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Chunk {
    pub points: Vec<Vec<Point>>,
-   pub name: String
+   pub name: String,
+   pub id: i32
+}
+impl Chunk {
+    pub fn assign_name(&mut self, s: String) {
+        self.name = s.clone();
+    }
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]

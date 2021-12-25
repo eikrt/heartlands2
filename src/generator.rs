@@ -207,7 +207,8 @@ let biomes: Vec<world_structs::Biome> = vec![
         
             world_chunks[i as usize].push(world_structs::Chunk {
                                             points: chunk_points,
-                                            name: get_chunk_name()
+                                            name: get_chunk_name(),
+                                            id: rng.gen_range(0..999999),    
                                           });
 
         }
@@ -330,7 +331,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         speed: 0.5,
                                         dir: 0.0,
                                         entity_type: world_structs::EntityType::WORKER_ANT,
-                                        faction: chunk.name.clone()
+                                        faction: chunk.name.clone().to_string(),
+                                        faction_id: chunk.id,    
                                     });
                                 }
                                 let mut sp_1 = k;
@@ -464,7 +466,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     speed: 0.0,
                                     stopped: true,
                                     entity_type: entity_type,
-                                    faction: chunk.name.clone()
+                                    faction: chunk.name.clone().to_string(),
+                                    faction_id: chunk.id,    
                                 });
 
                             }
@@ -492,6 +495,9 @@ let biomes: Vec<world_structs::Biome> = vec![
                             if point.tile_type == world_structs::TileType::GRASS {
                                 if tree_rand == 0 {
                                 entity_type = world_structs::EntityType::OAK;
+                                if rng.gen_range(0..6) == 1 {
+                                    entity_type = world_structs::EntityType::APPLETREE;
+                                }
 
                                 }
                                 else if tree_rand == 1 {
@@ -520,7 +526,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 dir: 0.0,
                                 stopped: true,
                                 entity_type: entity_type,
-                                faction: chunk.name.clone()
+                                faction: chunk.name.clone().to_string(),
+                                faction_id: chunk.id,    
                             });
 
                         }
@@ -559,7 +566,11 @@ fn get_chunk_name() -> String {
     let content_vec: Vec<&str> = contents.split("\n").collect();
     let mut word: String = content_vec[rng.gen_range(0..content_vec.len())-1].chars().rev().collect::<String>();
     word.remove(word.len()-1);
-    let char_1 = rng.gen_range(b'A'..b'Z') as char;
+    let letters = vec!['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+    let mut char_1 = letters[rng.gen_range(0..letters.len())];
+    if letters.len() < 2 {
+        char_1 = 'a';
+    }
     word.push(char_1);
     word.remove(rng.gen_range(0..word.len()-1));
     word = word.to_lowercase();

@@ -451,7 +451,8 @@ fn main_loop() -> Result<(), String> {
                  Err(e) => world_structs::WorldResponse{
                      chunk: world_structs::Chunk{
                          points: vec![],
-                         name: "error".to_string()
+                         name: "error".to_string(),
+                         id: rng.gen_range(0..999999),    
                      },
                     entities: vec![],
                     valid: false
@@ -461,24 +462,30 @@ fn main_loop() -> Result<(), String> {
                 continue;
                 println!("jumped");
             }
-            let mut chunk_already_in_chunks = false;
+            /*let mut chunk_already_in_chunks = false;
             for chnk in &chunks {
                 match response {
                 Some(ref r) => {if chnk.points[0][0].x == r.chunk.points[0][0].x && chnk.points[0][0].y == r.chunk.points[0][0].y{
-                    chunk_already_in_chunks = true;
+                   // chunk_already_in_chunks = true;
                 }
 
 
                     }
                 None => ()
                 };
-            }
-            if !chunk_already_in_chunks {
+            }*/
                 match response {
-                Some(ref r) => chunks.push(r.chunk.clone()),
+                Some(ref r) => {
+                    
+                    let mut index_option = chunks.iter().position(|x| x.id == r.chunk.id);
+                    if index_option != None {
+                        let index = index_option.unwrap();
+                        chunks.remove(index);
+                    }
+                    chunks.push(r.chunk.clone())
+                    },
                 None => ()
-            };
-        }
+            }
             //let mut filtered_entities = Vec::new();
             match response {
                 Some(ref mut  r) => {
@@ -590,36 +597,42 @@ fn main_loop() -> Result<(), String> {
 
             // trees
             if entity.entity_type == world_structs::EntityType::OAK {
-                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                let position = Point::new(tx_tree as i32 - sprite_32.width() as i32 / 2,ty_tree as i32 - sprite_32.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &oak_texture, position, sprite_32, camera.zoom);
 
             } 
 
+            else if entity.entity_type == world_structs::EntityType::APPLETREE {
+                let position = Point::new(tx_tree as i32 - sprite_32.width() as i32 / 2,ty_tree as i32 - sprite_32.height() as i32 / 2);
+                graphics_utils::render(&mut canvas, &appletree_texture, position, sprite_32, camera.zoom);
+
+            } 
+
             else if entity.entity_type == world_structs::EntityType::SPRUCE {
-                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                let position = Point::new(tx_tree as i32 - sprite_32.width() as i32 / 2,ty_tree as i32 - sprite_32.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &spruce_texture, position, sprite_32, camera.zoom);
 
             }
             else if entity.entity_type == world_structs::EntityType::PINE {
-                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                let position = Point::new(tx_tree as i32 - sprite_32.width() as i32 / 2,ty_tree as i32 - sprite_32.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &pine_texture, position, sprite_32, camera.zoom);
 
             }
             else if entity.entity_type == world_structs::EntityType::BIRCH {
-                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                let position = Point::new(tx_tree as i32 - sprite_32.width() as i32 / 2,ty_tree as i32 - sprite_32.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &birch_texture, position, sprite_32, camera.zoom);
 
             }
             // vegetation
 
             else if entity.entity_type == world_structs::EntityType::CACTUS {
-                let position = Point::new(tx_tree as i32 as i32 ,ty_tree as i32 as i32);
+                let position = Point::new(tx_tree as i32 - sprite_32.width() as i32 / 2,ty_tree as i32 - sprite_32.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &cactus_texture, position, sprite_32, camera.zoom);
 
             }
             // ants and other lifeforms
             else if entity.entity_type == world_structs::EntityType::WORKER_ANT {
-                let position = Point::new(tx_ant as i32 as i32 ,ty_ant as i32 as i32);
+                let position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2,ty_ant as i32 - sprite_16.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &ant_worker_texture, position, sprite_16, camera.zoom);
 
             }
@@ -731,7 +744,13 @@ fn main_loop() -> Result<(), String> {
                         let render_rect = Rect::new(position.x, position.y, (wd.chunk_size as i32 * wd.tile_size) as u32, (wd.chunk_size as i32 * wd.tile_size) as u32);
                         match chunk_graphics_data.get(&c.name) {
                         Some(cgd) => {
-                            graphics_utils::render_rect(&mut canvas, position, render_rect, *chunk_graphics_data.get(&c.name).unwrap(), camera.zoom);
+                            if c.name == "Neutral" {
+                                graphics_utils::render_rect(&mut canvas, position, render_rect, Color::RGBA(255,255,255,125), camera.zoom);
+                            }
+                            else {
+                                graphics_utils::render_rect(&mut canvas, position, render_rect, *chunk_graphics_data.get(&c.name).unwrap(), camera.zoom);
+
+                            }
                         },
                         None => {
                             graphics_utils::render_rect(&mut canvas, position, render_rect, Color::RGBA(255,255,255,125), camera.zoom);

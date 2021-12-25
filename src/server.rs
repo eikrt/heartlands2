@@ -4,6 +4,7 @@ use std::net::{TcpListener, TcpStream, Shutdown};
 use std::io::{Read, Write};
 use std::time::{SystemTime};
 use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 use std::str::from_utf8;
 use serde_json;
 fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
@@ -12,6 +13,11 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
     let mut compare_time = SystemTime::now();
     let mut data = [0 as u8; 65536];
     let mut world_clone = world.lock().unwrap();
+
+    let mut update_political_change = 0.0;
+    let mut update_political_time = 10.0;
+    let ant_number_to_change_ownership = 3;
+    let mut is_ok = true;
     while match stream.read(&mut data) {
         Ok(_size) => {
             // network stuff
@@ -21,8 +27,18 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
             }.replace("\0", "").replace("\n", "").to_string();
             let res_obj: world_structs::WorldRequest = match serde_json::from_str(&res) {
                 Ok(v) => v,
-                Err(e) => panic!("Invalid sequence: {}", e),
+                Err(e) => {is_ok = false;
+                            world_structs::WorldRequest{
+                        x: 0,
+                        y: 0,
+                        req_type: world_structs::RequestType::CHUNK
+                    }
+                    },
             };
+            if !is_ok {
+                is_ok = true;
+                return;
+            }
             if res_obj.req_type == world_structs::RequestType::CHUNK {
                 let response = world_structs::WorldResponse {
                     chunk: world_clone.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
@@ -40,12 +56,56 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
             // game tick
             
             let delta = SystemTime::now().duration_since(compare_time).unwrap();
-            let _delta_as_millis = delta.as_millis()/10;
-                if delta.as_millis()/10 != 0 {
-                 //   println!("FPS: {}", 100 / (delta.as_millis()/10));
+            let delta_as_millis = delta.as_millis();
+            update_political_change += delta_as_millis as f32;
+            if update_political_change > update_political_time {
+                let mut biggest_value_data = (0,0,"Neutral".to_string());
+                for row in world_clone.chunks.clone().iter().enumerate() {
+                    for c in world_clone.chunks[row.0].clone().iter().enumerate() {
+        
+                    let mut entity_types: HashMap<String, i32> = HashMap::new();
+                    let entities_for_chunks = world_clone.get_entities_for_chunk(c.1.clone());
+                    if (entities_for_chunks.len() as i32) < ant_number_to_change_ownership {
+                        world_clone.chunks[row.0][c.0].name = "Neutral".to_string();
+                    }
+                    for e in &entities_for_chunks {
+                            if !entity_types.contains_key(&e.faction) {
+
+                        if e.entity_type == world_structs::EntityType::WORKER_ANT {
+                                entity_types.insert(
+                                                        e.faction.clone(),
+                                                        0
+                                                    );
+
+                            }
+                            }
+                            else {
+
+                            if e.entity_type == world_structs::EntityType::WORKER_ANT {
+                                    *entity_types.get_mut(&e.faction).unwrap() += 1;
+
+                                }
+                            }
+                            let mut biggest_value = ("Neutral".to_string(), 0);
+                            for (key, value) in &entity_types {
+                                if value > &biggest_value.1 {
+                                   biggest_value = (key.to_string(), *value) 
+                                }
+                            }
+                            biggest_value_data = (row.0, c.0, biggest_value.0);
+                            if biggest_value.1 <= ant_number_to_change_ownership {
+
+                                biggest_value_data = (row.0, c.0, "Neutral".to_string());
+                            }
+                            world_clone.chunks[biggest_value_data.0][biggest_value_data.1].name = biggest_value_data.2;
+                            
+                    }
+                     
                 }
 
-                        
+                }
+                update_political_change = 0.0;
+            }
             world_clone.update_entities();
 
             // end of tick stuff
