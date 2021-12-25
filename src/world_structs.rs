@@ -113,7 +113,8 @@ impl Entity {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WorldResponse {
     pub chunk: Chunk,
-    pub entities: Vec<Entity>
+    pub entities: Vec<Entity>,
+    pub valid: bool
 }
 #[derive(Clone)]
 #[derive(Serialize, Deserialize, Debug)]

@@ -10,7 +10,7 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
 
     let mut entities: Vec<world_structs::Entity> = Vec::new();
     let mut compare_time = SystemTime::now();
-    let mut data = [0 as u8; 256];
+    let mut data = [0 as u8; 65536];
     let mut world_clone = world.lock().unwrap();
     while match stream.read(&mut data) {
         Ok(_size) => {
@@ -26,10 +26,10 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
             if res_obj.req_type == world_structs::RequestType::CHUNK {
                 let response = world_structs::WorldResponse {
                     chunk: world_clone.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
-                    entities: world_clone.get_entities_for_chunk(world_clone.chunks[res_obj.x as usize][res_obj.y as usize].clone())
+                    entities: world_clone.get_entities_for_chunk(world_clone.chunks[res_obj.x as usize][res_obj.y as usize].clone()),
+                    valid: true
                 };
                 let msg = serde_json::to_string(&response).unwrap();
-
                 stream.write(msg.as_bytes()).unwrap();
             }
 
@@ -51,7 +51,7 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
             // end of tick stuff
             compare_time = SystemTime::now();
 
-            data = [0 as u8; 256];
+            data = [0 as u8; 65536];
             true
         },
         Err(_) => {
