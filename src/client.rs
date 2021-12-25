@@ -20,6 +20,7 @@ use crate::world_structs;
 use crate::graphics_utils;
 use serde_json;
 use lerp::Lerp;
+use rand::Rng;
 const SCREEN_WIDTH: u32 = 720;
 const SCREEN_HEIGHT: u32 = 480;
 const TILE_SIZE: f32 = 16.0;
@@ -157,9 +158,12 @@ fn main_loop() -> Result<(), String> {
 
     // gameplay stuff
     
+    let mut rng = rand::thread_rng();
     let mut map_state = graphics_utils::MapState::NORMAL;
     let mut main_menu_on = true;
     let mut settings_menu_on = false;
+
+    let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
     let delta_as_millis = delta.as_millis();
@@ -523,7 +527,13 @@ fn main_loop() -> Result<(), String> {
 
         // iterate chunks
         for chunk_in_chunks in chunks.iter() {
+            if !chunk_graphics_data.contains_key(&chunk_in_chunks.name) {
+            chunk_graphics_data.insert(
+                chunk_in_chunks.name.clone(),
+                Color::RGBA(rng.gen_range(0..255), rng.gen_range(0..255), rng.gen_range(0..255), 125)
 
+            );
+            }
             for i in 0..chunk_in_chunks.points.len() {
                 for j in 0..chunk_in_chunks.points.len() {
                     let p = &chunk_in_chunks.points[i][j];
@@ -719,13 +729,20 @@ fn main_loop() -> Result<(), String> {
                     
                         let position = Point::new((wd.tile_size as f32* c.points[0][0].x * camera.zoom - camera.x)  as i32, (wd.tile_size as f32 * c.points[0][0].y* camera.zoom - camera.y) as i32);
                         let render_rect = Rect::new(position.x, position.y, (wd.chunk_size as i32 * wd.tile_size) as u32, (wd.chunk_size as i32 * wd.tile_size) as u32);
-                        graphics_utils::render_rect(&mut canvas, position, render_rect, Color::RGBA(255,0,0,125), camera.zoom);
+                        match chunk_graphics_data.get(&c.name) {
+                        Some(cgd) => {
+                            graphics_utils::render_rect(&mut canvas, position, render_rect, *chunk_graphics_data.get(&c.name).unwrap(), camera.zoom);
+                        },
+                        None => {
+                            graphics_utils::render_rect(&mut canvas, position, render_rect, Color::RGBA(255,255,255,125), camera.zoom);
 
+                            }
+                        }
                         // render chunk faction description
                         let title = c.name.clone();
-                        let text = graphics_utils::get_text(title,Color::RGBA(55, 185, 90, 255), desc_font_size, &font, &texture_creator).unwrap();
+                        let text = graphics_utils::get_text(title.clone(),Color::RGBA(55, 185, 90, 255), desc_font_size, &font, &texture_creator).unwrap();
 
-                        let text_position = Point::new(position.x() + (wd.chunk_size as f32 * wd.tile_size as f32 * camera.zoom) as i32 / 2, position.y() + (wd.chunk_size as f32 * wd.tile_size as f32 * camera.zoom) as i32 / 2);
+                        let text_position = Point::new(position.x() + (wd.chunk_size as f32 * wd.tile_size as f32 * camera.zoom) as i32 / 2 - title.clone().len() as i32*desc_font_size as i32 / 4, position.y() + (wd.chunk_size as f32 * wd.tile_size as f32 * camera.zoom) as i32 / 2);
                         graphics_utils::render_text(&mut canvas, &text.text_texture, text_position, text.text_sprite);
 
                 },
