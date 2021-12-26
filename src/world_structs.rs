@@ -1,6 +1,30 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use rand::Rng;
+#[derive(PartialEq)]
+#[derive(Clone,Serialize, Deserialize, Debug)]
+pub enum ItemType {
+    NOTHING, 
+    WOODEN_SPEAR,
+    FRUIT,
+    MEAT,
+    SHOVEL,
+    CROWN,
+}
+#[derive(PartialEq)]
+#[derive(Clone,Serialize, Deserialize, Debug)]
+pub enum ActionType {
+    IDLE,
+    FETCH_FOOD,
+    STORAGE_FOOD,
+    FISH,
+    HUNT,
+    TRADE,
+    BREED,
+    DEFEND,
+    CONQUER,
+
+}
 #[derive(Serialize, Deserialize, Debug)]
 #[derive(Clone)]
 #[derive(PartialEq)]
@@ -90,20 +114,34 @@ pub struct Entity {
     pub y: f32,
     pub speed: f32,
     pub dir: f32,
+    pub target_x: f32,
+    pub target_y: f32,
     pub stopped: bool,
     pub id: i32,
     pub entity_type: EntityType,
     pub faction: String, 
-    pub faction_id: i32, 
+    pub faction_id: i32,
+    pub current_action: ActionType,
+    pub wielding_item: ItemType,
+    pub backpack_item: ItemType,
+    pub wearable_item: ItemType,
+    
 }
 impl Entity {
-    pub fn mov(&mut self) {
+    pub fn idle_mov(&mut self) {
         if !self.stopped {
             
             let mut rng = rand::thread_rng();
             self.x += self.dir.cos() * self.speed;
             self.y += self.dir.sin() * self.speed;
             self.dir = rng.gen_range(0.0..3.14*2.0);
+        }
+    }
+    pub fn mov(&mut self) {
+        if !self.stopped {
+            self.dir = self.x.atan2(self.target_y); 
+            self.x += self.dir.cos() * self.speed;
+            self.y += self.dir.sin() * self.speed;
         }
     }
     pub fn stop(&mut self) {
@@ -168,7 +206,13 @@ impl World {
 
     pub fn update_entities(&mut self) {
        for e in self.entities.iter_mut() {
-            e.mov();
-        }
+            if e.current_action == ActionType::IDLE {
+                e.idle_mov();
+
+            }
+            else if e.current_action == ActionType::FETCH_FOOD {
+                e.mov();
+            }
     }
+}
 }

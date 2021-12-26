@@ -330,9 +330,15 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         stopped: false,
                                         speed: 0.5,
                                         dir: 0.0,
+                                        target_x: 0.0,
+                                        target_y: 0.0,
                                         entity_type: world_structs::EntityType::WORKER_ANT,
                                         faction: chunk.name.clone().to_string(),
-                                        faction_id: chunk.id,    
+                                        faction_id: chunk.id,
+                                        current_action: world_structs::ActionType::IDLE,
+                                        wielding_item: world_structs::ItemType::NOTHING,
+                                        backpack_item: world_structs::ItemType::NOTHING,
+                                        wearable_item: world_structs::ItemType::NOTHING,
                                     });
                                 }
                                 let mut sp_1 = k;
@@ -463,11 +469,17 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     x: _rx * tile_size as f32,
                                     y: _ry * tile_size as f32,
                                     dir: 0.0,
+                                    target_x: 0.0,
+                                    target_y: 0.0,
                                     speed: 0.0,
                                     stopped: true,
                                     entity_type: entity_type,
                                     faction: chunk.name.clone().to_string(),
-                                    faction_id: chunk.id,    
+                                    faction_id: chunk.id,
+                                    current_action: world_structs::ActionType::IDLE,
+                                    backpack_item: world_structs::ItemType::NOTHING,
+                                    wearable_item: world_structs::ItemType::NOTHING,
+                                    wielding_item: world_structs::ItemType::NOTHING
                                 });
 
                             }
@@ -524,10 +536,16 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 y: _ry * tile_size as f32,
                                 speed: 0.0,
                                 dir: 0.0,
+                                target_x: 0.0,
+                                target_y: 0.0,
                                 stopped: true,
                                 entity_type: entity_type,
                                 faction: chunk.name.clone().to_string(),
                                 faction_id: chunk.id,    
+                                current_action: world_structs::ActionType::IDLE,
+                                backpack_item: world_structs::ItemType::NOTHING,
+                                wearable_item: world_structs::ItemType::NOTHING,
+                                wielding_item: world_structs::ItemType::NOTHING
                             });
 
                         }
