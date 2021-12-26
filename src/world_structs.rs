@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use rand::Rng;
+const TARGET_SIZE: f32 = 8.0;
 #[derive(PartialEq)]
 #[derive(Clone,Serialize, Deserialize, Debug)]
 pub enum ItemType {
@@ -23,6 +24,7 @@ pub enum ActionType {
     BREED,
     DEFEND,
     CONQUER,
+    EXPLORE,
 
 }
 #[derive(Serialize, Deserialize, Debug)]
@@ -60,7 +62,12 @@ pub enum EntityType {
     SPRUCE,
     CACTUS,
     WORKER_ANT,
+    QUEEN_ANT,
+    DRONE_ANT,
+    SOLDIER_ANT,
+    MECHANT,
     SNAIL,
+    FOOD_STORAGE
 
 }
 #[derive(Serialize, Deserialize, Debug)]
@@ -139,9 +146,9 @@ impl Entity {
     }
     pub fn mov(&mut self) {
         if !self.stopped {
-            self.dir = self.x.atan2(self.target_y); 
+            self.dir = (self.y - self.target_y).atan2(self.x - self.target_x); 
             self.x += self.dir.cos() * self.speed;
-            self.y += self.dir.sin() * self.speed;
+            self.y -= self.dir.sin() * self.speed;
         }
     }
     pub fn stop(&mut self) {
@@ -205,12 +212,30 @@ impl World {
     }
 
     pub fn update_entities(&mut self) {
-       for e in self.entities.iter_mut() {
+         
+        let mut rng = rand::thread_rng();
+        for e in self.entities.iter_mut() {
+            if e.entity_type == EntityType::WORKER_ANT {
+                if e.current_action == ActionType::IDLE && e.target_x == 0.0 && e.target_y == 0.0 {
+                    e.current_action = ActionType::EXPLORE;
+                    e.target_x = e.x + rng.gen_range(-256.0..256.0);
+                    e.target_y = e.y + rng.gen_range(-256.0..256.0);
+                }
+            }
+            if e.current_action == ActionType::EXPLORE {
+                if e.x > e.target_x - TARGET_SIZE && e.y > e.target_y - TARGET_SIZE && e.x < e.target_x + TARGET_SIZE  && e.y < e.target_y + TARGET_SIZE {
+                    e.current_action == ActionType::IDLE;
+                    e.target_x = 0.0;
+                    e.target_y = 0.0;
+                }
+            }
             if e.current_action == ActionType::IDLE {
                 e.idle_mov();
-
             }
             else if e.current_action == ActionType::FETCH_FOOD {
+                e.mov();
+            }
+            else if e.current_action == ActionType::EXPLORE {
                 e.mov();
             }
     }

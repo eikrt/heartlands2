@@ -5,7 +5,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseWheelDirection;
 use sdl2::mouse::{MouseState};
 use sdl2::render::{WindowCanvas, Texture, TextureCreator, BlendMode};
-use sdl2::image::{LoadTexture, InitFlag};
+use sdl2::image::{LoadSurface,LoadTexture, InitFlag};
 use sdl2::surface::{Surface};
 use sdl2::ttf::Font;
 use std::collections::HashMap;
@@ -30,10 +30,12 @@ fn main_loop() -> Result<(), String> {
     // sdl stuff
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
-    let window = video_subsystem.window("Heartlands", SCREEN_WIDTH, SCREEN_HEIGHT)
+    let mut window = video_subsystem.window("Mechants", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
         .build()
         .expect("could not initialize video subsystem");
+    let icon: Surface = LoadSurface::from_file("res/icon2.png").unwrap();
+    window.set_icon(icon);
     let mut canvas = window.into_canvas().build()
         .expect("could not make a canvas");
     canvas.set_blend_mode(BlendMode::Blend);
@@ -131,7 +133,12 @@ fn main_loop() -> Result<(), String> {
     let spruce_texture = texture_creator.load_texture("res/spruce.png")?;
     let cactus_texture = texture_creator.load_texture("res/cactus.png")?;
     let ant_worker_texture = texture_creator.load_texture("res/ant1.png")?;
+    let ant_soldier_texture = texture_creator.load_texture("res/ant1.png")?;
+    let ant_drone_texture = texture_creator.load_texture("res/ant_drone.png")?;
+    let mechant_texture = texture_creator.load_texture("res/mechant.png")?;
+    let ant_queen_texture= texture_creator.load_texture("res/ant_queen.png")?;
     let snail_texture = texture_creator.load_texture("res/snail.png")?;
+    let food_storage_texture= texture_creator.load_texture("res/food_storage.png")?;
     // tile textures
     let mut grass_texture = texture_creator.load_texture("res/grass.png")?;
     let mut water_texture = texture_creator.load_texture("res/water.png")?;
@@ -141,6 +148,7 @@ fn main_loop() -> Result<(), String> {
     let mut menu_button_texture = texture_creator.load_texture("res/menu_button.png")?;
     let mut menu_button_hovered_texture = texture_creator.load_texture("res/menu_button_hovered.png")?;
     let mut menu_button_pressed_texture = texture_creator.load_texture("res/menu_button_pressed.png")?;
+    let mut menu_background = texture_creator.load_texture("res/background_image_1.png")?;
 
     // ui textures
 
@@ -155,6 +163,7 @@ fn main_loop() -> Result<(), String> {
     let sprite_16 = Rect::new(0,0,(16.0 * camera.zoom) as u32, (16.0 * camera.zoom) as u32);
     let sprite_32 = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
     let sprite_128x32 = Rect::new(0,0,(128.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
+    let sprite_720x480 = Rect::new(0,0,720.0 as u32, 480.0 as u32);
 
     // gameplay stuff
     
@@ -274,6 +283,8 @@ fn main_loop() -> Result<(), String> {
 
 
         if main_menu_on {
+            //render menu background
+            graphics_utils::render(&mut canvas, &menu_background, Point::new(0,0), sprite_720x480, 1.0);
             // render buttons
             let position = Point::new(play_button.x as i32,play_button.y as i32);
             play_button.check_if_hovered(mouse_x, mouse_y);
@@ -350,6 +361,7 @@ fn main_loop() -> Result<(), String> {
             else if exit_button.status == graphics_utils::ButtonStatus::RELEASED {
                running = false;
             }
+
         }
         else {
         let mut msg: Option<String> = None;
@@ -639,6 +651,26 @@ fn main_loop() -> Result<(), String> {
                 graphics_utils::render(&mut canvas, &ant_worker_texture, position, sprite_16, camera.zoom);
 
             }
+            else if entity.entity_type == world_structs::EntityType::SOLDIER_ANT {
+                let position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2,ty_ant as i32 - sprite_16.height() as i32 / 2);
+                graphics_utils::render(&mut canvas, &ant_soldier_texture, position, sprite_16, camera.zoom);
+
+            }
+            else if entity.entity_type == world_structs::EntityType::DRONE_ANT {
+                let position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2,ty_ant as i32 - sprite_16.height() as i32 / 2);
+                graphics_utils::render(&mut canvas, &ant_drone_texture, position, sprite_16, camera.zoom);
+
+            }
+            else if entity.entity_type == world_structs::EntityType::QUEEN_ANT {
+                let position = Point::new(tx_ant as i32 - sprite_32.width() as i32 / 2,ty_ant as i32 - sprite_32.height() as i32 / 2);
+                graphics_utils::render(&mut canvas, &ant_queen_texture, position, sprite_32, camera.zoom);
+
+            }
+            else if entity.entity_type == world_structs::EntityType::FOOD_STORAGE {
+                let position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2,ty_ant as i32 - sprite_16.height() as i32 / 2);
+                graphics_utils::render(&mut canvas, &food_storage_texture, position, sprite_16, camera.zoom);
+
+            }
         }
 
             let mut hovered_tiletype = world_structs::TileType::GRASS;
@@ -719,7 +751,7 @@ fn main_loop() -> Result<(), String> {
                     Some(he) => {
                         let mut name = descriptions_for_entities.get(&he.entity_type).unwrap();
                         let mut title = "".to_string();
-                        if he.entity_type == world_structs::EntityType::WORKER_ANT {
+                        if he.entity_type == world_structs::EntityType::WORKER_ANT || he.entity_type == world_structs::EntityType::DRONE_ANT ||he.entity_type == world_structs::EntityType::SOLDIER_ANT || he.entity_type == world_structs::EntityType::QUEEN_ANT   {
                             title = he.faction;
                             title.push_str("ese ");
                         }

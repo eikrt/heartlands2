@@ -275,6 +275,21 @@ pub fn get_descriptions_for_entities()-> HashMap<world_structs::EntityType, Stri
         (world_structs::EntityType::WORKER_ANT,
          "ant worker".to_string()
          ),
+         (world_structs::EntityType::QUEEN_ANT,
+         "ant queen".to_string()
+         ),
+         (world_structs::EntityType::DRONE_ANT,
+         "ant drone".to_string()
+         ),
+         (world_structs::EntityType::SOLDIER_ANT,
+         "ant soldier".to_string()
+         ),
+         (world_structs::EntityType::MECHANT,
+         "mechant".to_string()
+         ),
+         (world_structs::EntityType::FOOD_STORAGE,
+         "Food storage".to_string()
+         ),
         (world_structs::EntityType::SNAIL,
          "Snail".to_string()
          ),

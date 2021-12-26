@@ -18,7 +18,7 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
     let mut update_political_time = 10.0;
     let ant_number_to_change_ownership = 3;
     let mut is_ok = true;
-    while match stream.read(&mut data) {
+    'main: while match stream.read(&mut data) {
         Ok(_size) => {
             // network stuff
             let res = match from_utf8(&data) {
@@ -29,16 +29,12 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
                 Ok(v) => v,
                 Err(e) => {is_ok = false;
                             world_structs::WorldRequest{
-                        x: 0,
-                        y: 0,
-                        req_type: world_structs::RequestType::CHUNK
+                            x: 0,
+                            y: 0,
+                            req_type: world_structs::RequestType::CHUNK
                     }
                     },
             };
-            if !is_ok {
-                is_ok = true;
-                return;
-            }
             if res_obj.req_type == world_structs::RequestType::CHUNK {
                 let response = world_structs::WorldResponse {
                     chunk: world_clone.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
@@ -71,7 +67,7 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
                     for e in &entities_for_chunks {
                             if !entity_types.contains_key(&e.faction) {
 
-                        if e.entity_type == world_structs::EntityType::WORKER_ANT {
+                        if e.entity_type == world_structs::EntityType::DRONE_ANT {
                                 entity_types.insert(
                                                         e.faction.clone(),
                                                         0
@@ -81,7 +77,7 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
                             }
                             else {
 
-                            if e.entity_type == world_structs::EntityType::WORKER_ANT {
+                            if e.entity_type == world_structs::EntityType::DRONE_ANT {
                                     *entity_types.get_mut(&e.faction).unwrap() += 1;
 
                                 }
