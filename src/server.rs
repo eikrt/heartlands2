@@ -1,33 +1,37 @@
 use crate::world_structs;
 use std::thread;
-use std::net::{TcpListener, TcpStream, Shutdown};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::prelude::*;
 use std::io::{Read, Write};
 use std::time::{SystemTime};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use tokio::sync::mpsc;
 use std::str::from_utf8;
 use serde_json;
-fn update_entities(world: Arc<Mutex<world_structs::World>>){
-    let mut world_clone = world.lock().unwrap();
-    while true {
-        world_clone.update_entities();
-
-    }
-}
-fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
+/*async fn handle(mut stream: TcpStream, mut world: world_structs::World){
 
     let mut entities: Vec<world_structs::Entity> = Vec::new();
     let mut compare_time = SystemTime::now();
     let mut data = [0 as u8; 65536];
-    let mut world_clone = world.lock().unwrap();
-
     let mut update_political_change = 0.0;
     let mut update_political_time = 10.0;
     let ant_number_to_change_ownership = 3;
     let mut is_ok = true;
+    //let (sender, receiver): (mpsc::Sender<world_structs::World>, mpsc::Receiver<world_structs::World>)  = mpsc::channel();
+    let (mut sender, mut receiver) = mpsc::channel(100);
+    println!("dsf");
+    tokio::spawn(async move {
+        while true {
+//            world.update_entities();
+            println!("dsf");
+          sender.send(world.clone()).await;
+        }
+    });
     'main: while match stream.read(&mut data) {
         Ok(_size) => {
             // network stuff
+            let world_from = receiver.recv().await.unwrap();
             let res = match from_utf8(&data) {
                 Ok(_v) => _v,
                 Err(e) => panic!("Invalid sequence: {}", e),
@@ -44,8 +48,8 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
             };
             if res_obj.req_type == world_structs::RequestType::CHUNK {
                 let response = world_structs::WorldResponse {
-                    chunk: world_clone.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
-                    entities: world_clone.get_entities_for_chunk(world_clone.chunks[res_obj.x as usize][res_obj.y as usize].clone()),
+                    chunk: world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
+                    entities: world_from.get_entities_for_chunk(world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone()),
                     valid: true
                 };
                 let msg = serde_json::to_string(&response).unwrap();
@@ -53,13 +57,14 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
             }
 
             else if res_obj.req_type == world_structs::RequestType::DATA{
-                let msg = serde_json::to_string(&world_clone.world_data).unwrap();
+                let msg = serde_json::to_string(&world_from.world_data).unwrap();
                 stream.write(msg.as_bytes()).unwrap();
             }
             // game tick
             
             let delta = SystemTime::now().duration_since(compare_time).unwrap();
             let delta_as_millis = delta.as_millis();
+            /*
             update_political_change += delta_as_millis as f32;
             if update_political_change > update_political_time {
                 let mut biggest_value_data = (0,0,"Neutral".to_string());
@@ -108,9 +113,8 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
 
                 }
                 update_political_change = 0.0;
-            }
+            }*/
 
-        world_clone.update_entities();
             // end of tick stuff
             compare_time = SystemTime::now();
 
@@ -124,25 +128,40 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
         }
     } {}
 }
-pub fn serve(world: world_structs::World, _port: i32) {
-        let listener = TcpListener::bind("0.0.0.0:5000").unwrap();
+/*pub async fn serve(world: world_structs::World, _port: i32) {
+        let listener = TcpListener::bind("0.0.0.0:5000").await.unwrap();
         println!("Server listening on port 5000");
-        for stream in listener.incoming() {
-            match stream {
-                Ok(stream) => {
-                    let world_clone = Arc::new(Mutex::new(world.clone()));
-                    let mut arc_clone = Arc::clone(&world_clone);
-                    println!("New connection with: {}", stream.peer_addr().unwrap());
-                    let t1 = thread::spawn(move || {
-                        handle(stream, arc_clone);
-                    });
-                    arc_clone = Arc::clone(&world_clone);
-
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                }
-            }
+        loop {
+            let (socket, _) = listener.accept().await.unwrap();
+            tokio::spawn(async move {
+                process(socket).await;
+            });
         }
-        drop(listener); 
+}*/
+*/
+async fn serve(world: world_structs::World, _port:i32) {
+    if let Ok(mut tcp_listener) = TcpListener::bind("127.0.0.1:8080").await {
+        while let Ok((mut tcp_stream, _socket_addr)) = tcp_listener.accept().await {
+            tokio::spawn(async move {
+                let mut buf = [0; 1024];
+                // In a loop, read data from the socket and write the data back.
+                loop {
+                    let n = match tcp_stream.read(&mut buf).await {
+                        // socket closed
+                        Ok(n) if n == 0 => return,
+                        Ok(n) => n,
+                        Err(e) => {
+                            eprintln!("failed to read from socket; err = {:?}", e);
+                            return;
+                        }
+                    };
+                    // Write the data back
+                    if let Err(e) = tcp_stream.write_all(&buf[0..n]).await {
+                        eprintln!("failed to write to socket; err = {:?}", e);
+                        return;
+                    }
+                }
+            });
+        }
+    }
 }

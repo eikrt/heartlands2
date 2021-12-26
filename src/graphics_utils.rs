@@ -38,25 +38,25 @@ pub struct Camera {
 impl Camera {
     pub fn zoom(&mut self, dir: MoveDirection, delta: u128) { 
         if dir == MoveDirection::ZOOMIN {
-            self.zoom += self.zoom_speed * delta as f32 / 5.0;
+            self.zoom += self.zoom_speed * delta as f32 / 100.0;
         }
         else if dir == MoveDirection::ZOOMOUT {
-            self.zoom -= self.zoom_speed * delta as f32 / 5.0;
+            self.zoom -= self.zoom_speed * delta as f32 / 100.0;
         }
     }
     pub fn mov(&mut self, dir: MoveDirection, delta: u128) { 
         if dir == MoveDirection::UP {
-            self.y -= self.move_speed * delta as f32 / 5.0;
+            self.y -= self.move_speed * delta as f32 / 1000.0;
         }
         else if dir == MoveDirection::LEFT {
-            self.x -= self.move_speed * delta as f32 / 5.0;
+            self.x -= self.move_speed * delta as f32 / 1000.0;
         }
 
         else if dir == MoveDirection::DOWN {
-            self.y += self.move_speed * delta as f32 / 5.0;
+            self.y += self.move_speed * delta as f32 / 1000.0;
         }
         else if dir == MoveDirection::RIGHT {
-            self.x += self.move_speed * delta as f32 / 5.0;
+            self.x += self.move_speed * delta as f32 / 1000.0;
         }
     }
 }

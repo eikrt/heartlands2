@@ -15,6 +15,7 @@ use std::option::{Option};
 use std::iter::FromIterator;
 use std::str::from_utf8;
 use std::{thread, time};
+use std::sync::mpsc;
 use std::time::{SystemTime};
 use crate::world_structs;
 use crate::graphics_utils;
@@ -70,6 +71,7 @@ fn main_loop() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let mut compare_time = SystemTime::now();
     let mut update_data = true;
+    let mut world_data_state: Option<world_structs::WorldData> = None;
     let mut world_data: Option<world_structs::WorldData> = None;
     // mouse
     let mut mouse_not_moved_for = 0;
@@ -82,7 +84,8 @@ fn main_loop() -> Result<(), String> {
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
     let mut entities: Vec<world_structs::Entity> = Vec::new();
-
+    let mut chunks_state: Vec<world_structs::Chunk> = Vec::new();
+    let mut entities_state: Vec<world_structs::Entity> = Vec::new();
     // menu buttons
     let mut play_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::HOVERED,
@@ -171,10 +174,180 @@ fn main_loop() -> Result<(), String> {
     let mut map_state = graphics_utils::MapState::NORMAL;
     let mut main_menu_on = true;
     let mut settings_menu_on = false;
-
     let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
+
+    // network stuff
+
+    let (sender, receiver): (mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel();
+    thread::spawn(move || {
+    let mut rng = rand::thread_rng();
+        while true {
+            let mut msg: Option<String> = None;
+            if update_data {
+                msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::DATA, x: 0, y: 0}).unwrap());
+            }
+            
+            else if !update_data {
+                let mut chunk_x = 0;
+                let mut chunk_y = 0;
+                match world_data {
+
+                    Some(ref wd) => {chunk_x = (camera.x / TILE_SIZE/wd.chunk_size as f32) as i32;
+                                    chunk_y = (camera.y / TILE_SIZE/wd.chunk_size as f32) as i32},
+                    None => ()
+                }
+                chunk_x += chunk_fetch_x;
+                chunk_y += chunk_fetch_y;
+                chunk_fetch_x += 1;
+
+
+                if chunk_fetch_x > chunk_fetch_width {
+                    
+                    chunk_fetch_x = -1;
+                    chunk_fetch_y += 1;
+                }
+                if chunk_fetch_y > chunk_fetch_height {
+                    chunk_fetch_x = -1;
+                    chunk_fetch_y = -1;
+                }
+                match world_data {
+
+
+                
+                Some(ref wd) => {
+                if chunk_fetch_x > wd.width as i32 -1 {
+                    chunk_fetch_x = wd.width as i32 - 1;
+                }
+
+                if chunk_fetch_y > wd.height as i32 -1 {
+                    chunk_fetch_y = wd.height as i32 - 1;
+                }
+                if chunk_fetch_x < 0 as i32{
+                    chunk_fetch_x = -1;
+                }
+
+                if chunk_fetch_y < 0 as i32{
+                    chunk_fetch_y = -1;
+                }
+                }
+                None => {}
+                }
+                if chunk_x < 0 {
+                    chunk_x = 0;
+                }
+                if chunk_y < 0 {
+                    chunk_y = 0;
+                }
+                match world_data {
+                    Some(ref d) => {
+                    if chunk_x > d.width as i32-1 {
+                        chunk_x = d.width as i32 - 1;
+                    }
+                    
+
+                    if chunk_y > d.height as i32-1 {
+                         chunk_y = d.height as i32- 1;
+                    }
+                }
+                    
+                    None => ()
+                }
+                msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::CHUNK, x: chunk_x, y: chunk_y}).unwrap());
+            }
+            match msg {
+                Some(m) => stream.write(m.as_bytes()),
+                None => stream.write("No request".as_bytes()) 
+            };
+
+            // receive data from server
+            
+            let mut buf = [0; 65536];
+            match stream.read(&mut buf) {
+                Ok(_v) => _v,
+                Err(_v) => 0
+            };
+            let res = match from_utf8(&buf) {
+                Ok(v) => v,
+                Err(e) => panic!("Invalid sequence: {}", e),
+            }.replace("\0", "").replace("\n", "").to_string();
+            let mut response: Option<world_structs::WorldResponse> =  None;
+            if update_data {
+                            
+                world_data = Some(match serde_json::from_str(&res) {
+                     Ok(v) => v,
+                     Err(e) => panic!("Failed to get world data"),
+                });
+            }
+            else {
+                response = Some(match serde_json::from_str(&res) {
+                     Ok(v) => v,
+                     Err(e) => world_structs::WorldResponse{
+                         chunk: world_structs::Chunk{
+                             points: vec![],
+                             name: "error".to_string(),
+                             id: rng.gen_range(0..999999),    
+                         },
+                        entities: vec![],
+                        valid: false
+                     },
+                });
+                if !response.as_ref().unwrap().valid {
+                    continue;
+                    println!("jumped");
+                }
+                /*let mut chunk_already_in_chunks = false;
+                for chnk in &chunks {
+                    match response {
+                    Some(ref r) => {if chnk.points[0][0].x == r.chunk.points[0][0].x && chnk.points[0][0].y == r.chunk.points[0][0].y{
+                       // chunk_already_in_chunks = true;
+                    }
+
+
+                        }
+                    None => ()
+                    };
+                }*/
+                    match response {
+                    Some(ref r) => {
+                        
+                        let mut index_option = chunks.iter().position(|x| x.id == r.chunk.id);
+                        if index_option != None {
+                            let index = index_option.unwrap();
+                            chunks.remove(index);
+                        }
+                        chunks.push(r.chunk.clone())
+                        },
+                    None => ()
+                }
+                //let mut filtered_entities = Vec::new();
+                match response {
+                    Some(ref mut  r) => {
+                        for re in r.entities.clone() {
+                                if !entities.is_empty() {
+                                    let mut index_option = entities.iter().position(|x| x.id == re.id);
+                                    if index_option != None {
+                                        let index = index_option.unwrap();
+                                        entities.remove(index);
+                                    }
+
+                            }
+                        }
+                        entities.append(&mut r.entities);
+                    },
+                    None => ()
+                }
+                //for e in filtered_entities {
+
+               // }
+                
+            }
+                update_data = false;
+                sender.send((world_data.clone(), chunks.clone(), entities.clone())).unwrap();
+        }
+    });
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
+    compare_time = SystemTime::now();
     let delta_as_millis = delta.as_millis();
         if delta.as_millis()/10 != 0 {
          //   println!("FPS: {}", 100 / (delta.as_millis()/10));
@@ -364,166 +537,7 @@ fn main_loop() -> Result<(), String> {
 
         }
         else {
-        let mut msg: Option<String> = None;
-        if update_data {
-            msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::DATA, x: 0, y: 0}).unwrap());
-        }
 
-        else if !update_data {
-            let mut chunk_x = 0;
-            let mut chunk_y = 0;
-            match world_data {
-
-                Some(ref wd) => {chunk_x = (camera.x / TILE_SIZE/wd.chunk_size as f32) as i32;
-                                chunk_y = (camera.y / TILE_SIZE/wd.chunk_size as f32) as i32},
-                None => ()
-            }
-            chunk_x += chunk_fetch_x;
-            chunk_y += chunk_fetch_y;
-            chunk_fetch_x += 1;
-
-
-            if chunk_fetch_x > chunk_fetch_width {
-                
-                chunk_fetch_x = -1;
-                chunk_fetch_y += 1;
-            }
-            if chunk_fetch_y > chunk_fetch_height {
-                chunk_fetch_x = -1;
-                chunk_fetch_y = -1;
-            }
-            match world_data {
-
-
-            
-            Some(ref wd) => {
-            if chunk_fetch_x > wd.width as i32 -1 {
-                chunk_fetch_x = wd.width as i32 - 1;
-            }
-
-            if chunk_fetch_y > wd.height as i32 -1 {
-                chunk_fetch_y = wd.height as i32 - 1;
-            }
-            if chunk_fetch_x < 0 as i32{
-                chunk_fetch_x = -1;
-            }
-
-            if chunk_fetch_y < 0 as i32{
-                chunk_fetch_y = -1;
-            }
-            }
-            None => {}
-            }
-            if chunk_x < 0 {
-                chunk_x = 0;
-            }
-            if chunk_y < 0 {
-                chunk_y = 0;
-            }
-            match world_data {
-                Some(ref d) => {
-                if chunk_x > d.width as i32-1 {
-                    chunk_x = d.width as i32 - 1;
-                }
-                
-
-                if chunk_y > d.height as i32-1 {
-                     chunk_y = d.height as i32- 1;
-                }
-            }
-                
-                None => ()
-            }
-            msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::CHUNK, x: chunk_x, y: chunk_y}).unwrap());
-        }
-        match msg {
-            Some(m) => stream.write(m.as_bytes()),
-            None => stream.write("No request".as_bytes()) 
-        };
-
-        // receive data from server
-        
-        let mut buf = [0; 65536];
-        match stream.read(&mut buf) {
-            Ok(_v) => _v,
-            Err(_v) => 0
-        };
-        let res = match from_utf8(&buf) {
-            Ok(v) => v,
-            Err(e) => panic!("Invalid sequence: {}", e),
-        }.replace("\0", "").replace("\n", "").to_string();
-        let mut response: Option<world_structs::WorldResponse> =  None;
-        if update_data {
-                        
-            world_data = Some(match serde_json::from_str(&res) {
-                 Ok(v) => v,
-                 Err(e) => panic!("Failed to get world data"),
-            });
-        }
-        else {
-            response = Some(match serde_json::from_str(&res) {
-                 Ok(v) => v,
-                 Err(e) => world_structs::WorldResponse{
-                     chunk: world_structs::Chunk{
-                         points: vec![],
-                         name: "error".to_string(),
-                         id: rng.gen_range(0..999999),    
-                     },
-                    entities: vec![],
-                    valid: false
-                 },
-            });
-            if !response.as_ref().unwrap().valid {
-                continue;
-                println!("jumped");
-            }
-            /*let mut chunk_already_in_chunks = false;
-            for chnk in &chunks {
-                match response {
-                Some(ref r) => {if chnk.points[0][0].x == r.chunk.points[0][0].x && chnk.points[0][0].y == r.chunk.points[0][0].y{
-                   // chunk_already_in_chunks = true;
-                }
-
-
-                    }
-                None => ()
-                };
-            }*/
-                match response {
-                Some(ref r) => {
-                    
-                    let mut index_option = chunks.iter().position(|x| x.id == r.chunk.id);
-                    if index_option != None {
-                        let index = index_option.unwrap();
-                        chunks.remove(index);
-                    }
-                    chunks.push(r.chunk.clone())
-                    },
-                None => ()
-            }
-            //let mut filtered_entities = Vec::new();
-            match response {
-                Some(ref mut  r) => {
-                    for re in r.entities.clone() {
-                            if !entities.is_empty() {
-                                let mut index_option = entities.iter().position(|x| x.id == re.id);
-                                if index_option != None {
-                                    let index = index_option.unwrap();
-                                    entities.remove(index);
-                                }
-
-                        }
-                    }
-                    entities.append(&mut r.entities);
-                },
-                None => ()
-            }
-            //for e in filtered_entities {
-
-           // }
-            
-        }
-            update_data = false;
 
         if w {
             camera.mov(graphics_utils::MoveDirection::UP, delta_as_millis);
@@ -546,9 +560,12 @@ fn main_loop() -> Result<(), String> {
             zoom_button_minus = false;
         }
          
-
+        world_data_state = receiver.recv().unwrap().0;
+        chunks_state = Vec::new();//receiver.recv().unwrap().1;
+        entities_state = Vec::new();//receiver.recv().unwrap().2;
+        println!("{}", delta_as_millis);
         // iterate chunks
-        for chunk_in_chunks in chunks.iter() {
+        for chunk_in_chunks in chunks_state.iter() {
             if !chunk_graphics_data.contains_key(&chunk_in_chunks.name) {
             chunk_graphics_data.insert(
                 chunk_in_chunks.name.clone(),
@@ -601,8 +618,8 @@ fn main_loop() -> Result<(), String> {
                 }}
 
         //render entities
-        entities.sort_by(|a,b| a.id.cmp(&b.id));
-        for entity in &entities {
+        entities_state.sort_by(|a,b| a.id.cmp(&b.id));
+        for entity in &entities_state {
             let tx_ant = (entity.x) * camera.zoom - camera.x;
             let ty_ant = (entity.y) * camera.zoom - camera.y;
             let tx_tree = (entity.x + TILE_SIZE/2.0) * camera.zoom - camera.x;
@@ -684,12 +701,12 @@ fn main_loop() -> Result<(), String> {
         let mut hovering_entity = false;
         if mouse_not_moved_for > hover_time {
 
-            match world_data {
+            match world_data_state {
                 Some(ref wd) => {
 
                     let e_x = mouse_x;
                     let e_y = mouse_y;
-                    for e in &entities {
+                    for e in &entities_state {
                         if e_x > e.x  && e_x < e.x + 16.0 && e_y > e.y && e_y < e.y+ 16.0{
                             hovering_entity = true;
                             hovered_entity = Some(e.clone());
@@ -699,7 +716,7 @@ fn main_loop() -> Result<(), String> {
                     
                     let tile_x = (((mouse_x) / TILE_SIZE) as f32).floor();
                     let tile_y = (((mouse_y) / TILE_SIZE) as f32).floor();
-                    for c in &chunks {
+                    for c in &chunks_state {
                         for row in &c.points {
                             for p in row {
                             if tile_x == p.x && tile_y == p.y {
@@ -775,8 +792,8 @@ fn main_loop() -> Result<(), String> {
         // render overlays
 
         if map_state == graphics_utils::MapState::POLITICAL {
-            for c in &chunks {
-                match world_data {
+            for c in &chunks_state {
+                match world_data_state {
 
                     Some(ref wd) => {
                     
@@ -864,8 +881,7 @@ fn main_loop() -> Result<(), String> {
             map_state = graphics_utils::MapState::POLITICAL;
         }
         canvas.present();
-        compare_time = SystemTime::now();
-        thread::sleep(time::Duration::from_millis(5));
+        thread::sleep(time::Duration::from_millis(10));
 
        }
         
