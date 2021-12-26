@@ -20,3 +20,8 @@ Clone this repo, install dependencies from ```other_dependencies.txt```, and the
 
 ### Other ways coming soon...
 
+
+## Credits
+
+Programming: Eino Korte
+Art: Henna-Mari Vasama
