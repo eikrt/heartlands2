@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use rand::Rng;
 const TARGET_SIZE: f32 = 8.0;
+const VICINITY_SIZE: f32 = 32.0;
+const INTERACTION_SIZE: f32 = 8.0;
 #[derive(PartialEq)]
 #[derive(Clone,Serialize, Deserialize, Debug)]
 pub enum ItemType {
@@ -210,23 +212,76 @@ impl World {
        return filtered_entities; 
 
     }
+    pub fn get_entities_in_range(&self, x: f32, y: f32, width: f32, height: f32) -> Vec<Entity> {
+       let mut filtered_entities = Vec::new();
+       for e in self.entities.iter() {
+           let rx = e.x / self.world_data.tile_size as f32;
+           let ry = e.y / self.world_data.tile_size as f32;
+           let l_u_corner_x = x;
+           let l_u_corner_y = y;
+           let r_b_corner_x = x + width;
+           let r_b_corner_y = y + height;
+           if rx >= l_u_corner_x && rx <= r_b_corner_x && ry >= l_u_corner_y && ry <= r_b_corner_y { 
+               filtered_entities.push(e.clone());
+           }
+       }
+       return filtered_entities; 
+
+    }
 
     pub fn update_entities(&mut self) {
          
         let mut rng = rand::thread_rng();
+        let entities_clone = self.entities.clone();
         for e in self.entities.iter_mut() {
             if e.entity_type == EntityType::WORKER_ANT {
-                if e.current_action == ActionType::IDLE && e.target_x == 0.0 && e.target_y == 0.0 {
+                if e.current_action == ActionType::IDLE && e.backpack_item == ItemType::FRUIT {
+
+                for v in entities_clone.iter() {
+                        let dist_from_entity = ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
+                        if e.backpack_item == ItemType::FRUIT || e.backpack_item == ItemType::MEAT {
+                            if dist_from_entity < INTERACTION_SIZE {
+                                e.backpack_item = ItemType::NOTHING;
+                                e.current_action = ActionType::IDLE;
+                                e.target_x = 0.0;
+                                e.target_y = 0.0;
+                                break;
+                            }
+                    }
+                }
+            }
+                else if e.current_action == ActionType::IDLE && e.target_x == 0.0 && e.target_y == 0.0 {
                     e.current_action = ActionType::EXPLORE;
                     e.target_x = e.x + rng.gen_range(-256.0..256.0);
                     e.target_y = e.y + rng.gen_range(-256.0..256.0);
                 }
-            }
             if e.current_action == ActionType::EXPLORE {
                 if e.x > e.target_x - TARGET_SIZE && e.y > e.target_y - TARGET_SIZE && e.x < e.target_x + TARGET_SIZE  && e.y < e.target_y + TARGET_SIZE {
-                    e.current_action == ActionType::IDLE;
+                    e.current_action = ActionType::IDLE;
                     e.target_x = 0.0;
                     e.target_y = 0.0;
+                }
+                
+                for v in entities_clone.iter() {
+
+                    let dist_from_entity = ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
+                    if dist_from_entity < VICINITY_SIZE {
+                        if v.entity_type == EntityType::APPLETREE {
+                            e.current_action = ActionType::FETCH_FOOD;
+                            e.target_x = v.x;
+                            e.target_y = v.y;
+
+                        }
+                        if dist_from_entity < INTERACTION_SIZE {
+                            if v.entity_type == EntityType::APPLETREE {
+                                e.backpack_item = ItemType::FRUIT;
+                                e.current_action = ActionType::IDLE;
+                                e.target_x = 0.0;
+                                e.target_y = 0.0;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             if e.current_action == ActionType::IDLE {
@@ -239,5 +294,6 @@ impl World {
                 e.mov();
             }
     }
+}
 }
 }

@@ -661,6 +661,11 @@ fn main_loop() -> Result<(), String> {
                 graphics_utils::render(&mut canvas, &ant_drone_texture, position, sprite_16, camera.zoom);
 
             }
+            else if entity.entity_type == world_structs::EntityType::MECHANT {
+                let position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2,ty_ant as i32 - sprite_16.height() as i32 / 2);
+                graphics_utils::render(&mut canvas, &mechant_texture, position, sprite_16, camera.zoom);
+
+            }
             else if entity.entity_type == world_structs::EntityType::QUEEN_ANT {
                 let position = Point::new(tx_ant as i32 - sprite_32.width() as i32 / 2,ty_ant as i32 - sprite_32.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &ant_queen_texture, position, sprite_32, camera.zoom);
@@ -751,7 +756,7 @@ fn main_loop() -> Result<(), String> {
                     Some(he) => {
                         let mut name = descriptions_for_entities.get(&he.entity_type).unwrap();
                         let mut title = "".to_string();
-                        if he.entity_type == world_structs::EntityType::WORKER_ANT || he.entity_type == world_structs::EntityType::DRONE_ANT ||he.entity_type == world_structs::EntityType::SOLDIER_ANT || he.entity_type == world_structs::EntityType::QUEEN_ANT   {
+                        if he.entity_type == world_structs::EntityType::WORKER_ANT || he.entity_type == world_structs::EntityType::DRONE_ANT ||he.entity_type == world_structs::EntityType::SOLDIER_ANT || he.entity_type == world_structs::EntityType::QUEEN_ANT || he.entity_type == world_structs::EntityType::MECHANT  {
                             title = he.faction;
                             title.push_str("ese ");
                         }
