@@ -7,6 +7,13 @@ use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use std::str::from_utf8;
 use serde_json;
+fn update_entities(world: Arc<Mutex<world_structs::World>>){
+    let mut world_clone = world.lock().unwrap();
+    while true {
+        world_clone.update_entities();
+
+    }
+}
 fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
 
     let mut entities: Vec<world_structs::Entity> = Vec::new();
@@ -102,8 +109,8 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
                 }
                 update_political_change = 0.0;
             }
-            world_clone.update_entities();
 
+        world_clone.update_entities();
             // end of tick stuff
             compare_time = SystemTime::now();
 
@@ -117,22 +124,20 @@ fn handle(mut stream: TcpStream, world: Arc<Mutex<world_structs::World>>) {
         }
     } {}
 }
-/*fn move(e: &mut world_structs::Entity) {
-    e.x += 0.1;
-}*/
 pub fn serve(world: world_structs::World, _port: i32) {
-    thread::spawn(move || {
         let listener = TcpListener::bind("0.0.0.0:5000").unwrap();
         println!("Server listening on port 5000");
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
-
-                    let world_clone = world.clone();
+                    let world_clone = Arc::new(Mutex::new(world.clone()));
+                    let mut arc_clone = Arc::clone(&world_clone);
                     println!("New connection with: {}", stream.peer_addr().unwrap());
-                    thread::spawn(move || {
-                        handle(stream, Arc::new(Mutex::new(world_clone)));
+                    let t1 = thread::spawn(move || {
+                        handle(stream, arc_clone);
                     });
+                    arc_clone = Arc::clone(&world_clone);
+
                 }
                 Err(e) => {
                     println!("Error: {}", e);
@@ -140,6 +145,4 @@ pub fn serve(world: world_structs::World, _port: i32) {
             }
         }
         drop(listener); 
-
-    });
 }
