@@ -86,7 +86,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::HOVERED,
         previous_status: graphics_utils::ButtonStatus::HOVERED,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 64.0,
+        y: 64.0 + 32.0,
         width: 128.0,
         height: 32.0
     };
@@ -94,7 +94,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::HOVERED,
         previous_status: graphics_utils::ButtonStatus::HOVERED,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 128.0,
+        y: 128.0 + 32.0,
         width: 128.0,
         height: 32.0
     };
@@ -102,7 +102,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::HOVERED,
         previous_status: graphics_utils::ButtonStatus::HOVERED,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 192.0,
+        y: 192.0 + 32.0,
         width: 128.0,
         height: 32.0
     };
@@ -327,6 +327,9 @@ fn main_loop() -> Result<(), String> {
                 graphics_utils::render(&mut canvas, &menu_button_texture, position, sprite_128x32, 1.0);
             }
             // render texts
+            let title_text = graphics_utils::get_text("MECHANTS".to_string(), Color::RGBA(255, 255, 255, 255), desc_font_size, &font, &texture_creator).unwrap();
+            let position = Point::new((SCREEN_WIDTH / 2 - 42) as i32, 32 as i32);
+            graphics_utils::render_text(&mut canvas, &title_text.text_texture, position, title_text.text_sprite);
             let text_margin = 4;
             let play_text = graphics_utils::get_text("Play".to_string(), Color::RGBA(255, 255, 255, 255), desc_font_size, &font, &texture_creator).unwrap();
             let position = Point::new(play_button.x as i32 + text_margin, play_button.y as i32 + text_margin);
