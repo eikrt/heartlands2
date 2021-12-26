@@ -5,6 +5,7 @@
 ## Summary
 
 Mechants is application with three functionalities:
+
     - world generation
     - socket server to the world
     - client
