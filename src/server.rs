@@ -6,6 +6,7 @@ use std::io::{Read, Write};
 use std::time::{SystemTime};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use tokio::time::Duration;
 use tokio::sync::mpsc;
 use std::str::from_utf8;
 use serde_json;
@@ -144,7 +145,8 @@ pub async fn serve(mut world: world_structs::World, _port:i32) {
 
     let (mut sender, mut receiver) = mpsc::channel(100);
     let mut sender2 = sender.clone();
-        tokio::spawn(async move {
+    let mut world_from = world.clone();
+        tokio::task::spawn(async move {
             while true {
               world.update_entities();
               sender.send(world.clone()).await;
@@ -154,13 +156,22 @@ pub async fn serve(mut world: world_structs::World, _port:i32) {
         println!("Running socket server...");
         while let Ok((mut tcp_stream, _socket_addr)) = tcp_listener.accept().await {
             println!("Client connected");
-            while let Some(message) = receiver.recv().await {
+            //while let Some(message) = receiver.recv().await {
 
             
 
-                let mut data = [0; 65536];
                 loop {
-                    let world_from = receiver.recv().await.unwrap();
+
+                let mut data = [0; 65536];
+                    match tokio::time::timeout(Duration::from_millis(14), receiver.recv()).await {
+                        Ok(result) => match result {
+                            Some(r) => {
+                                world_from = r;
+                            },
+                            None => (),
+                        },
+                        Err(_) => ()//println!("Timeout: no response in 10 milliseconds."),
+                    };
 
                     let n = match tcp_stream.read(&mut data).await {
                         Ok(n) if n == 0 => return,
@@ -212,7 +223,7 @@ pub async fn serve(mut world: world_structs::World, _port:i32) {
                         return;
                     }*/
                 }
-            }
+            //}
         }
     }
 }

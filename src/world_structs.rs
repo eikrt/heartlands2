@@ -4,6 +4,19 @@ use rand::Rng;
 const TARGET_SIZE: f32 = 8.0;
 const VICINITY_SIZE: f32 = 32.0;
 const INTERACTION_SIZE: f32 = 8.0;
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+#[derive(PartialEq)]
+#[derive(Eq)]
+#[derive(Hash)]
+#[serde(tag = "CategoryType")]
+pub enum CategoryType {
+    ANT,
+    TREE,
+    VEGETATION,
+    ANIMAL,
+
+}
 #[derive(PartialEq)]
 #[derive(Clone,Serialize, Deserialize, Debug)]
 pub enum ItemType {
@@ -128,6 +141,7 @@ pub struct Entity {
     pub stopped: bool,
     pub id: i32,
     pub entity_type: EntityType,
+    pub category_type: CategoryType,
     pub faction: String, 
     pub faction_id: i32,
     pub current_action: ActionType,
@@ -284,9 +298,7 @@ impl World {
                     }
                 }
             }
-            if e.current_action == ActionType::IDLE {
-                e.idle_mov();
-            }
+
             else if e.current_action == ActionType::FETCH_FOOD {
                 e.mov();
             }
@@ -294,6 +306,12 @@ impl World {
                 e.mov();
             }
     }
-}
-}
-}
+        if e.category_type == CategoryType::ANT {
+            if e.current_action == ActionType::IDLE {
+                e.idle_mov();
+            }
+
+            }
+}}}
+
+

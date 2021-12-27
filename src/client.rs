@@ -65,6 +65,13 @@ async fn main_loop() -> Result<(), String> {
         zoom_speed: 0.05,
         move_speed: 20.0
     };
+    let mut camera_state = graphics_utils::Camera{
+        x: 0.0,
+        y: 0.0,
+        zoom: 1.0,
+        zoom_speed: 0.05,
+        move_speed: 20.0
+    };
 
     let bg_color = Color::RGB(0, 0, 0);
     //let mut stream = TcpStream::connect("localhost:5000").unwrap();
@@ -189,7 +196,6 @@ async fn main_loop() -> Result<(), String> {
     let mut camera_change = 0;
     let camera_time = 500;
 
-
   //  let (mut sender, mut receiver): (mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel(100);
     let (mut sender_to_thread, mut receiver_to_thread): (mpsc::Sender<graphics_utils::Camera>, mpsc::Receiver<graphics_utils::Camera>) =  mpsc::channel(100);
     let (mut sender, mut receiver) = mpsc::channel(100);
@@ -198,8 +204,15 @@ async fn main_loop() -> Result<(), String> {
     tokio::task::spawn(async move {
     let mut connection = TcpStream::connect("localhost:5000").await.unwrap();
         loop {
-        
-            let camera_state = receiver_to_thread.recv().await.unwrap();
+            match tokio::time::timeout(Duration::from_millis(14), receiver_to_thread.recv()).await {
+                Ok(result) => match result {
+                    Some(r) => {
+                        camera_state = r;
+                    },
+                    None => (),
+                },
+                Err(_) => ()//println!("Timeout: no response in 10 milliseconds."),
+            };
             let mut msg: Option<String> = None;
             if update_data {
                 msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::DATA, x: 0, y: 0}).unwrap());
@@ -303,7 +316,9 @@ async fn main_loop() -> Result<(), String> {
             else {
                 response = Some(match serde_json::from_str(&res) {
                      Ok(v) => v,
-                     Err(e) => world_structs::WorldResponse{
+                     Err(e) => {
+                        //println!("Error");
+                         world_structs::WorldResponse{
                          chunk: world_structs::Chunk{
                              points: vec![],
                              name: "error".to_string(),
@@ -311,24 +326,13 @@ async fn main_loop() -> Result<(), String> {
                          },
                         entities: vec![],
                         valid: false
-                     },
+                     }},
                 });
                 if !response.as_ref().unwrap().valid {
+
+                    //println!("jumped");
                     continue;
-                    println!("jumped");
                 }
-                /*let mut chunk_already_in_chunks = false;
-                for chnk in &chunks {
-                    match response {
-                    Some(ref r) => {if chnk.points[0][0].x == r.chunk.points[0][0].x && chnk.points[0][0].y == r.chunk.points[0][0].y{
-                       // chunk_already_in_chunks = true;
-                    }
-
-
-                        }
-                    None => ()
-                    };
-                }*/
                     match response {
                     Some(ref r) => {
                         
@@ -341,7 +345,6 @@ async fn main_loop() -> Result<(), String> {
                         },
                     None => ()
                 }
-                //let mut filtered_entities = Vec::new();
                 match response {
                     Some(ref mut  r) => {
                         for re in r.entities.clone() {
@@ -358,9 +361,6 @@ async fn main_loop() -> Result<(), String> {
                     },
                     None => ()
                 }
-                //for e in filtered_entities {
-
-               // }
                 
             }
                 update_data = false;
