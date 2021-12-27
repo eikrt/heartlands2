@@ -16,7 +16,9 @@ The program is implemented in Rust with SDL graphics library.
 
 ### Compile from source
 
-Clone this repo, install dependencies from ```other_dependencies.txt```, and then ```cargo run```. You should see the program running now.
+Clone this repo, install dependencies from ```other_dependencies.txt```, and then ```cargo run --bin server``` and ```cargo run --bin client``` in separate shells. You should see the program running now.
+
+
 
 ### Other ways coming soon...
 
