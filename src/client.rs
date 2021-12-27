@@ -186,16 +186,20 @@ async fn main_loop() -> Result<(), String> {
     let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
 
     // network stuff
+    let mut camera_change = 0;
+    let camera_time = 500;
 
 
-
+  //  let (mut sender, mut receiver): (mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel(100);
+    let (mut sender_to_thread, mut receiver_to_thread): (mpsc::Sender<graphics_utils::Camera>, mpsc::Receiver<graphics_utils::Camera>) =  mpsc::channel(100);
     let (mut sender, mut receiver) = mpsc::channel(100);
-    let (mut sender_to_thread, mut receiver_to_thread) = mpsc::channel(99);
+    //let (mut sender_to_thread, mut receiver_to_thread) = mpsc::channel(100);
     //(mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel();
     tokio::task::spawn(async move {
-    let camera_state = receiver_to_thread.recv().await.unwrap();
     let mut connection = TcpStream::connect("localhost:5000").await.unwrap();
         loop {
+        
+            let camera_state = receiver_to_thread.recv().await.unwrap();
             let mut msg: Option<String> = None;
             if update_data {
                 msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::DATA, x: 0, y: 0}).unwrap());
@@ -206,8 +210,8 @@ async fn main_loop() -> Result<(), String> {
                 let mut chunk_y = 0;
                 match world_data {
 
-                    Some(ref wd) => {chunk_x = (camera.x / TILE_SIZE/wd.chunk_size as f32) as i32;
-                                    chunk_y = (camera.y / TILE_SIZE/wd.chunk_size as f32) as i32},
+                    Some(ref wd) => {chunk_x = (camera_state.x / TILE_SIZE/wd.chunk_size as f32) as i32;
+                                    chunk_y = (camera_state.y / TILE_SIZE/wd.chunk_size as f32) as i32},
                     None => ()
                 }
                 chunk_x += chunk_fetch_x;
@@ -582,16 +586,21 @@ async fn main_loop() -> Result<(), String> {
         match tokio::time::timeout(Duration::from_millis(14), receiver.recv()).await {
             Ok(result) => match result {
                 Some(r) => {
-                    //println!("result");
                     world_data_state = r.0;
                     chunks_state = r.1;
                     entities_state = r.2;
+
                 },
                 None => (),
             },
             Err(_) => ()//println!("Timeout: no response in 10 milliseconds."),
         };
-        sender.send(camera).await;
+        camera_change += delta_as_millis as i32;
+        if camera_change > camera_time {
+            sender_to_thread.send(camera.clone()).await;
+            camera_change = 0;
+        }
+        //println!("{}", delta_as_millis);
         //world_data_state = receiver.recv().await.unwrap().0;
         //chunks_state = receiver.recv().await.unwrap().1;
         //entities_state = receiver.recv().await.unwrap().2;
@@ -652,12 +661,22 @@ async fn main_loop() -> Result<(), String> {
         //render entities
         entities_state.sort_by(|a,b| a.id.cmp(&b.id));
         for entity in &entities_state {
+            let tx = (entity.x) * camera.zoom - camera.x;
+            let ty = (entity.y) * camera.zoom - camera.y;
             let tx_ant = (entity.x) * camera.zoom - camera.x;
             let ty_ant = (entity.y) * camera.zoom - camera.y;
             let tx_tree = (entity.x + TILE_SIZE/2.0) * camera.zoom - camera.x;
             let ty_tree = (entity.y - TILE_SIZE/4.0) * camera.zoom - camera.y;
             canvas.set_draw_color(Color::RGB(0,0,0));
             
+            if tx < -64.0 || ty < -64.0 {
+                continue;
+            }
+            
+            if tx > SCREEN_WIDTH as f32 || ty > SCREEN_HEIGHT as f32 {
+
+                continue;
+            }
 
             // trees
             if entity.entity_type == world_structs::EntityType::OAK {
