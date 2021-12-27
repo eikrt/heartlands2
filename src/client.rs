@@ -9,13 +9,16 @@ use sdl2::image::{LoadSurface,LoadTexture, InitFlag};
 use sdl2::surface::{Surface};
 use sdl2::ttf::Font;
 use std::collections::HashMap;
-use std::net::{TcpStream};
+use tokio::net::{TcpStream};
 use std::io::{Read, Write};
 use std::option::{Option};
 use std::iter::FromIterator;
 use std::str::from_utf8;
 use std::{thread, time};
-use std::sync::mpsc;
+use tokio::sync::mpsc;
+use tokio::io::BufReader;
+use tokio::io::AsyncReadExt;
+use tokio::io::AsyncWriteExt;
 use std::time::{SystemTime};
 use crate::world_structs;
 use crate::graphics_utils;
@@ -26,7 +29,7 @@ const SCREEN_WIDTH: u32 = 720;
 const SCREEN_HEIGHT: u32 = 480;
 const TILE_SIZE: f32 = 16.0;
 
-fn main_loop() -> Result<(), String> {
+async fn main_loop() -> Result<(), String> {
 
     // sdl stuff
     let sdl_context = sdl2::init()?;
@@ -59,7 +62,8 @@ fn main_loop() -> Result<(), String> {
         move_speed: 20.0
     };
     let bg_color = Color::RGB(0, 0, 0);
-    let mut stream = TcpStream::connect("localhost:5000").unwrap();
+    //let mut stream = TcpStream::connect("localhost:5000").unwrap();
+    
     let mut running = true ; 
     // controls
     let mut w = false;
@@ -178,10 +182,14 @@ fn main_loop() -> Result<(), String> {
 
     // network stuff
 
-    let (sender, receiver): (mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel();
-    thread::spawn(move || {
-    let mut rng = rand::thread_rng();
-        while true {
+
+
+    let (mut sender, mut receiver) = mpsc::channel(100);
+    let sender2 = sender.clone();
+    //(mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel();
+    tokio::spawn(async move {
+    let mut connection = TcpStream::connect("localhost:5000").await.unwrap();
+        loop {
             let mut msg: Option<String> = None;
             if update_data {
                 msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::DATA, x: 0, y: 0}).unwrap());
@@ -255,17 +263,21 @@ fn main_loop() -> Result<(), String> {
                 msg = Some(serde_json::to_string(&world_structs::WorldRequest {req_type: world_structs::RequestType::CHUNK, x: chunk_x, y: chunk_y}).unwrap());
             }
             match msg {
-                Some(m) => stream.write(m.as_bytes()),
-                None => stream.write("No request".as_bytes()) 
+                Some(m) => {
+                    connection.write_all(m.as_bytes()).await.unwrap()
+                },
+                None => connection.write_all("No request".as_bytes()).await.unwrap() 
             };
 
             // receive data from server
             
             let mut buf = [0; 65536];
-            match stream.read(&mut buf) {
+            /*match stream.read(&mut buf) {
+
                 Ok(_v) => _v,
                 Err(_v) => 0
-            };
+            };*/
+            connection.read(&mut buf).await.unwrap();
             let res = match from_utf8(&buf) {
                 Ok(v) => v,
                 Err(e) => panic!("Invalid sequence: {}", e),
@@ -285,7 +297,7 @@ fn main_loop() -> Result<(), String> {
                          chunk: world_structs::Chunk{
                              points: vec![],
                              name: "error".to_string(),
-                             id: rng.gen_range(0..999999),    
+                             id: 0,    
                          },
                         entities: vec![],
                         valid: false
@@ -342,9 +354,10 @@ fn main_loop() -> Result<(), String> {
                 
             }
                 update_data = false;
-                sender.send((world_data.clone(), chunks.clone(), entities.clone())).unwrap();
+                sender.send((world_data.clone(), chunks.clone(), entities.clone())).await;
         }
     });
+
     while running  {
     let delta = SystemTime::now().duration_since(compare_time).unwrap();
     compare_time = SystemTime::now();
@@ -560,9 +573,9 @@ fn main_loop() -> Result<(), String> {
             zoom_button_minus = false;
         }
          
-        world_data_state = receiver.recv().unwrap().0;
-        chunks_state = Vec::new();//receiver.recv().unwrap().1;
-        entities_state = Vec::new();//receiver.recv().unwrap().2;
+        world_data_state = receiver.recv().await.unwrap().0;
+        chunks_state = receiver.recv().await.unwrap().1;
+        entities_state = receiver.recv().await.unwrap().2;
         println!("{}", delta_as_millis);
         // iterate chunks
         for chunk_in_chunks in chunks_state.iter() {
@@ -890,10 +903,6 @@ fn main_loop() -> Result<(), String> {
         println!("Socket connection ended.");
     Ok(())
 }
-pub fn run() {
-
-    match main_loop() {
-        Ok(_) => println!("Running..."),
-        Err(_) => println!("Error:")
-    }
+pub async fn run() {
+    main_loop().await;
 }

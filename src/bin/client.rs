@@ -1,4 +1,5 @@
 use mechants::client;
-fn main() {
-    client::run();
+#[tokio::main]
+async fn main() {
+    client::run().await;
 }

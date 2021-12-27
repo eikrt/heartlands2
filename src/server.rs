@@ -139,29 +139,80 @@ use serde_json;
         }
 }*/
 */
-async fn serve(world: world_structs::World, _port:i32) {
-    if let Ok(mut tcp_listener) = TcpListener::bind("127.0.0.1:8080").await {
+#[tokio::main]
+pub async fn serve(mut world: world_structs::World, _port:i32) {
+
+    let (mut sender, mut receiver) = mpsc::channel(100);
+    let mut sender2 = sender.clone();
+        tokio::spawn(async move {
+            while true {
+              world.update_entities();
+              sender.send(world.clone()).await;
+            }
+        });
+    if let Ok(mut tcp_listener) = TcpListener::bind("127.0.0.1:5000").await {
+        println!("Running socket server...");
         while let Ok((mut tcp_stream, _socket_addr)) = tcp_listener.accept().await {
-            tokio::spawn(async move {
-                let mut buf = [0; 1024];
-                // In a loop, read data from the socket and write the data back.
+            println!("Client connected");
+            while let Some(message) = receiver.recv().await {
+
+            
+
+                let mut data = [0; 65536];
                 loop {
-                    let n = match tcp_stream.read(&mut buf).await {
-                        // socket closed
+                    let world_from = receiver.recv().await.unwrap();
+
+                    let n = match tcp_stream.read(&mut data).await {
                         Ok(n) if n == 0 => return,
-                        Ok(n) => n,
+                        Ok(n) => {
+                                    n
+                        },
                         Err(e) => {
-                            eprintln!("failed to read from socket; err = {:?}", e);
+                            println!("Failed to read from socket; err = {:?}", e);
                             return;
                         }
                     };
-                    // Write the data back
-                    if let Err(e) = tcp_stream.write_all(&buf[0..n]).await {
-                        eprintln!("failed to write to socket; err = {:?}", e);
-                        return;
+
+                    let res = match from_utf8(&data) {
+                        Ok(_v) => _v,
+                        Err(e) => panic!("Invalid sequence: {}", e),
+                    }.replace("\0", "").replace("\n", "").to_string();
+                    let res_obj: world_structs::WorldRequest = match serde_json::from_str(&res) {
+                        Ok(v) => v,
+                        Err(e) => {
+                                    world_structs::WorldRequest{
+                                    x: 0,
+                                    y: 0,
+                                    req_type: world_structs::RequestType::CHUNK
+                            }
+                            },
+                    };
+                    
+                    if res_obj.req_type == world_structs::RequestType::CHUNK {
+                        let response = world_structs::WorldResponse {
+                            chunk: world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
+                            entities: world_from.get_entities_for_chunk(world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone()),
+                            valid: true
+                        };
+                        let msg = serde_json::to_string(&response).unwrap();
+                        tcp_stream.write_all(msg.as_bytes()).await;
                     }
+
+                    else if res_obj.req_type == world_structs::RequestType::DATA{
+                        let msg = serde_json::to_string(&world_from.world_data).unwrap();
+                        tcp_stream.write_all(msg.as_bytes()).await;
+                    }
+                    // game tick
+                    
+                    /*let delta = SystemTime::now().duration_since(compare_time).unwrap();
+                    let delta_as_millis = delta.as_millis();*/
+
+                    /*if let Err(e) = tcp_stream.write_all(&data[0..n]).await {
+                        eprintln!("Failed to write to socket; err = {:?}", e);
+                        return;
+                    }*/
                 }
-            });
+            }
         }
     }
 }
