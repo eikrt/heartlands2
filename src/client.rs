@@ -16,12 +16,16 @@ use std::iter::FromIterator;
 use std::str::from_utf8;
 use std::{thread, time};
 use tokio::sync::mpsc;
+use tokio::time::Duration;
 use tokio::io::BufReader;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
+use tokio::time::timeout;
 use std::time::{SystemTime};
 use crate::world_structs;
 use crate::graphics_utils;
+use std::pin::Pin;
+use std::future::Future;
 use serde_json;
 use lerp::Lerp;
 use rand::Rng;
@@ -61,6 +65,7 @@ async fn main_loop() -> Result<(), String> {
         zoom_speed: 0.05,
         move_speed: 20.0
     };
+
     let bg_color = Color::RGB(0, 0, 0);
     //let mut stream = TcpStream::connect("localhost:5000").unwrap();
     
@@ -185,9 +190,10 @@ async fn main_loop() -> Result<(), String> {
 
 
     let (mut sender, mut receiver) = mpsc::channel(100);
-    let sender2 = sender.clone();
+    let (mut sender_to_thread, mut receiver_to_thread) = mpsc::channel(99);
     //(mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel();
-    tokio::spawn(async move {
+    tokio::task::spawn(async move {
+    let camera_state = receiver_to_thread.recv().await.unwrap();
     let mut connection = TcpStream::connect("localhost:5000").await.unwrap();
         loop {
             let mut msg: Option<String> = None;
@@ -572,11 +578,24 @@ async fn main_loop() -> Result<(), String> {
             camera.zoom(graphics_utils::MoveDirection::ZOOMOUT, delta_as_millis);
             zoom_button_minus = false;
         }
-         
-        world_data_state = receiver.recv().await.unwrap().0;
-        chunks_state = receiver.recv().await.unwrap().1;
-        entities_state = receiver.recv().await.unwrap().2;
-        println!("{}", delta_as_millis);
+
+        match tokio::time::timeout(Duration::from_millis(14), receiver.recv()).await {
+            Ok(result) => match result {
+                Some(r) => {
+                    //println!("result");
+                    world_data_state = r.0;
+                    chunks_state = r.1;
+                    entities_state = r.2;
+                },
+                None => (),
+            },
+            Err(_) => ()//println!("Timeout: no response in 10 milliseconds."),
+        };
+        sender.send(camera).await;
+        //world_data_state = receiver.recv().await.unwrap().0;
+        //chunks_state = receiver.recv().await.unwrap().1;
+        //entities_state = receiver.recv().await.unwrap().2;
+        //println!("{}", delta_as_millis);
         // iterate chunks
         for chunk_in_chunks in chunks_state.iter() {
             if !chunk_graphics_data.contains_key(&chunk_in_chunks.name) {

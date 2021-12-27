@@ -46,17 +46,17 @@ impl Camera {
     }
     pub fn mov(&mut self, dir: MoveDirection, delta: u128) { 
         if dir == MoveDirection::UP {
-            self.y -= self.move_speed * delta as f32 / 1000.0;
+            self.y -= self.move_speed * delta as f32 / 100.0;
         }
         else if dir == MoveDirection::LEFT {
-            self.x -= self.move_speed * delta as f32 / 1000.0;
+            self.x -= self.move_speed * delta as f32 / 100.0;
         }
 
         else if dir == MoveDirection::DOWN {
-            self.y += self.move_speed * delta as f32 / 1000.0;
+            self.y += self.move_speed * delta as f32 / 100.0;
         }
         else if dir == MoveDirection::RIGHT {
-            self.x += self.move_speed * delta as f32 / 1000.0;
+            self.x += self.move_speed * delta as f32 / 100.0;
         }
     }
 }
