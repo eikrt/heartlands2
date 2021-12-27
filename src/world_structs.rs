@@ -284,9 +284,9 @@ impl World {
                             e.current_action = ActionType::FETCH_FOOD;
                             e.target_x = v.x;
                             e.target_y = v.y;
-                            
+                             
                         }
-                        
+                        println!("{}", dist_from_entity);
                         if dist_from_entity < INTERACTION_SIZE {
                             if v.entity_type == EntityType::APPLETREE {
                                 println!("picked apple");
