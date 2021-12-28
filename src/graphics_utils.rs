@@ -294,6 +294,9 @@ pub fn get_descriptions_for_entities()-> HashMap<world_structs::EntityType, Stri
         (world_structs::EntityType::SNAIL,
          "Snail".to_string()
          ),
+        (world_structs::EntityType::FOOD_STORAGE,
+         "Food storage".to_string()
+         ),
     ]);
     return entity_descriptions;
 }
@@ -334,6 +337,7 @@ pub fn get_descriptions_for_tiles() -> HashMap<world_structs::TileType, String> 
         (world_structs::TileType::MUD_HIVE_FLOOR,
          "Mud floor".to_string()
          ),
+
     ]);
     return tile_descriptions;
 }

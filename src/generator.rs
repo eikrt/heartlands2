@@ -174,6 +174,7 @@ let biomes: Vec<world_structs::Biome> = vec![
     for i in 0..width {
         world_chunks.push(vec![]);
         for j in 0..height {
+            let mut ref_entities: Vec<&world_structs::Entity> = Vec::new();
             let mut chunk_points: Vec<Vec<world_structs::Point>> = Vec::new();
             for k in 0..chunk_size {
                 chunk_points.push(vec![]);
@@ -207,6 +208,7 @@ let biomes: Vec<world_structs::Biome> = vec![
         
             world_chunks[i as usize].push(world_structs::Chunk {
                                             points: chunk_points,
+                                            ref_entities: Vec::new(),
                                             name: get_chunk_name(),
                                             id: rng.gen_range(0..999999),    
                                           });
@@ -340,6 +342,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         wielding_item: world_structs::ItemType::NOTHING,
                                         backpack_item: world_structs::ItemType::NOTHING,
                                         wearable_item: world_structs::ItemType::NOTHING,
+                                        backpack_amount: 0
                                     });
                                 }
                                 for l in 0..rng.gen_range(2..4) {
@@ -361,6 +364,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         wielding_item: world_structs::ItemType::NOTHING,
                                         backpack_item: world_structs::ItemType::NOTHING,
                                         wearable_item: world_structs::ItemType::NOTHING,
+                                        backpack_amount: 0
                                     });
                                 }
                                 for l in 0..rng.gen_range(2..4) {
@@ -382,6 +386,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         wielding_item: world_structs::ItemType::NOTHING,
                                         backpack_item: world_structs::ItemType::NOTHING,
                                         wearable_item: world_structs::ItemType::NOTHING,
+                                        backpack_amount: 0
                                     });
                                 }
                                 for l in 0..rng.gen_range(1..2) {
@@ -403,6 +408,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                         wielding_item: world_structs::ItemType::NOTHING,
                                         backpack_item: world_structs::ItemType::NOTHING,
                                         wearable_item: world_structs::ItemType::NOTHING,
+                                        backpack_amount: 0
                                     });
                                 }
                                 let mut has_queen = false;
@@ -412,6 +418,27 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     }
                                 }
                                 if !has_queen {
+
+                                
+                                world_entities.push(world_structs::Entity {
+                                    id: rng.gen_range(0..999999),  
+                                    x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
+                                    y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
+                                    stopped: false,
+                                    speed: 0.5,
+                                    dir: 0.0,
+                                    target_x: 0.0,
+                                    target_y: 0.0,
+                                    entity_type: world_structs::EntityType::FOOD_STORAGE,
+                                    category_type: world_structs::CategoryType::FURNITURE,
+                                    faction: chunk.name.clone().to_string(),
+                                    faction_id: chunk.id,
+                                    current_action: world_structs::ActionType::IDLE,
+                                    wielding_item: world_structs::ItemType::NOTHING,
+                                    backpack_item: world_structs::ItemType::NOTHING,
+                                    wearable_item: world_structs::ItemType::NOTHING,
+                                    backpack_amount: 0
+                                });
                                 world_entities.push(world_structs::Entity {
                                     id: rng.gen_range(0..999999),  
                                     x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
@@ -429,8 +456,10 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     wielding_item: world_structs::ItemType::NOTHING,
                                     backpack_item: world_structs::ItemType::NOTHING,
                                     wearable_item: world_structs::ItemType::NOTHING,
+                                    backpack_amount: 0
                                 });
                                 }
+
                                 let mut sp_1 = k;
                                 let mut sp_2 = h;
                                 let mut ep_1 = k;
@@ -570,7 +599,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     current_action: world_structs::ActionType::IDLE,
                                     backpack_item: world_structs::ItemType::NOTHING,
                                     wearable_item: world_structs::ItemType::NOTHING,
-                                    wielding_item: world_structs::ItemType::NOTHING
+                                    wielding_item: world_structs::ItemType::NOTHING,
+                                    backpack_amount: 0
                                 });
 
                             }
@@ -637,7 +667,8 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 current_action: world_structs::ActionType::IDLE,
                                 backpack_item: world_structs::ItemType::NOTHING,
                                 wearable_item: world_structs::ItemType::NOTHING,
-                                wielding_item: world_structs::ItemType::NOTHING
+                                wielding_item: world_structs::ItemType::NOTHING,
+                                backpack_amount: 0,
                             });
 
                         }

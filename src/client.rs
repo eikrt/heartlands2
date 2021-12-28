@@ -158,6 +158,7 @@ async fn main_loop() -> Result<(), String> {
     let ant_queen_texture= texture_creator.load_texture("res/ant_queen.png")?;
     let snail_texture = texture_creator.load_texture("res/snail.png")?;
     let food_storage_texture= texture_creator.load_texture("res/food_storage.png")?;
+    let fruit_texture= texture_creator.load_texture("res/fruit.png")?;
     // tile textures
     let mut grass_texture = texture_creator.load_texture("res/grass.png")?;
     let mut water_texture = texture_creator.load_texture("res/water.png")?;
@@ -179,6 +180,7 @@ async fn main_loop() -> Result<(), String> {
     // description stuff
     let descriptions_for_entities = graphics_utils::get_descriptions_for_entities();
     let descriptions_for_tiles = graphics_utils::get_descriptions_for_tiles();
+    let sprite_4 = Rect::new(0,0,(4.0 * camera.zoom) as u32, (4.0 * camera.zoom) as u32);
     let sprite_16 = Rect::new(0,0,(16.0 * camera.zoom) as u32, (16.0 * camera.zoom) as u32);
     let sprite_32 = Rect::new(0,0,(32.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
     let sprite_128x32 = Rect::new(0,0,(128.0 * camera.zoom) as u32, (32.0 * camera.zoom) as u32);
@@ -717,7 +719,13 @@ async fn main_loop() -> Result<(), String> {
             else if entity.entity_type == world_structs::EntityType::WORKER_ANT {
                 let position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2,ty_ant as i32 - sprite_16.height() as i32 / 2);
                 graphics_utils::render(&mut canvas, &ant_worker_texture, position, sprite_16, camera.zoom);
+                if entity.backpack_item == world_structs::ItemType::FRUIT {
+                    let item_position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2 + 4,ty_ant as i32 - sprite_16.height() as i32 / 2 + 4);
+                    graphics_utils::render(&mut canvas, &fruit_texture, item_position, sprite_4, camera.zoom);
 
+
+
+                }
             }
             else if entity.entity_type == world_structs::EntityType::SOLDIER_ANT {
                 let position = Point::new(tx_ant as i32 - sprite_16.width() as i32 / 2,ty_ant as i32 - sprite_16.height() as i32 / 2);

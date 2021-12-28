@@ -148,6 +148,7 @@ pub async fn serve(mut world: world_structs::World, _port:i32) {
     let mut world_from = world.clone();
         tokio::task::spawn(async move {
             while true {
+              println!("sdf");
               world.update_entities();
               sender.send(world.clone()).await;
             }

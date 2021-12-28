@@ -15,6 +15,7 @@ pub enum CategoryType {
     TREE,
     VEGETATION,
     ANIMAL,
+    FURNITURE,
 
 }
 #[derive(PartialEq)]
@@ -32,6 +33,7 @@ pub enum ItemType {
 pub enum ActionType {
     IDLE,
     FETCH_FOOD,
+    RETURN_FOOD,
     STORAGE_FOOD,
     FISH,
     HUNT,
@@ -83,7 +85,6 @@ pub enum EntityType {
     MECHANT,
     SNAIL,
     FOOD_STORAGE
-
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[derive(Clone)]
@@ -148,7 +149,7 @@ pub struct Entity {
     pub wielding_item: ItemType,
     pub backpack_item: ItemType,
     pub wearable_item: ItemType,
-    
+    pub backpack_amount: u8, 
 }
 impl Entity {
     pub fn idle_mov(&mut self) {
@@ -247,29 +248,36 @@ impl World {
          
         let mut rng = rand::thread_rng();
         let entities_clone = self.entities.clone();
+        println!("{}", self.entities.len());
         for e in self.entities.iter_mut() {
             if e.entity_type == EntityType::WORKER_ANT {
-                if e.current_action == ActionType::IDLE && e.backpack_item == ItemType::FRUIT {
-
-                for v in entities_clone.iter() {
-                        let dist_from_entity = ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
-                        if e.backpack_item == ItemType::FRUIT || e.backpack_item == ItemType::MEAT {
-                            if dist_from_entity < INTERACTION_SIZE && v.entity_type == EntityType::FOOD_STORAGE{
-                                e.backpack_item = ItemType::NOTHING;
-                                e.current_action = ActionType::IDLE;
-                                e.target_x = 0.0;
-                                e.target_y = 0.0;
-                                break;
-                            }
+                if e.current_action == ActionType::RETURN_FOOD {
+                    for v in entities_clone.iter() {
+                            let dist_from_entity = ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
+                            if e.backpack_item == ItemType::FRUIT || e.backpack_item == ItemType::MEAT {
+                                if  v.entity_type == EntityType::FOOD_STORAGE && v.faction == e.faction {
+                                    e.target_x = v.x;
+                                    e.target_y = v.y;
+                                    break;
+                                }
+                                if dist_from_entity < INTERACTION_SIZE {
+                                    e.backpack_item = ItemType::NOTHING;
+                                    e.current_action = ActionType::IDLE;
+                                    e.target_x = 0.0;
+                                    e.target_y = 0.0;
+                                    break;
+                                }
+                        }
                     }
                 }
-            }
-                else if e.current_action == ActionType::IDLE && e.target_x == 0.0 && e.target_y == 0.0 {
+                else if e.current_action == ActionType::IDLE {
+                if e.target_x == 0.0 && e.target_y == 0.0 {
                     e.current_action = ActionType::EXPLORE;
                     e.target_x = e.x + rng.gen_range(-128.0..128.0);
                     e.target_y = e.y + rng.gen_range(-128.0..128.0);
                 }
-            if e.current_action == ActionType::EXPLORE {
+                }
+            else if e.current_action == ActionType::EXPLORE {
                 if e.x > e.target_x - TARGET_SIZE && e.y > e.target_y - TARGET_SIZE && e.x < e.target_x + TARGET_SIZE  && e.y < e.target_y + TARGET_SIZE {
                     e.current_action = ActionType::IDLE;
                     e.target_x = 0.0;
@@ -286,32 +294,38 @@ impl World {
                             e.target_y = v.y;
                              
                         }
-                        println!("{}", dist_from_entity);
-                        if dist_from_entity < INTERACTION_SIZE {
-                            if v.entity_type == EntityType::APPLETREE {
-                                println!("picked apple");
-                                e.backpack_item = ItemType::FRUIT;
-                                e.current_action = ActionType::IDLE;
-                                e.target_x = 0.0;
-                                e.target_y = 0.0;
-                            }
-                        }
+
                     }
                 }
-                e.mov();
             }
+
+
 
             else if e.current_action == ActionType::FETCH_FOOD {
-                e.mov();
+                for v in entities_clone.iter() {
+
+                    let dist_from_entity = ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
+                        if dist_from_entity < INTERACTION_SIZE {
+                            if v.entity_type == EntityType::APPLETREE {
+
+                                e.backpack_item = ItemType::FRUIT;
+                                e.current_action = ActionType::RETURN_FOOD;
+                            }
+                        }
+
+                    }
+                }
             }
 
-    }
+    
         if e.category_type == CategoryType::ANT {
-            if e.entity_type != EntityType::WORKER_ANT {
             if e.current_action == ActionType::IDLE {
                 e.idle_mov();
                 }
-                }
+            else {
+
+                e.mov();
+            }
             }
 }
 }
