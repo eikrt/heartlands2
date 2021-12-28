@@ -147,10 +147,60 @@ pub async fn serve(mut world: world_structs::World, _port:i32) {
     let mut sender2 = sender.clone();
     let mut world_from = world.clone();
         tokio::task::spawn(async move {
+            let entity_check_time = 10;
+            let mut entity_check_change = 0;
             while true {
-              println!("sdf");
-              world.update_entities();
-              sender.send(world.clone()).await;
+                entity_check_change += 1;
+                for i in 0..world.world_data.width{
+                    for j in 0..world.world_data.height {
+                        let mut id = 0;
+                        for entity in world.chunks[i][j].entities.clone() {
+                            if entity.x < world.chunks[i][j].points[0][0].x* world.world_data.tile_size  as f32{
+                                id = entity.id;
+                                if i > 0 {
+                                    world.chunks[i-1][j].entities.push(entity);
+                                }
+                            }
+                            else if entity.y < world.chunks[i][j].points[0][0].y* world.world_data.tile_size  as f32{
+                                id = entity.id;
+                                if j > 0 {
+                                    world.chunks[i][j-1].entities.push(entity);
+                                
+                                }
+
+                            }
+                            else if entity.x > world.chunks[i][j].points[world.world_data.chunk_size-1][world.world_data.chunk_size-1].x * world.world_data.tile_size as f32{
+                                id = entity.id;
+                                if i < world.world_data.width-1{
+                                    world.chunks[i+1][j].entities.push(entity);
+                                
+                                }
+
+                            }
+                            else if entity.y > world.chunks[i][j].points[world.world_data.chunk_size-1][world.world_data.chunk_size-1].y* world.world_data.tile_size  as f32{
+                                id = entity.id;
+                                if j < world.world_data.height-1{
+                                    world.chunks[i][j+1].entities.push(entity);
+                                
+                                }
+
+                            }
+                            if world.chunks[i][j].entities.len() > 0 {
+                            
+                            let mut index_option = world.chunks[i][j].entities.iter().position(|x| x.id == id);
+                            match index_option {
+                                Some(index) => {
+                                    //println!("{}, {}", i, world.chunks[i][j].entities.len());
+                                    world.chunks[i][j].entities.remove(index);
+                                },
+                                None => ()
+                            
+                            }
+                    }
+                }
+                }}
+                world.update_entities();
+                sender.send(world.clone()).await;
             }
         });
     if let Ok(mut tcp_listener) = TcpListener::bind("127.0.0.1:5000").await {
@@ -203,7 +253,6 @@ pub async fn serve(mut world: world_structs::World, _port:i32) {
                     if res_obj.req_type == world_structs::RequestType::CHUNK {
                         let response = world_structs::WorldResponse {
                             chunk: world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
-                            entities: world_from.get_entities_for_chunk(world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone()),
                             valid: true
                         };
                         let msg = serde_json::to_string(&response).unwrap();

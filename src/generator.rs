@@ -174,7 +174,7 @@ let biomes: Vec<world_structs::Biome> = vec![
     for i in 0..width {
         world_chunks.push(vec![]);
         for j in 0..height {
-            let mut ref_entities: Vec<&world_structs::Entity> = Vec::new();
+            let mut entities: Vec<&world_structs::Entity> = Vec::new();
             let mut chunk_points: Vec<Vec<world_structs::Point>> = Vec::new();
             for k in 0..chunk_size {
                 chunk_points.push(vec![]);
@@ -208,7 +208,7 @@ let biomes: Vec<world_structs::Biome> = vec![
         
             world_chunks[i as usize].push(world_structs::Chunk {
                                             points: chunk_points,
-                                            ref_entities: Vec::new(),
+                                            entities: Vec::new(),
                                             name: get_chunk_name(),
                                             id: rng.gen_range(0..999999),    
                                           });
@@ -311,6 +311,7 @@ let biomes: Vec<world_structs::Biome> = vec![
 
             for i in 0..width {
                 for j in 0..height {
+                    let mut chunk_entities = Vec::new();
                     for k in 0..chunk_size {
                         for h in 0..chunk_size {
                             let _rx = ((i*chunk_size) as usize + k) as f32;
@@ -325,7 +326,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 point.tile_type = world_structs::TileType::MUD_HIVE_FLOOR;
                                 for l in 0..rng.gen_range(2..4) {
 
-                                    world_entities.push(world_structs::Entity {
+                                    chunk_entities.push(world_structs::Entity {
                                         id: rng.gen_range(0..999999),  
                                         x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
@@ -347,7 +348,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 }
                                 for l in 0..rng.gen_range(2..4) {
 
-                                    world_entities.push(world_structs::Entity {
+                                    chunk_entities.push(world_structs::Entity {
                                         id: rng.gen_range(0..999999),  
                                         x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
@@ -369,7 +370,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 }
                                 for l in 0..rng.gen_range(2..4) {
 
-                                    world_entities.push(world_structs::Entity {
+                                    chunk_entities.push(world_structs::Entity {
                                         id: rng.gen_range(0..999999),  
                                         x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
@@ -391,7 +392,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 }
                                 for l in 0..rng.gen_range(1..2) {
 
-                                    world_entities.push(world_structs::Entity {
+                                    chunk_entities.push(world_structs::Entity {
                                         id: rng.gen_range(0..999999),  
                                         x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                         y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
@@ -412,7 +413,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     });
                                 }
                                 let mut has_queen = false;
-                                for e in &world_entities {
+                                for e in &chunk_entities {
                                     if e.faction == chunk.name && e.entity_type == world_structs::EntityType::QUEEN_ANT {
                                         has_queen = true;
                                     }
@@ -420,7 +421,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 if !has_queen {
 
                                 
-                                world_entities.push(world_structs::Entity {
+                                chunk_entities.push(world_structs::Entity {
                                     id: rng.gen_range(0..999999),  
                                     x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                     y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
@@ -439,7 +440,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                     wearable_item: world_structs::ItemType::NOTHING,
                                     backpack_amount: 0
                                 });
-                                world_entities.push(world_structs::Entity {
+                                chunk_entities.push(world_structs::Entity {
                                     id: rng.gen_range(0..999999),  
                                     x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
                                     y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
@@ -535,6 +536,7 @@ let biomes: Vec<world_structs::Biome> = vec![
             }
             }
         }
+                world_chunks[i][j].entities.append(&mut chunk_entities);
         }
         }}
         if apply_cities {
@@ -571,6 +573,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                 
                 for i in 0..width {
                     for j in 0..height {
+                    let mut chunk_entities = Vec::new();
                         for k in 0..chunk_size {
                             for h in 0..chunk_size {
                                 let _rx = ((i*chunk_size) as usize + k) as f32;
@@ -583,7 +586,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                                 }
                                 let vegetation_val = vegetation_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
                                 if vegetation_val > vegetation_threshold && (point.tile_type == world_structs::TileType::SAND){
-                                world_entities.push(world_structs::Entity {
+                                chunk_entities.push(world_structs::Entity {
                                  id: rng.gen_range(0..999999),    
                                     x: _rx * tile_size as f32,
                                     y: _ry * tile_size as f32,
@@ -609,6 +612,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                         }
                     }
 
+                world_chunks[i][j].entities.append(&mut chunk_entities);
                 }
                 }
             }
@@ -617,6 +621,7 @@ let biomes: Vec<world_structs::Biome> = vec![
             
             for i in 0..width {
                 for j in 0..height {
+                    let mut chunk_entities = Vec::new();
                     for k in 0..chunk_size {
                         for h in 0..chunk_size {
                             let _rx = ((i*chunk_size) as usize + k) as f32;
@@ -651,7 +656,7 @@ let biomes: Vec<world_structs::Biome> = vec![
                             let tree_val = tree_noise[(_ry + _rx*width as f32 *chunk_size as f32) as usize];
                             if tree_val > tree_threshold && (point.tile_type == world_structs::TileType::GRASS || point.tile_type == world_structs::TileType::COLD_LAND){
 
-                            world_entities.push(world_structs::Entity {
+                            chunk_entities.push(world_structs::Entity {
                              id: rng.gen_range(0..999999),    
                                 x: _rx * tile_size as f32,
                                 y: _ry * tile_size as f32,
@@ -676,7 +681,7 @@ let biomes: Vec<world_structs::Biome> = vec![
 
                     }
                 }
-
+                world_chunks[i][j].entities.append(&mut chunk_entities);
             }
             }
         }
@@ -687,7 +692,6 @@ let biomes: Vec<world_structs::Biome> = vec![
 
     return world_structs::World {
         chunks: world_chunks,
-        entities: world_entities,
         world_data: world_structs::WorldData {
             name: name,
             sea_level: sea_level, 

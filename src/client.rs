@@ -323,10 +323,10 @@ async fn main_loop() -> Result<(), String> {
                          world_structs::WorldResponse{
                          chunk: world_structs::Chunk{
                              points: vec![],
+                             entities: vec![],
                              name: "error".to_string(),
                              id: 0,    
                          },
-                        entities: vec![],
                         valid: false
                      }},
                 });
@@ -349,7 +349,7 @@ async fn main_loop() -> Result<(), String> {
                 }
                 match response {
                     Some(ref mut  r) => {
-                        for re in r.entities.clone() {
+                        for re in r.chunk.entities.clone() {
                                 if !entities.is_empty() {
                                     let mut index_option = entities.iter().position(|x| x.id == re.id);
                                     if index_option != None {
@@ -359,7 +359,7 @@ async fn main_loop() -> Result<(), String> {
 
                             }
                         }
-                        entities.append(&mut r.entities);
+                        entities.append(&mut r.chunk.entities);
                     },
                     None => ()
                 }
