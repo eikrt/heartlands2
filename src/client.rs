@@ -1,3 +1,4 @@
+extern crate websocket;
 use crate::graphics_utils;
 use crate::world_structs;
 use lerp::Lerp;
@@ -15,25 +16,22 @@ use sdl2::ttf::Font;
 use serde_json;
 use std::collections::HashMap;
 use std::future::Future;
+use std::io::stdin;
 use std::io::{Read, Write};
 use std::iter::FromIterator;
 use std::option::Option;
 use std::pin::Pin;
 use std::str::from_utf8;
+use std::sync::mpsc::channel;
 use std::time::SystemTime;
 use std::{thread, time};
-use tokio::io::AsyncReadExt;
-use tokio::io::AsyncWriteExt;
-use tokio::io::BufReader;
-use tokio::net::TcpStream;
-use tokio::sync::mpsc;
-use tokio::time::timeout;
-use tokio::time::Duration;
+use websocket::client::ClientBuilder;
+use websocket::{Message, OwnedMessage};
 const SCREEN_WIDTH: u32 = 720;
 const SCREEN_HEIGHT: u32 = 480;
 const TILE_SIZE: f32 = 16.0;
-
-async fn main_loop() -> Result<(), String> {
+const CONNECTION: &'static str = "ws://127.0.0.1:5000";
+fn main_loop() -> Result<(), String> {
     // sdl stuff
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
@@ -102,8 +100,8 @@ async fn main_loop() -> Result<(), String> {
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
     let mut entities: Vec<world_structs::Entity> = Vec::new();
-    let mut chunks_state: Vec<world_structs::Chunk> = Vec::new();
-    let mut entities_state: Vec<world_structs::Entity> = Vec::new();
+    let mut chunks: Vec<world_structs::Chunk> = Vec::new();
+    let mut entities: Vec<world_structs::Entity> = Vec::new();
     // menu buttons
     let mut play_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
@@ -220,23 +218,80 @@ async fn main_loop() -> Result<(), String> {
     let mut main_menu_on = true;
     let mut settings_menu_on = false;
     let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
+    let client = ClientBuilder::new(CONNECTION)
+        .unwrap()
+        .add_protocol("rust-websocket")
+        .connect_insecure()
+        .unwrap();
+    println!("Succesfully connected");
+    let (mut receiver, mut sender) = client.split().unwrap();
+    let (tx, rx) = channel();
+    let tx_1 = tx.clone();
+
+    let send_loop = thread::spawn(move || {
+        loop {
+            // Send loop
+            let message = match rx.recv() {
+                Ok(m) => m,
+                Err(e) => {
+                    println!("Send Loop: {:?}", e);
+                    return;
+                }
+            };
+            match message {
+                OwnedMessage::Close(_) => {
+                    let _ = sender.send_message(&message);
+                    return;
+                }
+                _ => (),
+            }
+            match sender.send_message(&message) {
+                Ok(()) => (),
+                Err(e) => {
+                    println!("Send Loop: {:?}", e);
+                    let _ = sender.send_message(&Message::close());
+                    return;
+                }
+            }
+        }
+    });
+    let receive_loop = thread::spawn(move || {
+        // Receive loop
+        for message in receiver.incoming_messages() {
+            let message = match message {
+                Ok(m) => m,
+                Err(e) => {
+                    println!("Receive Loop: {:?}", e);
+                    let _ = tx_1.send(OwnedMessage::Close(None));
+                    return;
+                }
+            };
+            match message {
+                OwnedMessage::Close(_) => {
+                    // Got a close message, so send a close message and return
+                    let _ = tx_1.send(OwnedMessage::Close(None));
+                    return;
+                }
+                // Say what we received
+                _ => (), //println!("Receive Loop: {:?}", message),
+            }
+        }
+    });
 
     // network stuff
-    let mut camera_change = 0;
-    let camera_time = 500;
 
     //  let (mut sender, mut receiver): (mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel(100);
-    let (mut sender_to_thread, mut receiver_to_thread): (
-        mpsc::Sender<graphics_utils::Camera>,
-        mpsc::Receiver<graphics_utils::Camera>,
-    ) = mpsc::channel(100);
-    let (mut sender, mut receiver) = mpsc::channel(100);
+    //let (mut sender_to_thread, mut receiver_to_thread): (
+    //    mpsc::Sender<graphics_utils::Camera>,
+    //    mpsc::Receiver<graphics_utils::Camera>,
+    //) = mpsc::channel(100);
+    //let (mut sender, mut receiver) = mpsc::channel(100);
     //let (mut sender_to_thread, mut receiver_to_thread) = mpsc::channel(100);
     //(mpsc::Sender<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>, mpsc::Receiver<(Option<world_structs::WorldData>, Vec<world_structs::Chunk>, Vec<world_structs::Entity>)>) = mpsc::channel();
-    tokio::task::spawn(async move {
-        let mut connection = TcpStream::connect("localhost:5000").await.unwrap();
+    /*tokio::task::spawn(async move {
+        //let mut connection = TcpStream::connect("localhost:5000").await.unwrap();
         loop {
-            match tokio::time::timeout(Duration::from_millis(14), receiver_to_thread.recv()).await {
+            /*match tokio::time::timeout(Duration::from_millis(14), receiver_to_thread.recv()).await {
                 Ok(result) => match result {
                     Some(r) => {
                         camera_state = r;
@@ -244,7 +299,7 @@ async fn main_loop() -> Result<(), String> {
                     None => (),
                 },
                 Err(_) => (), //println!("Timeout: no response in 10 milliseconds."),
-            };
+            };*/
             let mut msg: Option<String> = None;
             if update_data {
                 msg = Some(
@@ -399,11 +454,11 @@ async fn main_loop() -> Result<(), String> {
                 }
             }
             update_data = false;
-            sender
-                .send((world_data.clone(), chunks.clone(), entities.clone()))
-                .await;
+            /*sender
+            .send((world_data.clone(), chunks.clone(), entities.clone()))
+            .await;*/
         }
-    });
+    });*/
 
     while running {
         let delta = SystemTime::now().duration_since(compare_time).unwrap();
@@ -621,7 +676,7 @@ async fn main_loop() -> Result<(), String> {
             }
             // render texts
             let title_text = graphics_utils::get_text(
-                "MechantS".to_string(),
+                "Mechants".to_string(),
                 Color::RGBA(255, 255, 255, 255),
                 desc_font_size,
                 &font,
@@ -719,29 +774,28 @@ async fn main_loop() -> Result<(), String> {
                 zoom_button_minus = false;
             }
 
-            match tokio::time::timeout(Duration::from_millis(14), receiver.recv()).await {
-                Ok(result) => match result {
-                    Some(r) => {
-                        world_data_state = r.0;
-                        chunks_state = r.1;
-                        entities_state = r.2;
-                    }
-                    None => (),
-                },
-                Err(_) => (), //println!("Timeout: no response in 10 milliseconds."),
-            };
-            camera_change += delta_as_millis as i32;
-            if camera_change > camera_time {
-                sender_to_thread.send(camera.clone()).await;
-                camera_change = 0;
+            // get entities and chunks from server
+            let mut input = String::new();
+
+            let trimmed = "/ping";
+
+            match tx.send(OwnedMessage::Text("asdf".to_string())) {
+                Ok(()) => (),
+                Err(e) => {
+                    println!("Main Loop: {:?}", e);
+                    break;
+                }
             }
-            //println!("{}", delta_as_millis);
-            //world_data_state = receiver.recv().await.unwrap().0;
-            //chunks_state = receiver.recv().await.unwrap().1;
-            //entities_state = receiver.recv().await.unwrap().2;
-            //println!("{}", delta_as_millis);
+
+            /*match tx.send(message) {
+                Ok(()) => (),
+                Err(e) => {
+                    println!("Main Loop: {:?}", e);
+                    break;
+                }
+            }*/
             // iterate chunks
-            for chunk_in_chunks in chunks_state.iter() {
+            for chunk_in_chunks in chunks.iter() {
                 if !chunk_graphics_data.contains_key(&chunk_in_chunks.name) {
                     chunk_graphics_data.insert(
                         chunk_in_chunks.name.clone(),
@@ -814,8 +868,8 @@ async fn main_loop() -> Result<(), String> {
             }
 
             //render entities
-            entities_state.sort_by(|a, b| a.id.cmp(&b.id));
-            for entity in &entities_state {
+            entities.sort_by(|a, b| a.id.cmp(&b.id));
+            for entity in &entities {
                 let tx = (entity.x) * camera.zoom - camera.x;
                 let ty = (entity.y) * camera.zoom - camera.y;
                 let tx_ant = (entity.x) * camera.zoom - camera.x;
@@ -1033,7 +1087,7 @@ async fn main_loop() -> Result<(), String> {
                     Some(ref wd) => {
                         let e_x = mouse_x;
                         let e_y = mouse_y;
-                        for e in &entities_state {
+                        for e in &entities {
                             if e_x > e.x && e_x < e.x + 16.0 && e_y > e.y && e_y < e.y + 16.0 {
                                 hovering_entity = true;
                                 hovered_entity = Some(e.clone());
@@ -1043,7 +1097,7 @@ async fn main_loop() -> Result<(), String> {
 
                         let tile_x = (((mouse_x) / TILE_SIZE) as f32).floor();
                         let tile_y = (((mouse_y) / TILE_SIZE) as f32).floor();
-                        for c in &chunks_state {
+                        for c in &chunks {
                             for row in &c.points {
                                 for p in row {
                                     if tile_x == p.x && tile_y == p.y {
@@ -1152,7 +1206,7 @@ async fn main_loop() -> Result<(), String> {
             // render overlays
 
             if map_state == graphics_utils::MapState::Political {
-                for c in &chunks_state {
+                for c in &chunks {
                     match world_data_state {
                         Some(ref wd) => {
                             let position = Point::new(
@@ -1332,6 +1386,6 @@ async fn main_loop() -> Result<(), String> {
     println!("Socket connection ended.");
     Ok(())
 }
-pub async fn run() {
-    main_loop().await;
+pub fn run() {
+    main_loop();
 }

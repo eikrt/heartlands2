@@ -2,6 +2,7 @@ use crate::world_structs;
 use rand::seq::IteratorRandom;
 use rand::Rng;
 use simdnoise::*;
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 pub fn generate(
@@ -173,7 +174,6 @@ pub fn generate(
     for i in 0..width {
         world_chunks.push(vec![]);
         for j in 0..height {
-            let _entities: Vec<&world_structs::Entity> = Vec::new();
             let mut chunk_points: Vec<Vec<world_structs::Point>> = Vec::new();
             for k in 0..chunk_size {
                 chunk_points.push(vec![]);
@@ -210,7 +210,7 @@ pub fn generate(
 
             world_chunks[i as usize].push(world_structs::Chunk {
                 points: chunk_points,
-                entities: Vec::new(),
+                entities: HashMap::new(),
                 name: get_chunk_name(),
                 id: rng.gen_range(0..999999),
             });
@@ -300,7 +300,7 @@ pub fn generate(
         if apply_villages {
             for i in 0..width {
                 for j in 0..height {
-                    let mut chunk_entities = Vec::new();
+                    let mut chunk_entities = HashMap::new();
                     for k in 0..chunk_size {
                         for h in 0..chunk_size {
                             let _rx = ((i * chunk_size) as usize + k) as f32;
@@ -321,91 +321,115 @@ pub fn generate(
                                 {
                                     point.tile_type = world_structs::TileType::MudHiveFloor;
                                     for _l in 0..rng.gen_range(2..4) {
-                                        chunk_entities.push(world_structs::Entity {
-                                            id: rng.gen_range(0..999999),
-                                            x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            stopped: false,
-                                            speed: 0.5,
-                                            dir: 0.0,
-                                            target_x: 0.0,
-                                            target_y: 0.0,
-                                            entity_type: world_structs::EntityType::WorkerAnt,
-                                            category_type: world_structs::CategoryType::Ant,
-                                            faction: chunk.name.clone().to_string(),
-                                            faction_id: chunk.id,
-                                            current_action: world_structs::ActionType::Idle,
-                                            wielding_item: world_structs::ItemType::Nothing,
-                                            backpack_item: world_structs::ItemType::Nothing,
-                                            wearable_item: world_structs::ItemType::Nothing,
-                                            backpack_amount: 0,
-                                        });
+                                        let id = rng.gen_range(0..999999);
+                                        chunk_entities.insert(
+                                            id,
+                                            world_structs::Entity {
+                                                id: id,
+                                                x: (_rx + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                y: (_ry + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                stopped: false,
+                                                speed: 0.5,
+                                                dir: 0.0,
+                                                target_x: 0.0,
+                                                target_y: 0.0,
+                                                entity_type: world_structs::EntityType::WorkerAnt,
+                                                category_type: world_structs::CategoryType::Ant,
+                                                faction: chunk.name.clone().to_string(),
+                                                faction_id: chunk.id,
+                                                current_action: world_structs::ActionType::Idle,
+                                                wielding_item: world_structs::ItemType::Nothing,
+                                                backpack_item: world_structs::ItemType::Nothing,
+                                                wearable_item: world_structs::ItemType::Nothing,
+                                                backpack_amount: 0,
+                                            },
+                                        );
                                     }
                                     for l in 0..rng.gen_range(2..4) {
-                                        chunk_entities.push(world_structs::Entity {
-                                            id: rng.gen_range(0..999999),
-                                            x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            stopped: false,
-                                            speed: 0.5,
-                                            dir: 0.0,
-                                            target_x: 0.0,
-                                            target_y: 0.0,
-                                            entity_type: world_structs::EntityType::SoldierAnt,
-                                            category_type: world_structs::CategoryType::Ant,
-                                            faction: chunk.name.clone().to_string(),
-                                            faction_id: chunk.id,
-                                            current_action: world_structs::ActionType::Idle,
-                                            wielding_item: world_structs::ItemType::Nothing,
-                                            backpack_item: world_structs::ItemType::Nothing,
-                                            wearable_item: world_structs::ItemType::Nothing,
-                                            backpack_amount: 0,
-                                        });
+                                        let id = rng.gen_range(0..999999);
+                                        chunk_entities.insert(
+                                            id,
+                                            world_structs::Entity {
+                                                id: id,
+                                                x: (_rx + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                y: (_ry + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                stopped: false,
+                                                speed: 0.5,
+                                                dir: 0.0,
+                                                target_x: 0.0,
+                                                target_y: 0.0,
+                                                entity_type: world_structs::EntityType::SoldierAnt,
+                                                category_type: world_structs::CategoryType::Ant,
+                                                faction: chunk.name.clone().to_string(),
+                                                faction_id: chunk.id,
+                                                current_action: world_structs::ActionType::Idle,
+                                                wielding_item: world_structs::ItemType::Nothing,
+                                                backpack_item: world_structs::ItemType::Nothing,
+                                                wearable_item: world_structs::ItemType::Nothing,
+                                                backpack_amount: 0,
+                                            },
+                                        );
                                     }
                                     for _l in 0..rng.gen_range(2..4) {
-                                        chunk_entities.push(world_structs::Entity {
-                                            id: rng.gen_range(0..999999),
-                                            x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            stopped: false,
-                                            speed: 0.5,
-                                            dir: 0.0,
-                                            target_x: 0.0,
-                                            target_y: 0.0,
-                                            entity_type: world_structs::EntityType::DroneAnt,
-                                            category_type: world_structs::CategoryType::Ant,
-                                            faction: chunk.name.clone().to_string(),
-                                            faction_id: chunk.id,
-                                            current_action: world_structs::ActionType::Idle,
-                                            wielding_item: world_structs::ItemType::Nothing,
-                                            backpack_item: world_structs::ItemType::Nothing,
-                                            wearable_item: world_structs::ItemType::Nothing,
-                                            backpack_amount: 0,
-                                        });
+                                        let id = rng.gen_range(0..999999);
+                                        chunk_entities.insert(
+                                            id,
+                                            world_structs::Entity {
+                                                id: id,
+                                                x: (_rx + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                y: (_ry + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                stopped: false,
+                                                speed: 0.5,
+                                                dir: 0.0,
+                                                target_x: 0.0,
+                                                target_y: 0.0,
+                                                entity_type: world_structs::EntityType::DroneAnt,
+                                                category_type: world_structs::CategoryType::Ant,
+                                                faction: chunk.name.clone().to_string(),
+                                                faction_id: chunk.id,
+                                                current_action: world_structs::ActionType::Idle,
+                                                wielding_item: world_structs::ItemType::Nothing,
+                                                backpack_item: world_structs::ItemType::Nothing,
+                                                wearable_item: world_structs::ItemType::Nothing,
+                                                backpack_amount: 0,
+                                            },
+                                        );
                                     }
                                     for _l in 0..rng.gen_range(1..2) {
-                                        chunk_entities.push(world_structs::Entity {
-                                            id: rng.gen_range(0..999999),
-                                            x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            stopped: false,
-                                            speed: 0.5,
-                                            dir: 0.0,
-                                            target_x: 0.0,
-                                            target_y: 0.0,
-                                            entity_type: world_structs::EntityType::Mechant,
-                                            category_type: world_structs::CategoryType::Ant,
-                                            faction: chunk.name.clone().to_string(),
-                                            faction_id: chunk.id,
-                                            current_action: world_structs::ActionType::Idle,
-                                            wielding_item: world_structs::ItemType::Nothing,
-                                            backpack_item: world_structs::ItemType::Nothing,
-                                            wearable_item: world_structs::ItemType::Nothing,
-                                            backpack_amount: 0,
-                                        });
+                                        let id = rng.gen_range(0..999999);
+                                        chunk_entities.insert(
+                                            id,
+                                            world_structs::Entity {
+                                                id: id,
+                                                x: (_rx + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                y: (_ry + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                stopped: false,
+                                                speed: 0.5,
+                                                dir: 0.0,
+                                                target_x: 0.0,
+                                                target_y: 0.0,
+                                                entity_type: world_structs::EntityType::Mechant,
+                                                category_type: world_structs::CategoryType::Ant,
+                                                faction: chunk.name.clone().to_string(),
+                                                faction_id: chunk.id,
+                                                current_action: world_structs::ActionType::Idle,
+                                                wielding_item: world_structs::ItemType::Nothing,
+                                                backpack_item: world_structs::ItemType::Nothing,
+                                                wearable_item: world_structs::ItemType::Nothing,
+                                                backpack_amount: 0,
+                                            },
+                                        );
                                     }
                                     let mut has_queen = false;
-                                    for e in &chunk_entities {
+                                    for e in chunk_entities.values() {
                                         if e.faction == chunk.name
                                             && e.entity_type == world_structs::EntityType::QueenAnt
                                         {
@@ -413,44 +437,56 @@ pub fn generate(
                                         }
                                     }
                                     if !has_queen {
-                                        chunk_entities.push(world_structs::Entity {
-                                            id: rng.gen_range(0..999999),
-                                            x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            stopped: false,
-                                            speed: 0.5,
-                                            dir: 0.0,
-                                            target_x: 0.0,
-                                            target_y: 0.0,
-                                            entity_type: world_structs::EntityType::FoodStorage,
-                                            category_type: world_structs::CategoryType::Furniture,
-                                            faction: chunk.name.clone().to_string(),
-                                            faction_id: chunk.id,
-                                            current_action: world_structs::ActionType::Idle,
-                                            wielding_item: world_structs::ItemType::Nothing,
-                                            backpack_item: world_structs::ItemType::Nothing,
-                                            wearable_item: world_structs::ItemType::Nothing,
-                                            backpack_amount: 0,
-                                        });
-                                        chunk_entities.push(world_structs::Entity {
-                                            id: rng.gen_range(0..999999),
-                                            x: (_rx + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            y: (_ry + rng.gen_range(1.0..4.0)) * tile_size as f32,
-                                            stopped: false,
-                                            speed: 0.5,
-                                            dir: 0.0,
-                                            target_x: 0.0,
-                                            target_y: 0.0,
-                                            entity_type: world_structs::EntityType::QueenAnt,
-                                            category_type: world_structs::CategoryType::Ant,
-                                            faction: chunk.name.clone().to_string(),
-                                            faction_id: chunk.id,
-                                            current_action: world_structs::ActionType::Idle,
-                                            wielding_item: world_structs::ItemType::Nothing,
-                                            backpack_item: world_structs::ItemType::Nothing,
-                                            wearable_item: world_structs::ItemType::Nothing,
-                                            backpack_amount: 0,
-                                        });
+                                        let id = rng.gen_range(0..999999);
+                                        chunk_entities.insert(
+                                            id,
+                                            world_structs::Entity {
+                                                id: id,
+                                                x: (_rx + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                y: (_ry + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                stopped: false,
+                                                speed: 0.5,
+                                                dir: 0.0,
+                                                target_x: 0.0,
+                                                target_y: 0.0,
+                                                entity_type: world_structs::EntityType::FoodStorage,
+                                                category_type:
+                                                    world_structs::CategoryType::Furniture,
+                                                faction: chunk.name.clone().to_string(),
+                                                faction_id: chunk.id,
+                                                current_action: world_structs::ActionType::Idle,
+                                                wielding_item: world_structs::ItemType::Nothing,
+                                                backpack_item: world_structs::ItemType::Nothing,
+                                                wearable_item: world_structs::ItemType::Nothing,
+                                                backpack_amount: 0,
+                                            },
+                                        );
+                                        chunk_entities.insert(
+                                            id,
+                                            world_structs::Entity {
+                                                id: id,
+                                                x: (_rx + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                y: (_ry + rng.gen_range(1.0..4.0))
+                                                    * tile_size as f32,
+                                                stopped: false,
+                                                speed: 0.5,
+                                                dir: 0.0,
+                                                target_x: 0.0,
+                                                target_y: 0.0,
+                                                entity_type: world_structs::EntityType::QueenAnt,
+                                                category_type: world_structs::CategoryType::Ant,
+                                                faction: chunk.name.clone().to_string(),
+                                                faction_id: chunk.id,
+                                                current_action: world_structs::ActionType::Idle,
+                                                wielding_item: world_structs::ItemType::Nothing,
+                                                backpack_item: world_structs::ItemType::Nothing,
+                                                wearable_item: world_structs::ItemType::Nothing,
+                                                backpack_amount: 0,
+                                            },
+                                        );
                                     }
 
                                     let sp_1 = k;
@@ -530,7 +566,7 @@ pub fn generate(
                             }
                         }
                     }
-                    world_chunks[i][j].entities.append(&mut chunk_entities);
+                    // world_chunks[i][j].entities.extend(&mut chunk_entities);
                 }
             }
         }
@@ -571,7 +607,7 @@ pub fn generate(
         if apply_vegetation {
             for i in 0..width {
                 for j in 0..height {
-                    let mut chunk_entities = Vec::new();
+                    let mut chunk_entities = HashMap::new();
                     for k in 0..chunk_size {
                         for h in 0..chunk_size {
                             let _rx = ((i * chunk_size) as usize + k) as f32;
@@ -587,30 +623,36 @@ pub fn generate(
                             if vegetation_val > vegetation_threshold
                                 && (point.tile_type == world_structs::TileType::Sand)
                             {
-                                chunk_entities.push(world_structs::Entity {
-                                    id: rng.gen_range(0..999999),
-                                    x: _rx * tile_size as f32,
-                                    y: _ry * tile_size as f32,
-                                    dir: 0.0,
-                                    target_x: 0.0,
-                                    target_y: 0.0,
-                                    speed: 0.0,
-                                    stopped: true,
-                                    entity_type: entity_type,
-                                    category_type: world_structs::CategoryType::Vegetation,
-                                    faction: chunk.name.clone().to_string(),
-                                    faction_id: chunk.id,
-                                    current_action: world_structs::ActionType::Idle,
-                                    backpack_item: world_structs::ItemType::Nothing,
-                                    wearable_item: world_structs::ItemType::Nothing,
-                                    wielding_item: world_structs::ItemType::Nothing,
-                                    backpack_amount: 0,
-                                });
+                                let id = rng.gen_range(0..999999);
+                                chunk_entities.insert(
+                                    id,
+                                    world_structs::Entity {
+                                        id: id,
+                                        x: _rx * tile_size as f32,
+                                        y: _ry * tile_size as f32,
+                                        dir: 0.0,
+                                        target_x: 0.0,
+                                        target_y: 0.0,
+                                        speed: 0.0,
+                                        stopped: true,
+                                        entity_type: entity_type,
+                                        category_type: world_structs::CategoryType::Vegetation,
+                                        faction: chunk.name.clone().to_string(),
+                                        faction_id: chunk.id,
+                                        current_action: world_structs::ActionType::Idle,
+                                        backpack_item: world_structs::ItemType::Nothing,
+                                        wearable_item: world_structs::ItemType::Nothing,
+                                        wielding_item: world_structs::ItemType::Nothing,
+                                        backpack_amount: 0,
+                                    },
+                                );
                             }
                         }
                     }
 
-                    world_chunks[i][j].entities.append(&mut chunk_entities);
+                    //chunk_entities
+                    //   .into_iter()
+                    //  .map(|(k.try_into().unwrap(), v)| world_chunks[i][j].entities.insert(k, v));
                 }
             }
         }
@@ -618,7 +660,7 @@ pub fn generate(
         if apply_trees {
             for i in 0..width {
                 for j in 0..height {
-                    let mut chunk_entities = Vec::new();
+                    let mut chunk_entities = HashMap::new();
                     for k in 0..chunk_size {
                         for h in 0..chunk_size {
                             let _rx = ((i * chunk_size) as usize + k) as f32;
@@ -649,29 +691,35 @@ pub fn generate(
                                 && (point.tile_type == world_structs::TileType::Grass
                                     || point.tile_type == world_structs::TileType::ColdLand)
                             {
-                                chunk_entities.push(world_structs::Entity {
-                                    id: rng.gen_range(0..999999),
-                                    x: _rx * tile_size as f32,
-                                    y: _ry * tile_size as f32,
-                                    speed: 0.0,
-                                    dir: 0.0,
-                                    target_x: 0.0,
-                                    target_y: 0.0,
-                                    stopped: true,
-                                    entity_type: entity_type,
-                                    category_type: world_structs::CategoryType::Tree,
-                                    faction: chunk.name.clone().to_string(),
-                                    faction_id: chunk.id,
-                                    current_action: world_structs::ActionType::Idle,
-                                    backpack_item: world_structs::ItemType::Nothing,
-                                    wearable_item: world_structs::ItemType::Nothing,
-                                    wielding_item: world_structs::ItemType::Nothing,
-                                    backpack_amount: 0,
-                                });
+                                let id = rng.gen_range(0..999999);
+                                chunk_entities.insert(
+                                    id,
+                                    world_structs::Entity {
+                                        id: id,
+                                        x: _rx * tile_size as f32,
+                                        y: _ry * tile_size as f32,
+                                        speed: 0.0,
+                                        dir: 0.0,
+                                        target_x: 0.0,
+                                        target_y: 0.0,
+                                        stopped: true,
+                                        entity_type: entity_type,
+                                        category_type: world_structs::CategoryType::Tree,
+                                        faction: chunk.name.clone().to_string(),
+                                        faction_id: chunk.id,
+                                        current_action: world_structs::ActionType::Idle,
+                                        backpack_item: world_structs::ItemType::Nothing,
+                                        wearable_item: world_structs::ItemType::Nothing,
+                                        wielding_item: world_structs::ItemType::Nothing,
+                                        backpack_amount: 0,
+                                    },
+                                );
                             }
                         }
                     }
-                    world_chunks[i][j].entities.append(&mut chunk_entities);
+                    //chunk_entities
+                    //   .into_iter()
+                    //  .map(|(k.try_into.unwrap(), v)| world_chunks[i][j].entities.insert(k, v));
                 }
             }
         }

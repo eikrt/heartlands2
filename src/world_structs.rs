@@ -100,6 +100,16 @@ pub struct Point {
     pub z: f32,
     pub tile_type: TileType,
 }
+impl Default for Point {
+    fn default() -> Point {
+        Point {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            tile_type: TileType::Grass,
+        }
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct WorldRequest {
@@ -146,16 +156,44 @@ impl Entity {
     pub fn stop(&mut self) {
         self.stopped = true;
     }
+    pub fn to_json(&self) -> String {
+        return "".to_string();
+        //serde_json::to_str(entities.iter().skip(1).map(|(_, e)| e.to_json().fold(first.to_json() |acc,s|)).unwrap();
+    }
+}
+impl Default for Entity {
+    fn default() -> Entity {
+        Entity {
+            x: 0.0,
+            y: 0.0,
+            id: 0,
+            speed: 0.0,
+            dir: 0.0,
+            target_x: 0.0,
+            target_y: 0.0,
+            stopped: true,
+            entity_type: EntityType::Oak,
+            category_type: CategoryType::Tree,
+            faction: "Neutral".to_string(),
+            faction_id: 0,
+            current_action: ActionType::Idle,
+            wielding_item: ItemType::Nothing,
+            wearable_item: ItemType::Nothing,
+            backpack_amount: 0,
+            backpack_item: ItemType::Nothing,
+        }
+    }
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct WorldResponse {
     pub chunk: Chunk,
+    pub world_data: WorldData,
     pub valid: bool,
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Chunk {
     pub points: Vec<Vec<Point>>,
-    pub entities: Vec<Entity>,
+    pub entities: HashMap<u32, Entity>,
     pub name: String,
     pub id: i32,
 }
@@ -181,7 +219,7 @@ pub struct World {
 
 impl World {
     pub fn update_entities(&mut self) {
-        let mut rng = rand::thread_rng();
+        /* let mut rng = rand::thread_rng();
 
         for i in 0..self.world_data.width {
             for j in 0..self.world_data.height {
@@ -302,6 +340,6 @@ impl World {
                     }
                 }
             }
-        }
+        }*/
     }
 }
