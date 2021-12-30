@@ -607,7 +607,7 @@ fn main_loop() -> Result<(), String> {
             }
             match rx_w.try_recv() {
                 Ok(w) => {
-                    let cut_string = &w.as_str()[7..w.len() - 3].replace("\\", "");
+                    let cut_string = &w.as_str()[6..w.len() - 2].replace("\\", "");
                     let world_from: world_structs::World =
                         serde_json::from_str(cut_string).unwrap();
                     chunks = world_from.chunks;

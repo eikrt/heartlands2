@@ -27,7 +27,6 @@ pub fn serve(world: world_structs::World) {
     println!("Server running!");
     let connections = Arc::new(RwLock::new(HashMap::new()));
     let world = Arc::new(RwLock::from(world.clone()));
-    //let world = Arc::new(RwLock::new(HashMap::new()));
     let counter = Arc::new(RwLock::new(0));
     let connections_inner = connections.clone();
     let world_inner = world.clone();
@@ -53,15 +52,7 @@ pub fn serve(world: world_structs::World) {
                     let id = *counter_inner.read().unwrap();
                     println!("Client connected!");
                     connections_inner.write().unwrap().insert(id, sink);
-                    /* world.write().unwrap().insert(
-                        id,
-                        world_structs::Entity {
-                            id: id as i32,
-                            ..Default::default()
-                        },
-                    );*/
                     let c = *counter_inner.read().unwrap();
-
                     let f = stream
                         .for_each(move |msg| {
                             process_message(c.try_into().unwrap(), &msg, world.clone());
@@ -86,6 +77,7 @@ pub fn serve(world: world_structs::World) {
         let executor = executor.clone();
         let world_inner = world.clone();
 
+        world.write().unwrap().update_entities();
         tokio::timer::Delay::new(Instant::now() + Duration::from_millis(100))
             .map_err(|_| ())
             .and_then(move |_| {
@@ -96,20 +88,7 @@ pub fn serve(world: world_structs::World) {
                     let sink = conn.remove(id).unwrap();
 
                     let world = world_inner.read().unwrap();
-                    /*let first = match world.iter().take(1).next() {
-                        Some((_, e)) => e,
-                        None => return Ok(Loop::Continue(())),
-                    };*/
-                    /*let serial_world = format!(
-                        "[{}]",
-                        world
-                            .iter()
-                            .skip(1)
-                            .map(|(_, e)| serde_json::to_string(e).unwrap())
-                            .fold(first.to_json(), |acc, s| format!("{},{}", s, acc))
-                    );*/
-                    let serial_world = format!("{{{}}}", world);
-                    //let serial_world = serde_json::from_str(world.iter().skip(1).map(|(_, e)| e.to_json().fold(first.to_json() |acc,s|)).unwrap();
+                    let serial_world = format!("{}", world);
                     let connections = connections_inner.clone();
                     let id = id.clone();
 
@@ -117,7 +96,6 @@ pub fn serve(world: world_structs::World) {
                     let f = sink
                         .send(OwnedMessage::Text(serial_world))
                         .and_then(move |sink| {
-                            // Re-insert the entry to the connections map
                             connections.write().unwrap().insert(id.clone(), sink);
                             Ok(())
                         })

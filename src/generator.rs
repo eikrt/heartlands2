@@ -331,7 +331,7 @@ pub fn generate(
                                                 y: (_ry + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
                                                 stopped: false,
-                                                speed: 0.5,
+                                                speed: 1.5,
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,

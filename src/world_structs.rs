@@ -249,11 +249,17 @@ impl fmt::Display for World {
 }
 impl World {
     pub fn update_entities(&mut self) {
-        /* let mut rng = rand::thread_rng();
-
+        let mut rng = rand::thread_rng();
+        /*for i in 0..self.world_data.width {
+            for j in 0..self.world_data.height {
+                for (k, v) in self.chunks[i][j].entities.iter_mut() {
+                    v.idle_mov();
+                }
+            }
+        }*/
         for i in 0..self.world_data.width {
             for j in 0..self.world_data.height {
-                let mut chunks_entities: Vec<Entity> = vec![];
+                let mut chunks_entities: HashMap<i32, Entity> = HashMap::new();
                 let mut chunk_range_min_k = (i as i32 - CHUNKRANGE as i32) as i32;
                 if chunk_range_min_k < 0 {
                     chunk_range_min_k = 0;
@@ -273,12 +279,14 @@ impl World {
 
                 for k in chunk_range_min_k as usize..chunk_range_max_k as usize {
                     for h in chunk_range_min_h as usize..chunk_range_max_h as usize {
-                        for e in self.chunks[k][h].entities.clone() {
-                            chunks_entities.push(e);
+                        let ents: Vec<Entity> =
+                            self.chunks[k][h].entities.values().cloned().collect();
+                        for e in ents {
+                            chunks_entities.insert(e.id, e);
                         }
                     }
                 }
-                for e in self.chunks[i][j].entities.iter_mut() {
+                for (key, e) in self.chunks[i][j].entities.iter_mut() {
                     if e.category_type == CategoryType::Ant {
                         if e.current_action == ActionType::Idle {
                             e.idle_mov();
@@ -287,7 +295,7 @@ impl World {
                         }
                     }
                     if e.entity_type == EntityType::FoodStorage {
-                        for v in chunks_entities.iter() {
+                        for (key2, v) in chunks_entities.iter_mut() {
                             let dist_from_entity =
                                 ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
                             if v.backpack_item == ItemType::Fruit
@@ -303,7 +311,7 @@ impl World {
                         }
                     } else if e.entity_type == EntityType::WorkerAnt {
                         if e.current_action == ActionType::ReturnFood {
-                            for v in chunks_entities.iter() {
+                            for (key2, v) in chunks_entities.iter_mut() {
                                 let dist_from_entity =
                                     ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
                                 if e.backpack_item == ItemType::Fruit
@@ -340,7 +348,7 @@ impl World {
                                 e.target_y = 0.0;
                             }
 
-                            for v in chunks_entities.iter() {
+                            for (key2, v) in chunks_entities.iter_mut() {
                                 let dist_from_entity =
                                     ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
                                 if dist_from_entity < VICINITY_SIZE {
@@ -354,7 +362,7 @@ impl World {
                                 }
                             }
                         } else if e.current_action == ActionType::FetchFood {
-                            for v in chunks_entities.iter() {
+                            for (key, v) in chunks_entities.iter_mut() {
                                 let dist_from_entity =
                                     ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
                                 if dist_from_entity < INTERACTION_SIZE {
@@ -370,6 +378,6 @@ impl World {
                     }
                 }
             }
-        }*/
+        }
     }
 }
