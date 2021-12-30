@@ -566,6 +566,7 @@ pub fn generate(
                             }
                         }
                     }
+                    world_chunks[i][j].entities.extend(chunk_entities);
                     // world_chunks[i][j].entities.extend(&mut chunk_entities);
                 }
             }
@@ -717,9 +718,10 @@ pub fn generate(
                             }
                         }
                     }
-                    //chunk_entities
-                    //   .into_iter()
-                    //  .map(|(k.try_into.unwrap(), v)| world_chunks[i][j].entities.insert(k, v));
+                    /*chunk_entities
+                    .into_iter()
+                    .map(|(k.try_into.unwrap(), v)| world_chunks[i][j].entities.insert(k, v));*/
+                    world_chunks[i][j].entities.extend(chunk_entities);
                 }
             }
         }

@@ -599,10 +599,9 @@ fn main_loop() -> Result<(), String> {
 
             // get entities and chunks from server
 
-            match tx.send(OwnedMessage::Text("asdf".to_string())) {
+            match tx.send(OwnedMessage::Text("".to_string())) {
                 Ok(()) => (),
                 Err(e) => {
-                    println!("Main Loop: {:?}", e);
                     break;
                 }
             }
@@ -613,20 +612,12 @@ fn main_loop() -> Result<(), String> {
                         serde_json::from_str(cut_string).unwrap();
                     chunks = world_from.chunks;
                     world_data = world_from.world_data;
-                    println!("{}", world_data.name);
                 }
                 Err(e) => (),
             }
             if world_data.is_default {
                 continue;
             }
-            /*match tx.send(message) {
-                Ok(()) => (),
-                Err(e) => {
-                    println!("Main Loop: {:?}", e);
-                    break;
-                }
-            }*/
             // iterate chunks
             for i in 0..world_data.width {
                 for j in 0..world_data.height {
@@ -703,10 +694,13 @@ fn main_loop() -> Result<(), String> {
                 }
 
                 //render entities
-                //entities_vals.sort_by(|a, b| a.id.cmp(&b.id));
                 for i in 0..world_data.width {
                     for j in 0..world_data.height {
-                        for entity in chunks[i][j].entities.values() {
+                        let mut entities_vals: Vec<world_structs::Entity> =
+                            chunks[i][j].entities.values().cloned().collect();
+
+                        entities_vals.sort_by(|a, b| a.id.cmp(&b.id));
+                        for entity in entities_vals.iter() {
                             let tx = (entity.x) * camera.zoom - camera.x;
                             let ty = (entity.y) * camera.zoom - camera.y;
                             let tx_ant = (entity.x) * camera.zoom - camera.x;

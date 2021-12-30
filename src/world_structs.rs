@@ -198,7 +198,7 @@ pub struct WorldResponse {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Chunk {
     pub points: Vec<Vec<Point>>,
-    pub entities: HashMap<u32, Entity>,
+    pub entities: HashMap<i32, Entity>,
     pub name: String,
     pub id: i32,
 }
