@@ -1,11 +1,17 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use std::collections::HashMap;
+use std::fmt;
 const TARGET_SIZE: f32 = 8.0;
 const VICINITY_SIZE: f32 = 96.0;
 const INTERACTION_SIZE: f32 = 8.0;
 const CHUNKRANGE: usize = 2;
 const BACKPACKSIZE: u8 = 64;
+#[derive(Clone, Serialize, Deserialize, Debug)]
+struct y {
+    x: u8,
+}
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "CategoryType")]
 pub enum CategoryType {
@@ -188,7 +194,6 @@ impl Default for Entity {
 pub struct WorldResponse {
     pub chunk: Chunk,
     pub world_data: WorldData,
-    pub valid: bool,
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Chunk {
@@ -210,13 +215,38 @@ pub struct WorldData {
     pub height: usize,
     pub chunk_size: usize,
     pub tile_size: i32,
+    pub is_default: bool,
+}
+impl Default for WorldData {
+    fn default() -> WorldData {
+        WorldData {
+            name: "Default name".to_string(),
+            sea_level: 0.0,
+            width: 1,
+            height: 1,
+            chunk_size: 1,
+            tile_size: 1,
+            is_default: true,
+        }
+    }
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct World {
     pub chunks: Vec<Vec<Chunk>>,
     pub world_data: WorldData,
 }
-
+impl fmt::Display for World {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        /*write!(
+            f,
+            "\"world\": {{\"world_data\": {}, \"chunks\": {}}}",
+            serde_json::to_string(&self.chunks).unwrap(),
+            serde_json::to_string(&self.world_data).unwrap()
+        )*/
+        write!(f, "{}", serde_json::to_string(self).unwrap())
+        //write!(f, "\"x\":{}", 5)
+    }
+}
 impl World {
     pub fn update_entities(&mut self) {
         /* let mut rng = rand::thread_rng();

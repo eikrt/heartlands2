@@ -1,0 +1,1132 @@
+warning: unused import: `sdl2::mouse::MouseWheelDirection`
+  --> src/client.rs:10:5
+   |
+10 | use sdl2::mouse::MouseWheelDirection;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused imports: `TextureCreator`, `Texture`, `WindowCanvas`
+  --> src/client.rs:13:31
+   |
+13 | use sdl2::render::{BlendMode, Texture, TextureCreator, WindowCanvas};
+   |                               ^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^^^^
+
+warning: unused import: `sdl2::ttf::Font`
+  --> src/client.rs:15:5
+   |
+15 | use sdl2::ttf::Font;
+   |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::future::Future`
+  --> src/client.rs:18:5
+   |
+18 | use std::future::Future;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::io::stdin`
+  --> src/client.rs:19:5
+   |
+19 | use std::io::stdin;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused imports: `Read`, `Write`
+  --> src/client.rs:20:15
+   |
+20 | use std::io::{Read, Write};
+   |               ^^^^  ^^^^^
+
+warning: unused import: `std::iter::FromIterator`
+  --> src/client.rs:21:5
+   |
+21 | use std::iter::FromIterator;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::pin::Pin`
+  --> src/client.rs:23:5
+   |
+23 | use std::pin::Pin;
+   |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::str::from_utf8`
+  --> src/client.rs:24:5
+   |
+24 | use std::str::from_utf8;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unnecessary parentheses around `if` condition
+    --> src/client.rs:1123:16
+     |
+1123 |             if (!hovering_entity) {
+     |                ^                ^
+     |
+     = note: `#[warn(unused_parens)]` on by default
+help: remove these parentheses
+     |
+1123 -             if (!hovering_entity) {
+1123 +             if !hovering_entity {
+     | 
+
+warning: unnecessary parentheses around function argument
+    --> src/client.rs:1151:29
+     |
+1151 | ...                   (mouse_state.x() - text.text_sprite.width() as i32 / 2),
+     |                       ^                                                     ^
+     |
+help: remove these parentheses
+     |
+1151 -                             (mouse_state.x() - text.text_sprite.width() as i32 / 2),
+1151 +                             mouse_state.x() - text.text_sprite.width() as i32 / 2,
+     | 
+
+warning: unnecessary parentheses around function argument
+    --> src/client.rs:1152:29
+     |
+1152 | ...                   (mouse_state.y() - (text.text_sprite.height()) as i32),
+     |                       ^                                                    ^
+     |
+help: remove these parentheses
+     |
+1152 -                             (mouse_state.y() - (text.text_sprite.height()) as i32),
+1152 +                             mouse_state.y() - (text.text_sprite.height()) as i32,
+     | 
+
+warning: unnecessary parentheses around function argument
+    --> src/client.rs:1200:29
+     |
+1200 | ...                   (mouse_state.x() - text.text_sprite.width() as i32 / 2),
+     |                       ^                                                     ^
+     |
+help: remove these parentheses
+     |
+1200 -                             (mouse_state.x() - text.text_sprite.width() as i32 / 2),
+1200 +                             mouse_state.x() - text.text_sprite.width() as i32 / 2,
+     | 
+
+warning: unnecessary parentheses around function argument
+    --> src/client.rs:1201:29
+     |
+1201 | ...                   (mouse_state.y() - (text.text_sprite.height()) as i32),
+     |                       ^                                                    ^
+     |
+help: remove these parentheses
+     |
+1201 -                             (mouse_state.y() - (text.text_sprite.height()) as i32),
+1201 +                             mouse_state.y() - (text.text_sprite.height()) as i32,
+     | 
+
+warning: unused import: `rand::seq::IteratorRandom`
+ --> src/generator.rs:2:5
+  |
+2 | use rand::seq::IteratorRandom;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::env`
+ --> src/generator.rs:6:5
+  |
+6 | use std::env;
+  |     ^^^^^^^^
+
+warning: unnecessary parentheses around assigned value
+   --> src/generator.rs:290:39
+    |
+290 | ...                   point.z = (512.0 - point.z);
+    |                                 ^               ^
+    |
+help: remove these parentheses
+    |
+290 -                             point.z = (512.0 - point.z);
+290 +                             point.z = 512.0 - point.z;
+    | 
+
+warning: unused imports: `InitFlag`, `LoadTexture`
+ --> src/graphics_utils.rs:2:19
+  |
+2 | use sdl2::image::{InitFlag, LoadTexture};
+  |                   ^^^^^^^^  ^^^^^^^^^^^
+
+warning: unused import: `BlendMode`
+ --> src/graphics_utils.rs:5:20
+  |
+5 | use sdl2::render::{BlendMode, Texture, TextureCreator, WindowCanvas};
+  |                    ^^^^^^^^^
+
+warning: unused import: `serde_json`
+ --> src/server.rs:5:5
+  |
+5 | use serde_json;
+  |     ^^^^^^^^^^
+
+warning: unused import: `tokio::runtime::TaskExecutor`
+ --> src/server.rs:7:5
+  |
+7 | use tokio::runtime::TaskExecutor;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fmt::Debug`
+  --> src/server.rs:10:5
+   |
+10 | use std::fmt::Debug;
+   |     ^^^^^^^^^^^^^^^
+
+warning: an associated function with this name may be added to the standard library in the future
+   --> src/client.rs:833:30
+    |
+833 | ...                   .lerp(tile_gs.get(&p.tile_type).unwrap().tc.r as f32, p.z / 512.0)
+    |                        ^^^^
+    |
+    = note: `#[warn(unstable_name_collisions)]` on by default
+    = warning: once this associated item is added to the standard library, the ambiguity may cause an error or change in behavior!
+    = note: for more information, see issue #48919 <https://github.com/rust-lang/rust/issues/48919>
+    = help: call with fully qualified syntax `lerp(...)` to keep using the current method
+
+warning: an associated function with this name may be added to the standard library in the future
+   --> src/client.rs:836:30
+    |
+836 | ...                   .lerp(tile_gs.get(&p.tile_type).unwrap().tc.g as f32, p.z / 512.0)
+    |                        ^^^^
+    |
+    = warning: once this associated item is added to the standard library, the ambiguity may cause an error or change in behavior!
+    = note: for more information, see issue #48919 <https://github.com/rust-lang/rust/issues/48919>
+    = help: call with fully qualified syntax `lerp(...)` to keep using the current method
+
+warning: an associated function with this name may be added to the standard library in the future
+   --> src/client.rs:839:30
+    |
+839 | ...                   .lerp(tile_gs.get(&p.tile_type).unwrap().tc.b as f32, p.z / 512.0)
+    |                        ^^^^
+    |
+    = warning: once this associated item is added to the standard library, the ambiguity may cause an error or change in behavior!
+    = note: for more information, see issue #48919 <https://github.com/rust-lang/rust/issues/48919>
+    = help: call with fully qualified syntax `lerp(...)` to keep using the current method
+
+warning: use of deprecated associated function `server::tokio::runtime::Runtime::reactor`: there is now a reactor per worker thread
+  --> src/server.rs:26:49
+   |
+26 |         Server::bind("127.0.0.1:5000", &runtime.reactor()).expect("Failed to create server");
+   |                                                 ^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: unused variable: `camera_state`
+  --> src/client.rs:68:13
+   |
+68 |     let mut camera_state = graphics_utils::Camera {
+   |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_camera_state`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `update_data`
+  --> src/client.rs:89:13
+   |
+89 |     let mut update_data = true;
+   |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_update_data`
+
+warning: unused variable: `world_data`
+  --> src/client.rs:91:13
+   |
+91 |     let mut world_data: Option<world_structs::WorldData> = None;
+   |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_world_data`
+
+warning: value assigned to `mouse_state` is never read
+  --> src/client.rs:94:13
+   |
+94 |     let mut mouse_state = MouseState::new(&event_pump);
+   |             ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_assignments)]` on by default
+   = help: maybe it is overwritten before being read?
+
+warning: unused variable: `chunk_fetch_width`
+  --> src/client.rs:97:13
+   |
+97 |     let mut chunk_fetch_width = 2;
+   |             ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_chunk_fetch_width`
+
+warning: unused variable: `chunk_fetch_height`
+  --> src/client.rs:98:13
+   |
+98 |     let mut chunk_fetch_height = 2;
+   |             ^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_chunk_fetch_height`
+
+warning: unused variable: `chunk_fetch_x`
+  --> src/client.rs:99:13
+   |
+99 |     let mut chunk_fetch_x = -1;
+   |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_chunk_fetch_x`
+
+warning: unused variable: `chunk_fetch_y`
+   --> src/client.rs:100:13
+    |
+100 |     let mut chunk_fetch_y = -1;
+    |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_chunk_fetch_y`
+
+warning: unused variable: `chunks`
+   --> src/client.rs:101:13
+    |
+101 |     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_chunks`
+
+warning: unused variable: `entities`
+   --> src/client.rs:102:13
+    |
+102 |     let mut entities: Vec<world_structs::Entity> = Vec::new();
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_entities`
+
+warning: unused variable: `snail_texture`
+   --> src/client.rs:159:9
+    |
+159 |     let snail_texture = texture_creator.load_texture("res/snail.png")?;
+    |         ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_snail_texture`
+
+warning: unused variable: `settings_menu_on`
+   --> src/client.rs:219:13
+    |
+219 |     let mut settings_menu_on = false;
+    |             ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_settings_menu_on`
+
+warning: unused variable: `send_loop`
+   --> src/client.rs:233:9
+    |
+233 |     let send_loop = thread::spawn(move || {
+    |         ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_send_loop`
+
+warning: unused variable: `receive_loop`
+   --> src/client.rs:260:9
+    |
+260 |     let receive_loop = thread::spawn(move || {
+    |         ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_receive_loop`
+
+warning: unused variable: `x`
+   --> src/client.rs:525:37
+    |
+525 |                 Event::MouseWheel { x, y, .. } => {
+    |                                     ^ help: try ignoring the field: `x: _`
+
+warning: unused variable: `world_data`
+   --> src/client.rs:791:25
+    |
+791 |                     let world_data = Some(match serde_json::from_str(cut_string) {
+    |                         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_world_data`
+
+warning: unused variable: `e`
+   --> src/client.rs:797:21
+    |
+797 |                 Err(e) => (),
+    |                     ^ help: if this is intentional, prefix it with an underscore: `_e`
+
+warning: unused variable: `hovered_tiletype`
+    --> src/client.rs:1090:21
+     |
+1090 |             let mut hovered_tiletype = world_structs::TileType::Grass;
+     |                     ^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_hovered_tiletype`
+
+warning: unused variable: `wd`
+    --> src/client.rs:1096:30
+     |
+1096 |                     Some(ref wd) => {
+     |                              ^^ help: if this is intentional, prefix it with an underscore: `_wd`
+
+warning: unused variable: `cgd`
+    --> src/client.rs:1234:38
+     |
+1234 | ...                   Some(cgd) => {
+     |                            ^^^ help: if this is intentional, prefix it with an underscore: `_cgd`
+
+warning: unused variable: `l`
+   --> src/generator.rs:350:41
+    |
+350 | ...                   for l in 0..rng.gen_range(2..4) {
+    |                           ^ help: if this is intentional, prefix it with an underscore: `_l`
+
+warning: unused variable: `width`
+   --> src/graphics_utils.rs:115:10
+    |
+115 |     let (width, height) = canvas.output_size()?;
+    |          ^^^^^ help: if this is intentional, prefix it with an underscore: `_width`
+
+warning: unused variable: `height`
+   --> src/graphics_utils.rs:115:17
+    |
+115 |     let (width, height) = canvas.output_size()?;
+    |                 ^^^^^^ help: if this is intentional, prefix it with an underscore: `_height`
+
+warning: unused variable: `addr`
+  --> src/server.rs:38:35
+   |
+38 |         .for_each(move |(upgrade, addr)| {
+   |                                   ^^^^ help: if this is intentional, prefix it with an underscore: `_addr`
+
+warning: unused variable: `v`
+  --> src/server.rs:93:48
+   |
+93 |                 let ids = conn.iter().map(|(k, v)| k.clone()).collect::<Vec<_>>();
+   |                                                ^ help: if this is intentional, prefix it with an underscore: `_v`
+
+warning: unused variable: `world`
+   --> src/server.rs:143:49
+    |
+143 | fn process_message(id: u32, msg: &OwnedMessage, world: Arc<RwLock<world_structs::World>>) {
+    |                                                 ^^^^^ help: if this is intentional, prefix it with an underscore: `_world`
+
+warning: variable does not need to be mutable
+  --> src/client.rs:57:9
+   |
+57 |     let mut font = ttf_context.load_font("fonts/PixelOperator.ttf", desc_font_size)?;
+   |         ----^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+  --> src/client.rs:68:9
+   |
+68 |     let mut camera_state = graphics_utils::Camera {
+   |         ----^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+  --> src/client.rs:89:9
+   |
+89 |     let mut update_data = true;
+   |         ----^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+  --> src/client.rs:90:9
+   |
+90 |     let mut world_data_state: Option<world_structs::WorldData> = None;
+   |         ----^^^^^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+  --> src/client.rs:91:9
+   |
+91 |     let mut world_data: Option<world_structs::WorldData> = None;
+   |         ----^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+  --> src/client.rs:97:9
+   |
+97 |     let mut chunk_fetch_width = 2;
+   |         ----^^^^^^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+  --> src/client.rs:98:9
+   |
+98 |     let mut chunk_fetch_height = 2;
+   |         ----^^^^^^^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+  --> src/client.rs:99:9
+   |
+99 |     let mut chunk_fetch_x = -1;
+   |         ----^^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:100:9
+    |
+100 |     let mut chunk_fetch_y = -1;
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:101:9
+    |
+101 |     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
+    |         ----^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:102:9
+    |
+102 |     let mut entities: Vec<world_structs::Entity> = Vec::new();
+    |         ----^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:103:9
+    |
+103 |     let mut chunks: Vec<world_structs::Chunk> = Vec::new();
+    |         ----^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:167:9
+    |
+167 |     let mut grass_texture = texture_creator.load_texture("res/grass.png")?;
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:168:9
+    |
+168 |     let mut water_texture = texture_creator.load_texture("res/water.png")?;
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:169:9
+    |
+169 |     let mut ice_texture = texture_creator.load_texture("res/ice.png")?;
+    |         ----^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:170:9
+    |
+170 |     let mut sand_texture = texture_creator.load_texture("res/sand.png")?;
+    |         ----^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:172:9
+    |
+172 |     let mut menu_button_texture = texture_creator.load_texture("res/menu_button.png")?;
+    |         ----^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:173:9
+    |
+173 |     let mut menu_button_hovered_texture =
+    |         ----^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:175:9
+    |
+175 |     let mut menu_button_pressed_texture =
+    |         ----^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:177:9
+    |
+177 |     let mut menu_background = texture_creator.load_texture("res/background_image_1.png")?;
+    |         ----^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:181:9
+    |
+181 |     let mut ui_button_texture = texture_creator.load_texture("res/ui_button.png")?;
+    |         ----^^^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:182:9
+    |
+182 |     let mut ui_button_hovered_texture =
+    |         ----^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:184:9
+    |
+184 |     let mut ui_button_pressed_texture =
+    |         ----^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/client.rs:219:9
+    |
+219 |     let mut settings_menu_on = false;
+    |         ----^^^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/client.rs:1090:17
+     |
+1090 |             let mut hovered_tiletype = world_structs::TileType::Grass;
+     |                 ----^^^^^^^^^^^^^^^^
+     |                 |
+     |                 help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/client.rs:1177:29
+     |
+1177 |                         let mut name = descriptions_for_entities.get(&he.entity_type).unwrap();
+     |                             ----^^^^
+     |                             |
+     |                             help: remove this `mut`
+
+warning: constant is never used: `TARGET_SIZE`
+ --> src/world_structs.rs:6:1
+  |
+6 | const TARGET_SIZE: f32 = 8.0;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: constant is never used: `VICINITY_SIZE`
+ --> src/world_structs.rs:7:1
+  |
+7 | const VICINITY_SIZE: f32 = 96.0;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant is never used: `INTERACTION_SIZE`
+ --> src/world_structs.rs:8:1
+  |
+8 | const INTERACTION_SIZE: f32 = 8.0;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant is never used: `CHUNKRANGE`
+ --> src/world_structs.rs:9:1
+  |
+9 | const CHUNKRANGE: usize = 2;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant is never used: `BACKPACKSIZE`
+  --> src/world_structs.rs:10:1
+   |
+10 | const BACKPACKSIZE: u8 = 64;
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused `Result` that must be used
+   --> src/client.rs:279:21
+    |
+279 |                     tx_w.send(format!("{:?}", message));
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_must_use)]` on by default
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:584:13
+    |
+584 | /             graphics_utils::render(
+585 | |                 &mut canvas,
+586 | |                 &menu_background,
+587 | |                 Point::new(0, 0),
+588 | |                 sprite_720x480,
+589 | |                 1.0,
+590 | |             );
+    | |______________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:601:17
+    |
+601 | /                 graphics_utils::render(
+602 | |                     &mut canvas,
+603 | |                     &menu_button_hovered_texture,
+604 | |                     position,
+605 | |                     sprite_128x32,
+606 | |                     1.0,
+607 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:609:17
+    |
+609 | /                 graphics_utils::render(
+610 | |                     &mut canvas,
+611 | |                     &menu_button_pressed_texture,
+612 | |                     position,
+613 | |                     sprite_128x32,
+614 | |                     1.0,
+615 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:617:17
+    |
+617 | /                 graphics_utils::render(
+618 | |                     &mut canvas,
+619 | |                     &menu_button_texture,
+620 | |                     position,
+621 | |                     sprite_128x32,
+622 | |                     1.0,
+623 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:628:17
+    |
+628 | /                 graphics_utils::render(
+629 | |                     &mut canvas,
+630 | |                     &menu_button_hovered_texture,
+631 | |                     position,
+632 | |                     sprite_128x32,
+633 | |                     1.0,
+634 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:636:17
+    |
+636 | /                 graphics_utils::render(
+637 | |                     &mut canvas,
+638 | |                     &menu_button_pressed_texture,
+639 | |                     position,
+640 | |                     sprite_128x32,
+641 | |                     1.0,
+642 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:644:17
+    |
+644 | /                 graphics_utils::render(
+645 | |                     &mut canvas,
+646 | |                     &menu_button_texture,
+647 | |                     position,
+648 | |                     sprite_128x32,
+649 | |                     1.0,
+650 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:655:17
+    |
+655 | /                 graphics_utils::render(
+656 | |                     &mut canvas,
+657 | |                     &menu_button_hovered_texture,
+658 | |                     position,
+659 | |                     sprite_128x32,
+660 | |                     1.0,
+661 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:663:17
+    |
+663 | /                 graphics_utils::render(
+664 | |                     &mut canvas,
+665 | |                     &menu_button_pressed_texture,
+666 | |                     position,
+667 | |                     sprite_128x32,
+668 | |                     1.0,
+669 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:671:17
+    |
+671 | /                 graphics_utils::render(
+672 | |                     &mut canvas,
+673 | |                     &menu_button_texture,
+674 | |                     position,
+675 | |                     sprite_128x32,
+676 | |                     1.0,
+677 | |                 );
+    | |__________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:858:25
+    |
+858 | /                         graphics_utils::render_with_color(
+859 | |                             &mut canvas,
+860 | |                             texture,
+861 | |                             position,
+...   |
+864 | |                             camera.zoom,
+865 | |                         );
+    | |__________________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:904:21
+    |
+904 | /                     graphics_utils::render(
+905 | |                         &mut canvas,
+906 | |                         &oak_texture,
+907 | |                         position,
+908 | |                         sprite_32,
+909 | |                         camera.zoom,
+910 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:916:21
+    |
+916 | /                     graphics_utils::render(
+917 | |                         &mut canvas,
+918 | |                         &appletree_texture,
+919 | |                         position,
+920 | |                         sprite_32,
+921 | |                         camera.zoom,
+922 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:928:21
+    |
+928 | /                     graphics_utils::render(
+929 | |                         &mut canvas,
+930 | |                         &spruce_texture,
+931 | |                         position,
+932 | |                         sprite_32,
+933 | |                         camera.zoom,
+934 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:940:21
+    |
+940 | /                     graphics_utils::render(
+941 | |                         &mut canvas,
+942 | |                         &pine_texture,
+943 | |                         position,
+944 | |                         sprite_32,
+945 | |                         camera.zoom,
+946 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:952:21
+    |
+952 | /                     graphics_utils::render(
+953 | |                         &mut canvas,
+954 | |                         &birch_texture,
+955 | |                         position,
+956 | |                         sprite_32,
+957 | |                         camera.zoom,
+958 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:966:21
+    |
+966 | /                     graphics_utils::render(
+967 | |                         &mut canvas,
+968 | |                         &cactus_texture,
+969 | |                         position,
+970 | |                         sprite_32,
+971 | |                         camera.zoom,
+972 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:980:21
+    |
+980 | /                     graphics_utils::render(
+981 | |                         &mut canvas,
+982 | |                         &ant_worker_texture,
+983 | |                         position,
+984 | |                         sprite_16,
+985 | |                         camera.zoom,
+986 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/client.rs:992:21
+    |
+992 | /                     graphics_utils::render(
+993 | |                         &mut canvas,
+994 | |                         &ant_soldier_texture,
+995 | |                         position,
+996 | |                         sprite_16,
+997 | |                         camera.zoom,
+998 | |                     );
+    | |______________________^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1004:21
+     |
+1004 | /                     graphics_utils::render(
+1005 | |                         &mut canvas,
+1006 | |                         &ant_drone_texture,
+1007 | |                         position,
+1008 | |                         sprite_16,
+1009 | |                         camera.zoom,
+1010 | |                     );
+     | |______________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1016:21
+     |
+1016 | /                     graphics_utils::render(
+1017 | |                         &mut canvas,
+1018 | |                         &mechant_texture,
+1019 | |                         position,
+1020 | |                         sprite_16,
+1021 | |                         camera.zoom,
+1022 | |                     );
+     | |______________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1028:21
+     |
+1028 | /                     graphics_utils::render(
+1029 | |                         &mut canvas,
+1030 | |                         &ant_queen_texture,
+1031 | |                         position,
+1032 | |                         sprite_32,
+1033 | |                         camera.zoom,
+1034 | |                     );
+     | |______________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1040:21
+     |
+1040 | /                     graphics_utils::render(
+1041 | |                         &mut canvas,
+1042 | |                         &food_storage_texture,
+1043 | |                         position,
+1044 | |                         sprite_16,
+1045 | |                         camera.zoom,
+1046 | |                     );
+     | |______________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1054:21
+     |
+1054 | /                     graphics_utils::render(
+1055 | |                         &mut canvas,
+1056 | |                         &fruit_texture,
+1057 | |                         item_position,
+1058 | |                         sprite_4,
+1059 | |                         camera.zoom,
+1060 | |                     );
+     | |______________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1067:21
+     |
+1067 | /                     graphics_utils::render(
+1068 | |                         &mut canvas,
+1069 | |                         &wooden_spear_texture,
+1070 | |                         item_position,
+1071 | |                         sprite_1x5,
+1072 | |                         camera.zoom,
+1073 | |                     );
+     | |______________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1080:21
+     |
+1080 | /                     graphics_utils::render(
+1081 | |                         &mut canvas,
+1082 | |                         &wooden_shovel_texture,
+1083 | |                         item_position,
+1084 | |                         sprite_2x5,
+1085 | |                         camera.zoom,
+1086 | |                     );
+     | |______________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1236:41
+     |
+1236 | / ...                   graphics_utils::render_rect(
+1237 | | ...                       &mut canvas,
+1238 | | ...                       position,
+1239 | | ...                       render_rect,
+1240 | | ...                       Color::RGBA(255, 255, 255, 125),
+1241 | | ...                       camera.zoom,
+1242 | | ...                   );
+     | |________________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1244:41
+     |
+1244 | / ...                   graphics_utils::render_rect(
+1245 | | ...                       &mut canvas,
+1246 | | ...                       position,
+1247 | | ...                       render_rect,
+1248 | | ...                       *chunk_graphics_data.get(&c.name).unwrap(),
+1249 | | ...                       camera.zoom,
+1250 | | ...                   );
+     | |________________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1254:37
+     |
+1254 | / ...                   graphics_utils::render_rect(
+1255 | | ...                       &mut canvas,
+1256 | | ...                       position,
+1257 | | ...                       render_rect,
+1258 | | ...                       Color::RGBA(255, 255, 255, 125),
+1259 | | ...                       camera.zoom,
+1260 | | ...                   );
+     | |________________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1303:17
+     |
+1303 | /                 graphics_utils::render(
+1304 | |                     &mut canvas,
+1305 | |                     &ui_button_hovered_texture,
+1306 | |                     position,
+1307 | |                     sprite_32,
+1308 | |                     1.0,
+1309 | |                 );
+     | |__________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1311:17
+     |
+1311 | /                 graphics_utils::render(
+1312 | |                     &mut canvas,
+1313 | |                     &ui_button_pressed_texture,
+1314 | |                     position,
+1315 | |                     sprite_32,
+1316 | |                     1.0,
+1317 | |                 );
+     | |__________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1319:17
+     |
+1319 |                 graphics_utils::render(&mut canvas, &ui_button_texture, position, sprite_32, 1.0);
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1327:17
+     |
+1327 | /                 graphics_utils::render(
+1328 | |                     &mut canvas,
+1329 | |                     &ui_button_hovered_texture,
+1330 | |                     position,
+1331 | |                     sprite_32,
+1332 | |                     1.0,
+1333 | |                 );
+     | |__________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1335:17
+     |
+1335 | /                 graphics_utils::render(
+1336 | |                     &mut canvas,
+1337 | |                     &ui_button_pressed_texture,
+1338 | |                     position,
+1339 | |                     sprite_32,
+1340 | |                     1.0,
+1341 | |                 );
+     | |__________________^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1343:17
+     |
+1343 |                 graphics_utils::render(&mut canvas, &ui_button_texture, position, sprite_32, 1.0);
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+    --> src/client.rs:1399:5
+     |
+1399 |     main_loop();
+     |     ^^^^^^^^^^^^
+     |
+     = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `Result` that must be used
+   --> src/graphics_utils.rs:176:5
+    |
+176 |     canvas.copy(texture, None, screen_rect);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+
+warning: unused `SelectNext` in tuple element 1 that must be used
+   --> src/server.rs:136:5
+    |
+136 | /     runtime
+137 | |         .block_on_all(connection_handler.select(send_handler))
+138 | |         .map_err(|_| println!("Error!"))
+139 | |         .unwrap();
+    | |__________________^
+    |
+    = note: futures do nothing unless polled
+
+warning: `mechants` (lib) generated 122 warnings
+    Finished dev [unoptimized + debuginfo] target(s) in 0.04s
+     Running `target/debug/client`
+thread 'main' panicked at 'Failed to get world with error: invalid type: string "{\"chunks\":[[{\"points\":[[{\"x\":0.0,\"y\":0.0,\"z\":177.05426,\"tile_type\":{\"TileType\":\"Water\"}},{\"x\":0.0,\"y\":1.0,\"z\":512.0,\"tile_type\":{\"TileType\":\"Water\"}}],[{\"x\":1.0,\"y\":0.0,\"z\":512.0,\"tile_type\":{\"TileType\":\"MudHiveWall\"}},{\"x\":1.0,\"y\":1.0,\"z\":196.47632,\"tile_type\":{\"TileType\":\"MudHiveWall\"}}]],\"entities\":{},\"name\":\"Niluahrevo\",\"id\":4072}]],\"world_data\":{\"name\":\"Land of Ants\",\"sea_level\":400.0,\"width\":1,\"height\":1,\"chunk_size\":2,\"tile_size\":16}}", expected unit at line 1 column 523', src/client.rs:793:35
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

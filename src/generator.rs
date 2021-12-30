@@ -736,6 +736,7 @@ pub fn generate(
             height: height,
             chunk_size: chunk_size,
             tile_size: tile_size,
+            is_default: false,
         },
     };
 }
