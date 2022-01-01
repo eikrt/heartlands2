@@ -8,10 +8,6 @@ const VICINITY_SIZE: f32 = 96.0;
 const INTERACTION_SIZE: f32 = 8.0;
 const CHUNKRANGE: usize = 2;
 const BACKPACKSIZE: u8 = 64;
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct y {
-    x: u8,
-}
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "CategoryType")]
 pub enum CategoryType {
@@ -197,6 +193,8 @@ pub struct WorldResponse {
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Chunk {
+    pub x: i32,
+    pub y: i32,
     pub points: Vec<Vec<Point>>,
     pub entities: HashMap<i32, Entity>,
     pub name: String,
@@ -234,16 +232,75 @@ impl Default for WorldData {
 pub struct World {
     pub chunks: Vec<Vec<Chunk>>,
     pub world_data: WorldData,
+    pub v_x: i32, // slice dimensions for formatting
+    pub v_y: i32,
+    pub v_w: i32,
+    pub v_h: i32,
 }
 impl fmt::Display for World {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        /*write!(
+        let mut view_x =
+            self.v_x / self.world_data.tile_size / self.world_data.chunk_size as i32 - self.v_w;
+        let mut view_y =
+            self.v_y / self.world_data.tile_size / self.world_data.chunk_size as i32 - self.v_h;
+        let mut view_width = view_x + self.v_w * 2;
+        let mut view_height = view_y + self.v_h * 2;
+        if view_x < 0 {
+            view_x = 0;
+        }
+        if view_y < 0 {
+            view_y = 0;
+        }
+        if view_x > self.chunks.len() as i32 - 2 {
+            view_x = self.chunks.len() as i32 - 2;
+        }
+        if view_y > self.chunks.len() as i32 - 2 {
+            view_y = self.chunks.len() as i32 - 2;
+        }
+
+        if view_width < 0 {
+            view_width = 1;
+        }
+        if view_height < 0 {
+            view_height = 1;
+        }
+        if view_width > self.chunks.len() as i32 - 1 {
+            view_width = self.chunks.len() as i32 - 1;
+        }
+        if view_height > self.chunks.len() as i32 - 1 {
+            view_height = self.chunks.len() as i32 - 1;
+        }
+        /*let mut selected_chunks: Vec<Vec<Chunk>> = Vec::from(Vec::new());
+        for i in view_x as usize..view_height as usize as usize {
+            selected_chunks.push(Vec::new());
+            for j in view_y as usize..view_height as usize {
+                println!("{}", i - view_x as usize);
+                selected_chunks[i - view_x as usize].push(self.chunks[i][j].clone());
+            }
+        }*/
+
+        let mut selected_chunks = self.chunks.clone();
+        let mut selected_chunks2 = self.chunks.clone();
+        for i in 0..selected_chunks.len() {
+            for j in 0..selected_chunks.len() {
+                selected_chunks2[i].retain(|x| {
+                    x.x > view_x && x.x < view_width && x.y > view_y && x.y < view_height
+                });
+            }
+        }
+
+        write!(
             f,
-            "\"world\": {{\"world_data\": {}, \"chunks\": {}}}",
-            serde_json::to_string(&self.chunks).unwrap(),
-            serde_json::to_string(&self.world_data).unwrap()
-        )*/
-        write!(f, "{}", serde_json::to_string(self).unwrap())
+            "{{\"chunks\": {}, \"world_data\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
+            serde_json::to_string(&selected_chunks2).unwrap(),
+            serde_json::to_string(&self.world_data).unwrap(),
+            serde_json::to_string(&view_x).unwrap(),
+            serde_json::to_string(&view_y).unwrap(),
+            serde_json::to_string(&view_width).unwrap(),
+            serde_json::to_string(&view_height).unwrap(),
+
+        )
+        //write!(f, "{}", serde_json::to_string(self).unwrap())
         //write!(f, "\"x\":{}", 5)
     }
 }

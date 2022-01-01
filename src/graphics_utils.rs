@@ -5,6 +5,7 @@ use sdl2::rect::{Point, Rect};
 use sdl2::render::{BlendMode, Texture, TextureCreator, WindowCanvas};
 use sdl2::surface::Surface;
 use sdl2::ttf::Font;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 #[derive(PartialEq)]
 pub enum MapState {
@@ -27,7 +28,7 @@ pub enum ButtonStatus {
     Pressed,
     Released,
 }
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Camera {
     pub x: f32,
     pub y: f32,
@@ -77,8 +78,14 @@ impl Button {
     pub fn neutralize(&mut self) {
         self.status = ButtonStatus::Neutral;
     }
-    pub fn check_if_hovered(&mut self, m_x: f32, m_y: f32) {
-        if m_x > self.x && m_x < self.x + self.width && m_y > self.y && m_y < self.y + self.height {
+    pub fn check_if_hovered(&mut self, m_x: f32, m_y: f32, ratio_x: f32, ratio_y: f32) {
+        let m_x2 = m_x;
+        let m_y2 = m_y;
+        if m_x2 > self.x as f32
+            && m_x2 < self.x + self.width
+            && m_y2 > self.y
+            && m_y2 < self.y + self.height
+        {
             self.hover();
         } else {
             self.neutralize();
@@ -111,13 +118,15 @@ pub fn render(
     position: Point,
     sprite: Rect,
     zoom: f32,
+    ratio_x: f32,
+    ratio_y: f32,
 ) -> Result<(), String> {
     let (width, height) = canvas.output_size()?;
     let screen_rect = Rect::new(
-        position.x as i32,
-        position.y as i32,
-        (sprite.width() as f32 * zoom) as u32,
-        (sprite.height() as f32 * zoom) as u32,
+        (position.x as f32 / ratio_x) as i32,
+        (position.y as f32 / ratio_y) as i32,
+        (sprite.width() as f32 * zoom / ratio_x) as u32,
+        (sprite.height() as f32 * zoom / ratio_y) as u32,
     );
     canvas.copy(texture, sprite, screen_rect)?;
     Ok(())
@@ -130,21 +139,23 @@ pub fn render_with_color(
     sprite: Rect,
     color: Color,
     zoom: f32,
+    ratio_x: f32,
+    ratio_y: f32,
 ) -> Result<(), String> {
     let (_width, _height) = canvas.output_size()?;
     let screen_rect = Rect::new(
-        position.x,
-        position.y,
-        (sprite.width() as f32 * zoom) as u32,
-        (sprite.height() as f32 * zoom) as u32,
+        (position.x as f32 / ratio_x) as i32,
+        (position.y as f32 / ratio_y) as i32,
+        (sprite.width() as f32 * zoom / ratio_x) as u32,
+        (sprite.height() as f32 * zoom / ratio_y) as u32,
     );
     canvas.copy(texture, sprite, screen_rect)?;
     canvas.set_draw_color(color);
     match canvas.fill_rect(Rect::new(
-        position.x as i32,
-        position.y as i32,
-        (sprite.width() as f32 * zoom) as u32,
-        (sprite.height() as f32 * zoom) as u32,
+        (position.x as f32 / ratio_x) as i32,
+        (position.y as f32 / ratio_y) as i32,
+        (sprite.width() as f32 * zoom / ratio_x) as u32,
+        (sprite.height() as f32 * zoom / ratio_y) as u32,
     )) {
         Ok(_v) => (),
         Err(_v) => (),
@@ -171,8 +182,20 @@ pub fn render_rect(
     }
     Ok(())
 }
-pub fn render_text(canvas: &mut WindowCanvas, texture: &Texture, position: Point, sprite: Rect) {
-    let screen_rect = Rect::new(position.x, position.y, sprite.width(), sprite.height());
+pub fn render_text(
+    canvas: &mut WindowCanvas,
+    texture: &Texture,
+    position: Point,
+    sprite: Rect,
+    ratio_x: f32,
+    ratio_y: f32,
+) {
+    let screen_rect = Rect::new(
+        (position.x as f32 / ratio_x) as i32,
+        (position.y as f32 / ratio_y) as i32,
+        (sprite.width() as f32 / ratio_x) as u32,
+        (sprite.height() as f32 / ratio_y) as u32,
+    );
     canvas.copy(texture, None, screen_rect);
 }
 pub fn tile_graphics() -> HashMap<world_structs::TileType, TileGraphics> {

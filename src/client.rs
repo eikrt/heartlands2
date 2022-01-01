@@ -13,6 +13,7 @@ use sdl2::rect::{Point, Rect};
 use sdl2::render::{BlendMode, Texture, TextureCreator, WindowCanvas};
 use sdl2::surface::Surface;
 use sdl2::ttf::Font;
+use sdl2::video::FullscreenType;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -28,14 +29,10 @@ use std::time::SystemTime;
 use std::{thread, time};
 use websocket::client::ClientBuilder;
 use websocket::{Message, OwnedMessage};
-const SCREEN_WIDTH: u32 = 720;
-const SCREEN_HEIGHT: u32 = 480;
+const SCREEN_WIDTH: u32 = 426;
+const SCREEN_HEIGHT: u32 = 240;
 const TILE_SIZE: f32 = 16.0;
 const CONNECTION: &'static str = "ws://127.0.0.1:5000";
-#[derive(Clone, Serialize, Deserialize, Debug)]
-struct y {
-    x: u8,
-}
 fn main_loop() -> Result<(), String> {
     // sdl stuff
     let sdl_context = sdl2::init()?;
@@ -43,6 +40,7 @@ fn main_loop() -> Result<(), String> {
     let mut window = video_subsystem
         .window("Mechants", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
+        .resizable()
         .build()
         .expect("could not initialize video subsystem");
     let icon: Surface = LoadSurface::from_file("res/icon2.png").unwrap();
@@ -53,6 +51,9 @@ fn main_loop() -> Result<(), String> {
         .expect("could not make a canvas");
     canvas.set_blend_mode(BlendMode::Blend);
 
+    //canvas.window_mut().set_fullscreen(FullscreenType::True);
+    // canvas.window_mut().set_size(500, 500);
+    // canvas.window_mut().set_resizable(true);
     // texture stuff
     let texture_creator = canvas.texture_creator();
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
@@ -98,7 +99,7 @@ fn main_loop() -> Result<(), String> {
     // mouse
     let mut mouse_not_moved_for = 0;
     let mut mouse_state = MouseState::new(&event_pump);
-    let hover_time = 25;
+    let hover_time = 75;
     // chunks and entities
     let mut chunk_fetch_width = 2;
     let mut chunk_fetch_height = 2;
@@ -111,7 +112,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 64.0 + 32.0,
+        y: 64.0 + 4.0,
         width: 128.0,
         height: 32.0,
     };
@@ -119,7 +120,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 128.0 + 32.0,
+        y: 128.0 + 4.0,
         width: 128.0,
         height: 32.0,
     };
@@ -127,7 +128,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 192.0 + 32.0,
+        y: 192.0 + 4.0,
         width: 128.0,
         height: 32.0,
     };
@@ -397,8 +398,16 @@ fn main_loop() -> Result<(), String> {
         }
 
         mouse_state = event_pump.mouse_state();
-        let mouse_x = (mouse_state.x() as f32 + camera.x) / camera.zoom;
-        let mouse_y = (mouse_state.y() as f32 + camera.y) / camera.zoom;
+        let (width, height) = canvas.output_size().unwrap();
+        let ratio_x = SCREEN_WIDTH as f32 / width as f32;
+        let ratio_y = SCREEN_HEIGHT as f32 / height as f32;
+
+        let margin_x = 0.0; //(width as f32 - canvas.logical_size().0 as f32 * ratio_x) / 2.0;
+        let margin_y = 0.0; //(height as f32 - canvas.logical_size().1 as f32) / 2.0;
+        let mouse_x = (((mouse_state.x() as f32 + camera.x) / camera.zoom * ratio_x)
+            - margin_x as f32) as f32;
+        let mouse_y = (((mouse_state.y() as f32 + camera.y) / camera.zoom * ratio_y)
+            - margin_y as f32) as f32;
 
         if main_menu_on {
             //render menu background
@@ -408,14 +417,16 @@ fn main_loop() -> Result<(), String> {
                 Point::new(0, 0),
                 sprite_720x480,
                 1.0,
+                ratio_x,
+                ratio_y,
             );
             // render buttons
             let position = Point::new(play_button.x as i32, play_button.y as i32);
-            play_button.check_if_hovered(mouse_x, mouse_y);
+            play_button.check_if_hovered(mouse_x, mouse_y, ratio_x, ratio_y);
             play_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
-            settings_button.check_if_hovered(mouse_x, mouse_y);
+            settings_button.check_if_hovered(mouse_x, mouse_y, ratio_x, ratio_y);
             settings_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
-            exit_button.check_if_hovered(mouse_x, mouse_y);
+            exit_button.check_if_hovered(mouse_x, mouse_y, ratio_x, ratio_y);
             exit_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
             // play button
             if play_button.status == graphics_utils::ButtonStatus::Hovered {
@@ -425,6 +436,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             } else if play_button.status == graphics_utils::ButtonStatus::Pressed {
                 graphics_utils::render(
@@ -433,6 +446,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             } else {
                 graphics_utils::render(
@@ -441,6 +456,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             }
             // settings button
@@ -452,6 +469,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             } else if settings_button.status == graphics_utils::ButtonStatus::Pressed {
                 graphics_utils::render(
@@ -460,6 +479,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             } else {
                 graphics_utils::render(
@@ -468,6 +489,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             }
             // exit button
@@ -479,6 +502,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             } else if exit_button.status == graphics_utils::ButtonStatus::Pressed {
                 graphics_utils::render(
@@ -487,6 +512,8 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             } else {
                 graphics_utils::render(
@@ -495,23 +522,27 @@ fn main_loop() -> Result<(), String> {
                     position,
                     sprite_128x32,
                     1.0,
+                    ratio_x,
+                    ratio_y,
                 );
             }
             // render texts
             let title_text = graphics_utils::get_text(
-                "Mechants".to_string(),
+                "MechAnts".to_string(),
                 Color::RGBA(255, 255, 255, 255),
                 desc_font_size,
                 &font,
                 &texture_creator,
             )
             .unwrap();
-            let position = Point::new((SCREEN_WIDTH / 2 - 42) as i32, 32 as i32);
+            let position = Point::new((SCREEN_WIDTH / 2 - 42) as i32, 16 as i32);
             graphics_utils::render_text(
                 &mut canvas,
                 &title_text.text_texture,
                 position,
                 title_text.text_sprite,
+                ratio_x,
+                ratio_y,
             );
             let text_margin = 4;
             let play_text = graphics_utils::get_text(
@@ -531,6 +562,8 @@ fn main_loop() -> Result<(), String> {
                 &play_text.text_texture,
                 position,
                 play_text.text_sprite,
+                ratio_x,
+                ratio_y,
             );
             let settings_text = graphics_utils::get_text(
                 "Settings".to_string(),
@@ -549,6 +582,8 @@ fn main_loop() -> Result<(), String> {
                 &settings_text.text_texture,
                 position,
                 settings_text.text_sprite,
+                ratio_x,
+                ratio_y,
             );
             let exit_text = graphics_utils::get_text(
                 "Exit".to_string(),
@@ -567,6 +602,8 @@ fn main_loop() -> Result<(), String> {
                 &exit_text.text_texture,
                 position,
                 exit_text.text_sprite,
+                ratio_x,
+                ratio_y,
             );
 
             if play_button.status == graphics_utils::ButtonStatus::Released {
@@ -599,7 +636,7 @@ fn main_loop() -> Result<(), String> {
 
             // get entities and chunks from server
 
-            match tx.send(OwnedMessage::Text("".to_string())) {
+            match tx.send(OwnedMessage::Text(serde_json::to_string(&camera).unwrap())) {
                 Ok(()) => (),
                 Err(e) => {
                     break;
@@ -615,12 +652,12 @@ fn main_loop() -> Result<(), String> {
                 }
                 Err(e) => (),
             }
-            if world_data.is_default {
-                continue;
-            }
+            /*println!("{}", delta_as_millis);
+            thread::sleep(time::Duration::from_millis(10));
+            continue;*/
             // iterate chunks
-            for i in 0..world_data.width {
-                for j in 0..world_data.height {
+            for i in 0..chunks.len() {
+                for j in 0..chunks[i].len() {
                     if !chunk_graphics_data.contains_key(&chunks[i][j].name) {
                         chunk_graphics_data.insert(
                             chunks[i][j].name.clone(),
@@ -677,25 +714,27 @@ fn main_loop() -> Result<(), String> {
                                 texture,
                                 position,
                                 sprite_16,
-                                Color::RGBA(r_result, g_result, b_result, 125),
+                                Color::RGBA(r_result, g_result, b_result, 175),
                                 camera.zoom,
+                                ratio_x,
+                                ratio_y,
                             );
-                            match canvas.fill_rect(Rect::new(
-                                tx as i32,
-                                ty as i32,
-                                (TILE_SIZE * camera.zoom) as u32,
-                                (TILE_SIZE * camera.zoom) as u32,
+                            /* match canvas.fill_rect(Rect::new(
+                                (tx * ratio_x) as i32,
+                                (ty * ratio_y) as i32,
+                                (TILE_SIZE * camera.zoom * ratio_x) as u32,
+                                (TILE_SIZE * camera.zoom * ratio_y) as u32,
                             )) {
                                 Ok(_v) => (),
                                 Err(_v) => (),
-                            }
+                            }*/
                         }
                     }
                 }
 
                 //render entities
-                for i in 0..world_data.width {
-                    for j in 0..world_data.height {
+                for i in 0..chunks.len() {
+                    for j in 0..chunks[i].len() {
                         let mut entities_vals: Vec<world_structs::Entity> =
                             chunks[i][j].entities.values().cloned().collect();
 
@@ -729,6 +768,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_32,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::AppleTree {
                                 let position = Point::new(
@@ -741,6 +782,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_32,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::Spruce {
                                 let position = Point::new(
@@ -753,6 +796,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_32,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::Pine {
                                 let position = Point::new(
@@ -765,6 +810,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_32,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::Birch {
                                 let position = Point::new(
@@ -777,6 +824,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_32,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             }
                             // vegetation
@@ -791,6 +840,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_32,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             }
                             // ants and other lifeforms
@@ -805,6 +856,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_16,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::SoldierAnt {
                                 let position = Point::new(
@@ -817,6 +870,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_16,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::DroneAnt {
                                 let position = Point::new(
@@ -829,6 +884,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_16,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::Mechant {
                                 let position = Point::new(
@@ -841,6 +898,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_16,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::QueenAnt {
                                 let position = Point::new(
@@ -853,6 +912,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_32,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             } else if entity.entity_type == world_structs::EntityType::FoodStorage {
                                 let position = Point::new(
@@ -865,6 +926,8 @@ fn main_loop() -> Result<(), String> {
                                     position,
                                     sprite_16,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             }
 
@@ -879,6 +942,8 @@ fn main_loop() -> Result<(), String> {
                                     item_position,
                                     sprite_4,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             }
                             if entity.wielding_item == world_structs::ItemType::WoodenSpear {
@@ -892,6 +957,8 @@ fn main_loop() -> Result<(), String> {
                                     item_position,
                                     sprite_1x5,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             }
                             if entity.wielding_item == world_structs::ItemType::WoodenShovel {
@@ -905,6 +972,8 @@ fn main_loop() -> Result<(), String> {
                                     item_position,
                                     sprite_2x5,
                                     camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
                                 );
                             }
                         }
@@ -916,10 +985,10 @@ fn main_loop() -> Result<(), String> {
                 let mut hovered_entity: std::option::Option<world_structs::Entity> = None;
                 let mut hovering_entity = false;
                 if mouse_not_moved_for > hover_time {
-                    let e_x = mouse_x;
-                    let e_y = mouse_y;
-                    for i in 0..world_data.width {
-                        for j in 0..world_data.height {
+                    let e_x = (camera.x / ratio_x + mouse_state.x() as f32) * ratio_x;
+                    let e_y = (camera.y / ratio_y + mouse_state.y() as f32) * ratio_y;
+                    for i in 0..chunks.len() {
+                        for j in 0..chunks[i].len() {
                             for e in chunks[i][j].entities.values() {
                                 if e_x > e.x && e_x < e.x + 16.0 && e_y > e.y && e_y < e.y + 16.0 {
                                     hovering_entity = true;
@@ -929,10 +998,12 @@ fn main_loop() -> Result<(), String> {
                             }
                         }
                     }
-                    let tile_x = (((mouse_x) / TILE_SIZE) as f32).floor();
-                    let tile_y = (((mouse_y) / TILE_SIZE) as f32).floor();
-                    for i in 0..world_data.width {
-                        for j in 0..world_data.height {
+                    let mouse_x_unscaled = (camera.x / ratio_x + mouse_state.x() as f32) * ratio_x;
+                    let mouse_y_unscaled = (camera.y / ratio_y + mouse_state.y() as f32) * ratio_y;
+                    let tile_x = (((mouse_x_unscaled) / TILE_SIZE) as f32).floor();
+                    let tile_y = (((mouse_y_unscaled) / TILE_SIZE) as f32).floor();
+                    for i in 0..chunks.len() {
+                        for j in 0..chunks[i].len() {
                             for row in &chunks[i][j].points {
                                 for p in row {
                                     if tile_x == p.x && tile_y == p.y {
@@ -946,19 +1017,6 @@ fn main_loop() -> Result<(), String> {
                 if (!hovering_entity) {
                     match hovered_tile {
                         Some(ht) => {
-                            /*
-                                match tile_descriptions.get(&ht.tile_type) {
-                                    Some(tt) => {
-
-                                        let position = Point::new((mouse_state.x() - tt.text_sprite.width() as i32 / 2),(mouse_state.y() - (tt.text_sprite.height()) as i32));
-                                        graphics_utils::render_text(&mut canvas, &tt.text_texture, position, tt.text_sprite);
-
-
-                                    },
-
-                                    None => ()
-                            }*/
-
                             let text = graphics_utils::get_text(
                                 descriptions_for_tiles
                                     .get(&ht.tile_type)
@@ -971,31 +1029,26 @@ fn main_loop() -> Result<(), String> {
                             )
                             .unwrap();
                             let position = Point::new(
-                                (mouse_state.x() - text.text_sprite.width() as i32 / 2),
-                                (mouse_state.y() - (text.text_sprite.height()) as i32),
+                                ((mouse_state.x() as f32 * ratio_x
+                                    - text.text_sprite.width() as f32 / 2.0)
+                                    as i32),
+                                ((mouse_state.y() as f32 * ratio_y
+                                    - (text.text_sprite.height()) as f32)
+                                    as i32),
                             );
                             graphics_utils::render_text(
                                 &mut canvas,
                                 &text.text_texture,
                                 position,
                                 text.text_sprite,
+                                ratio_x,
+                                ratio_y,
                             );
                         }
                         None => (),
                     }
                 } else {
                     match hovered_entity {
-                        /* Some(he) => {
-
-                                match entity_descriptions.get(&he.entity_type) {
-                                Some(tt) => {
-                                    let position = Point::new((mouse_state.x() - tt.text_sprite.width() as i32 / 2),(mouse_state.y() - (tt.text_sprite.height()) as i32));
-                                    graphics_utils::render_text(&mut canvas, &tt.text_texture, position, tt.text_sprite);
-
-                                }
-                                None => ()
-                            }
-                        },*/
                         Some(he) => {
                             let mut name = descriptions_for_entities.get(&he.entity_type).unwrap();
                             let mut title = "".to_string();
@@ -1020,14 +1073,20 @@ fn main_loop() -> Result<(), String> {
                             .unwrap();
 
                             let position = Point::new(
-                                (mouse_state.x() - text.text_sprite.width() as i32 / 2),
-                                (mouse_state.y() - (text.text_sprite.height()) as i32),
+                                (mouse_state.x() as f32 * ratio_x
+                                    - text.text_sprite.width() as f32 / 2.0)
+                                    as i32,
+                                ((mouse_state.y() as f32 * ratio_y
+                                    - (text.text_sprite.height()) as f32)
+                                    as i32),
                             );
                             graphics_utils::render_text(
                                 &mut canvas,
                                 &text.text_texture,
                                 position,
                                 text.text_sprite,
+                                ratio_x,
+                                ratio_y,
                             );
                         }
 
@@ -1038,8 +1097,8 @@ fn main_loop() -> Result<(), String> {
                 // render overlays
 
                 if map_state == graphics_utils::MapState::Political {
-                    for i in 0..world_data.width {
-                        for j in 0..world_data.height {
+                    for i in 0..chunks.len() {
+                        for j in 0..chunks.len() {
                             let position = Point::new(
                                 (world_data.tile_size as f32
                                     * chunks[i][j].points[0][0].x
@@ -1115,6 +1174,8 @@ fn main_loop() -> Result<(), String> {
                                 &text.text_texture,
                                 text_position,
                                 text.text_sprite,
+                                ratio_x,
+                                ratio_y,
                             );
                         }
                     }
@@ -1123,7 +1184,12 @@ fn main_loop() -> Result<(), String> {
                 // render ui
                 // political map button
                 let position = Point::new(political_button.x as i32, political_button.y as i32);
-                political_button.check_if_hovered(mouse_state.x() as f32, mouse_state.y() as f32);
+                political_button.check_if_hovered(
+                    mouse_state.x() as f32,
+                    mouse_state.y() as f32,
+                    ratio_x,
+                    ratio_y,
+                );
                 political_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
                 if political_button.status == graphics_utils::ButtonStatus::Hovered {
                     graphics_utils::render(
@@ -1132,6 +1198,8 @@ fn main_loop() -> Result<(), String> {
                         position,
                         sprite_32,
                         1.0,
+                        ratio_x,
+                        ratio_y,
                     );
                 } else if political_button.status == graphics_utils::ButtonStatus::Pressed {
                     graphics_utils::render(
@@ -1140,6 +1208,8 @@ fn main_loop() -> Result<(), String> {
                         position,
                         sprite_32,
                         1.0,
+                        ratio_x,
+                        ratio_y,
                     );
                 } else {
                     graphics_utils::render(
@@ -1148,12 +1218,19 @@ fn main_loop() -> Result<(), String> {
                         position,
                         sprite_32,
                         1.0,
+                        ratio_x,
+                        ratio_y,
                     );
                 }
 
                 // normal map button
                 let position = Point::new(normal_button.x as i32, normal_button.y as i32);
-                normal_button.check_if_hovered(mouse_state.x() as f32, mouse_state.y() as f32);
+                normal_button.check_if_hovered(
+                    mouse_state.x() as f32,
+                    mouse_state.y() as f32,
+                    ratio_x,
+                    ratio_y,
+                );
                 normal_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
                 if normal_button.status == graphics_utils::ButtonStatus::Hovered {
                     graphics_utils::render(
@@ -1162,6 +1239,8 @@ fn main_loop() -> Result<(), String> {
                         position,
                         sprite_32,
                         1.0,
+                        ratio_x,
+                        ratio_y,
                     );
                 } else if normal_button.status == graphics_utils::ButtonStatus::Pressed {
                     graphics_utils::render(
@@ -1170,6 +1249,8 @@ fn main_loop() -> Result<(), String> {
                         position,
                         sprite_32,
                         1.0,
+                        ratio_x,
+                        ratio_y,
                     );
                 } else {
                     graphics_utils::render(
@@ -1178,6 +1259,8 @@ fn main_loop() -> Result<(), String> {
                         position,
                         sprite_32,
                         1.0,
+                        ratio_x,
+                        ratio_y,
                     );
                 }
                 let normal_text_margin = 4;
@@ -1198,6 +1281,8 @@ fn main_loop() -> Result<(), String> {
                     &normal_text.text_texture,
                     position,
                     normal_text.text_sprite,
+                    ratio_x,
+                    ratio_y,
                 );
 
                 let political_text_margin = 4;
@@ -1218,6 +1303,8 @@ fn main_loop() -> Result<(), String> {
                     &political_text.text_texture,
                     position,
                     political_text.text_sprite,
+                    ratio_x,
+                    ratio_y,
                 );
             }
         }

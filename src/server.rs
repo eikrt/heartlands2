@@ -1,6 +1,7 @@
 extern crate futures;
 extern crate tokio;
 extern crate websocket;
+use crate::graphics_utils;
 use crate::world_structs;
 use serde_json;
 use tokio::runtime;
@@ -119,9 +120,12 @@ pub fn serve(world: world_structs::World) {
 
 // update state
 fn process_message(id: u32, msg: &OwnedMessage, world: Arc<RwLock<world_structs::World>>) {
-    // if let OwnedMessage::Text(ref txt) = *msg {
-    //    println!("Received msg '{}' from id {}", txt, id);
-    //}
+    if let OwnedMessage::Text(ref txt) = *msg {
+        let cut_string = txt.as_str()[0..txt.len() - 0].replace("\\", "");
+        let camera: graphics_utils::Camera = serde_json::from_str(&cut_string).unwrap();
+        world.write().unwrap().v_x = camera.x as i32;
+        world.write().unwrap().v_y = camera.y as i32;
+    }
     /*if let OwnedMessage::Text(ref txt) = *msg {
         println!("Received msg '{}' from id {}", txt, id);
 

@@ -209,6 +209,8 @@ pub fn generate(
             }
 
             world_chunks[i as usize].push(world_structs::Chunk {
+                x: i as i32,
+                y: j as i32,
                 points: chunk_points,
                 entities: HashMap::new(),
                 name: get_chunk_name(),
@@ -740,6 +742,11 @@ pub fn generate(
             tile_size: tile_size,
             is_default: false,
         },
+
+        v_x: 0,
+        v_y: 0,
+        v_w: 4,
+        v_h: 3,
     };
 }
 fn get_chunk_name() -> String {
