@@ -342,7 +342,8 @@ pub fn generate(
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 current_action: world_structs::ActionType::Idle,
-                                                wielding_item: world_structs::ItemType::Nothing,
+                                                wielding_item:
+                                                    world_structs::ItemType::WoodenShovel,
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,
@@ -369,7 +370,7 @@ pub fn generate(
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 current_action: world_structs::ActionType::Idle,
-                                                wielding_item: world_structs::ItemType::Nothing,
+                                                wielding_item: world_structs::ItemType::WoodenSpear,
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,

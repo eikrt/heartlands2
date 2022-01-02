@@ -25,7 +25,7 @@ use std::option::Option;
 use std::pin::Pin;
 use std::str::from_utf8;
 use std::sync::mpsc::channel;
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{thread, time};
 use websocket::client::ClientBuilder;
 use websocket::{Message, OwnedMessage};
@@ -33,6 +33,13 @@ const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
 const TILE_SIZE: f32 = 16.0;
 const CONNECTION: &'static str = "ws://127.0.0.1:5000";
+const WORKER_ANIMATION_SPEED: u128 = 500;
+const DRONE_ANIMATION_SPEED: u128 = 500;
+const QUEEN_ANIMATION_SPEED: u128 = 500;
+const SOLDIER_ANIMATION_SPEED: u128 = 500;
+const MECHANT_ANIMATION_SPEED: u128 = 500;
+const WATER_ANIMATION_SPEED: u128 = 600;
+const ANIMATION_RANDOM: u128 = 50;
 fn main_loop() -> Result<(), String> {
     // sdl stuff
     let sdl_context = sdl2::init()?;
@@ -156,11 +163,16 @@ fn main_loop() -> Result<(), String> {
     let pine_texture = texture_creator.load_texture("res/pine.png")?;
     let spruce_texture = texture_creator.load_texture("res/spruce.png")?;
     let cactus_texture = texture_creator.load_texture("res/cactus.png")?;
-    let ant_worker_texture = texture_creator.load_texture("res/ant1.png")?;
-    let ant_soldier_texture = texture_creator.load_texture("res/ant1.png")?;
-    let ant_drone_texture = texture_creator.load_texture("res/ant_drone.png")?;
-    let mechant_texture = texture_creator.load_texture("res/mechant.png")?;
-    let ant_queen_texture = texture_creator.load_texture("res/ant_queen.png")?;
+    let ant_worker_texture_1 = texture_creator.load_texture("res/ant_worker.png")?;
+    let ant_worker_texture_2 = texture_creator.load_texture("res/ant_worker_2.png")?;
+    let ant_soldier_texture_1 = texture_creator.load_texture("res/ant1.png")?;
+    let ant_soldier_texture_2 = texture_creator.load_texture("res/ant1.png")?;
+    let ant_drone_texture_1 = texture_creator.load_texture("res/ant_drone.png")?;
+    let ant_drone_texture_2 = texture_creator.load_texture("res/ant_drone_2.png")?;
+    let mechant_texture_1 = texture_creator.load_texture("res/mechant.png")?;
+    let mechant_texture_2 = texture_creator.load_texture("res/mechant.png")?;
+    let ant_queen_texture_1 = texture_creator.load_texture("res/ant_queen.png")?;
+    let ant_queen_texture_2 = texture_creator.load_texture("res/ant_queen.png")?;
     let snail_texture = texture_creator.load_texture("res/snail.png")?;
     let food_storage_texture = texture_creator.load_texture("res/food_storage.png")?;
 
@@ -195,6 +207,12 @@ fn main_loop() -> Result<(), String> {
     let descriptions_for_tiles = graphics_utils::get_descriptions_for_tiles();
     let sprite_4 = Rect::new(0, 0, (4.0 * camera.zoom) as u32, (4.0 * camera.zoom) as u32);
     let sprite_1x5 = Rect::new(0, 0, (1.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
+    let sprite_1x10 = Rect::new(
+        0,
+        0,
+        (1.0 * camera.zoom) as u32,
+        (10.0 * camera.zoom) as u32,
+    );
     let sprite_2x5 = Rect::new(0, 0, (2.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
     let sprite_16 = Rect::new(
         0,
@@ -286,7 +304,12 @@ fn main_loop() -> Result<(), String> {
 
     while running {
         let delta = SystemTime::now().duration_since(compare_time).unwrap();
+        let time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
         compare_time = SystemTime::now();
+
         let delta_as_millis = delta.as_millis();
         if delta.as_millis() / 10 != 0 {
             //   println!("FPS: {}", 100 / (delta.as_millis()/10));
@@ -850,9 +873,16 @@ fn main_loop() -> Result<(), String> {
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
+                                let mut tex = &ant_worker_texture_1;
+                                if entity.current_action != world_structs::ActionType::Idle
+                                    && time / (DRONE_ANIMATION_SPEED + rng.gen_range(1..2) * 10) % 2
+                                        == 0
+                                {
+                                    tex = &ant_worker_texture_2;
+                                }
                                 graphics_utils::render(
                                     &mut canvas,
-                                    &ant_worker_texture,
+                                    tex,
                                     position,
                                     sprite_16,
                                     camera.zoom,
@@ -864,9 +894,17 @@ fn main_loop() -> Result<(), String> {
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
+                                let mut tex = &ant_soldier_texture_1;
+                                if entity.current_action != world_structs::ActionType::Idle
+                                    && time / (SOLDIER_ANIMATION_SPEED + rng.gen_range(1..2) * 10)
+                                        % 2
+                                        == 0
+                                {
+                                    tex = &ant_soldier_texture_2;
+                                }
                                 graphics_utils::render(
                                     &mut canvas,
-                                    &ant_soldier_texture,
+                                    &tex,
                                     position,
                                     sprite_16,
                                     camera.zoom,
@@ -878,9 +916,16 @@ fn main_loop() -> Result<(), String> {
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
+                                let mut tex = &ant_drone_texture_1;
+                                if entity.current_action != world_structs::ActionType::Idle
+                                    && time / (DRONE_ANIMATION_SPEED + rng.gen_range(1..2) * 10) % 2
+                                        == 0
+                                {
+                                    tex = &ant_drone_texture_2;
+                                }
                                 graphics_utils::render(
                                     &mut canvas,
-                                    &ant_drone_texture,
+                                    &tex,
                                     position,
                                     sprite_16,
                                     camera.zoom,
@@ -892,9 +937,17 @@ fn main_loop() -> Result<(), String> {
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
+                                let mut tex = &mechant_texture_1;
+                                if entity.current_action != world_structs::ActionType::Idle
+                                    && time / (MECHANT_ANIMATION_SPEED + rng.gen_range(1..2) * 10)
+                                        % 2
+                                        == 0
+                                {
+                                    tex = &mechant_texture_2;
+                                }
                                 graphics_utils::render(
                                     &mut canvas,
-                                    &mechant_texture,
+                                    &tex,
                                     position,
                                     sprite_16,
                                     camera.zoom,
@@ -906,9 +959,16 @@ fn main_loop() -> Result<(), String> {
                                     tx_ant as i32 - sprite_32.width() as i32 / 2,
                                     ty_ant as i32 - sprite_32.height() as i32 / 2,
                                 );
+                                let mut tex = &ant_queen_texture_1;
+                                if entity.current_action != world_structs::ActionType::Idle
+                                    && time / (QUEEN_ANIMATION_SPEED + rng.gen_range(1..2) * 10) % 2
+                                        == 0
+                                {
+                                    tex = &ant_queen_texture_2;
+                                }
                                 graphics_utils::render(
                                     &mut canvas,
-                                    &ant_queen_texture,
+                                    &tex,
                                     position,
                                     sprite_32,
                                     camera.zoom,
@@ -948,14 +1008,14 @@ fn main_loop() -> Result<(), String> {
                             }
                             if entity.wielding_item == world_structs::ItemType::WoodenSpear {
                                 let item_position = Point::new(
-                                    tx_ant as i32 - sprite_1x5.width() as i32 / 2 + 8,
-                                    ty_ant as i32 - sprite_1x5.height() as i32 / 2 + 8,
+                                    tx_ant as i32 - sprite_1x10.width() as i32 / 2 + 7,
+                                    ty_ant as i32 - sprite_1x10.height() as i32 / 2 - 1,
                                 );
                                 graphics_utils::render(
                                     &mut canvas,
                                     &wooden_spear_texture,
                                     item_position,
-                                    sprite_1x5,
+                                    sprite_1x10,
                                     camera.zoom,
                                     ratio_x,
                                     ratio_y,
@@ -963,8 +1023,8 @@ fn main_loop() -> Result<(), String> {
                             }
                             if entity.wielding_item == world_structs::ItemType::WoodenShovel {
                                 let item_position = Point::new(
-                                    tx_ant as i32 - sprite_2x5.width() as i32 / 2 + 8,
-                                    ty_ant as i32 - sprite_2x5.height() as i32 / 2 + 8,
+                                    tx_ant as i32 - sprite_2x5.width() as i32 / 2 + 7,
+                                    ty_ant as i32 - sprite_2x5.height() as i32 / 2 + 2,
                                 );
                                 graphics_utils::render(
                                     &mut canvas,
@@ -1052,12 +1112,7 @@ fn main_loop() -> Result<(), String> {
                         Some(he) => {
                             let mut name = descriptions_for_entities.get(&he.entity_type).unwrap();
                             let mut title = "".to_string();
-                            if he.entity_type == world_structs::EntityType::WorkerAnt
-                                || he.entity_type == world_structs::EntityType::DroneAnt
-                                || he.entity_type == world_structs::EntityType::SoldierAnt
-                                || he.entity_type == world_structs::EntityType::QueenAnt
-                                || he.entity_type == world_structs::EntityType::Mechant
-                            {
+                            if he.category_type == world_structs::CategoryType::Ant {
                                 title = he.faction;
                                 title.push_str("ese ");
                             }
