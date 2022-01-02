@@ -3,7 +3,7 @@ use mechants::server;
 fn main() {
     let seed = 64;
     let width = 8;
-    let height = 12;
+    let height = 8;
     let chunk_size = 12;
     let sealevel = 400.0;
     let name = "Land of Ants".to_string();

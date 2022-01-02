@@ -369,7 +369,89 @@ impl World {
         //write!(f, "{}", serde_json::to_string(self).unwrap())
         //write!(f, "\"x\":{}", 5)
     }
+
+    pub fn update_political_situation(&mut self) {
+        let mut biggest_value_data = (0, 0, "Neutral".to_string());
+        let ant_number_to_change_ownership = 1;
+        for row in self.chunks.clone().iter().enumerate() {
+            for c in self.chunks[row.0].clone().iter().enumerate() {
+                let mut entity_types: HashMap<String, i32> = HashMap::new();
+                if (c.1.entities.len() as i32) < ant_number_to_change_ownership {
+                    self.chunks[row.0][c.0].name = "Neutral".to_string();
+                }
+                for e in c.1.entities.values() {
+                    if !entity_types.contains_key(&e.faction) {
+                        if e.entity_type == EntityType::DroneAnt {
+                            entity_types.insert(e.faction.clone(), 0);
+                        }
+                    } else {
+                        if e.entity_type == EntityType::DroneAnt {
+                            *entity_types.get_mut(&e.faction).unwrap() += 1;
+                        }
+                    }
+                    let mut biggest_value = ("Neutral".to_string(), 0);
+                    for (key, value) in &entity_types {
+                        if value > &biggest_value.1 {
+                            biggest_value = (key.to_string(), *value);
+                        }
+                    }
+                    biggest_value_data = (row.0, c.0, biggest_value.0);
+                    if biggest_value.1 <= ant_number_to_change_ownership {
+                        biggest_value_data = (row.0, c.0, "Neutral".to_string());
+                    }
+                    self.chunks[biggest_value_data.0][biggest_value_data.1].name =
+                        biggest_value_data.2;
+                }
+            }
+        }
+    }
     pub fn update_entities(&mut self) {
+        for i in 0..self.world_data.width {
+            for j in 0..self.world_data.height {
+                let mut id = 0;
+                for entity in self.chunks[i][j].entities.clone().values() {
+                    if entity.x
+                        < self.chunks[i][j].points[0][0].x * self.world_data.tile_size as f32
+                    {
+                        id = entity.id;
+                        if i > 0 {
+                            self.chunks[i - 1][j].entities.insert(id, entity.clone());
+                        }
+                    } else if entity.y
+                        < self.chunks[i][j].points[0][0].y * self.world_data.tile_size as f32
+                    {
+                        id = entity.id;
+                        if j > 0 {
+                            self.chunks[i][j - 1].entities.insert(id, entity.clone());
+                        }
+                    } else if entity.x
+                        > self.chunks[i][j].points[self.world_data.chunk_size - 1]
+                            [self.world_data.chunk_size - 1]
+                            .x
+                            * self.world_data.tile_size as f32
+                    {
+                        id = entity.id;
+                        if i < self.world_data.width - 1 {
+                            self.chunks[i + 1][j].entities.insert(id, entity.clone());
+                        }
+                    } else if entity.y
+                        > self.chunks[i][j].points[self.world_data.chunk_size - 1]
+                            [self.world_data.chunk_size - 1]
+                            .y
+                            * self.world_data.tile_size as f32
+                    {
+                        id = entity.id;
+                        if j < self.world_data.height - 1 {
+                            self.chunks[i][j + 1].entities.insert(id, entity.clone());
+                        }
+                    }
+                    if self.chunks[i][j].entities.len() > 0 {
+                        self.chunks[i][j].entities.remove(&id);
+                    }
+                }
+            }
+        }
+
         let mut rng = rand::thread_rng();
         /*for i in 0..self.world_data.width {
             for j in 0..self.world_data.height {

@@ -449,7 +449,7 @@ pub fn generate(
                                                 y: (_ry + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
                                                 stopped: false,
-                                                speed: 0.5,
+                                                speed: 0.0,
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
@@ -465,6 +465,7 @@ pub fn generate(
                                                 backpack_amount: 0,
                                             },
                                         );
+                                        let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
                                             world_structs::Entity {
@@ -754,7 +755,7 @@ fn get_chunk_name() -> String {
     let filename = "words/words.txt";
     let contents = fs::read_to_string(filename).expect("Failed to read file");
     let content_vec: Vec<&str> = contents.split("\n").collect();
-    let mut word: String = content_vec[rng.gen_range(0..content_vec.len()) - 1]
+    let mut word: String = content_vec[rng.gen_range(0..content_vec.len() - 1)]
         .chars()
         .rev()
         .collect::<String>();
@@ -763,12 +764,16 @@ fn get_chunk_name() -> String {
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
         's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
     ];
-    let mut char_1 = letters[rng.gen_range(0..letters.len())];
+    let mut char_1 = letters[rng.gen_range(0..letters.len() - 1)];
     if letters.len() < 2 {
         char_1 = 'a';
     }
     word.push(char_1);
-    word.remove(rng.gen_range(0..word.len() - 1));
+    if word.len() - 1 != 0 {
+        word.remove(rng.gen_range(0..word.len() - 1));
+    } else {
+        word.remove(0);
+    }
     word = word.to_lowercase();
     let first_letter = word.chars().nth(0).unwrap();
     word.replace_range(

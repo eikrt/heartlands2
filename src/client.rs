@@ -665,7 +665,7 @@ fn main_loop() -> Result<(), String> {
                                 rng.gen_range(0..255),
                                 rng.gen_range(0..255),
                                 rng.gen_range(0..255),
-                                125,
+                                55,
                             ),
                         );
                     }
@@ -1098,22 +1098,27 @@ fn main_loop() -> Result<(), String> {
 
                 if map_state == graphics_utils::MapState::Political {
                     for i in 0..chunks.len() {
-                        for j in 0..chunks.len() {
+                        for j in 0..chunks[i].len() {
                             let position = Point::new(
-                                (world_data.tile_size as f32
+                                ((world_data.tile_size as f32
                                     * chunks[i][j].points[0][0].x
                                     * camera.zoom
-                                    - camera.x) as i32,
-                                (world_data.tile_size as f32
-                                    * chunks[i][j].points[0][0].y
-                                    * camera.zoom
-                                    - camera.y) as i32,
+                                    - camera.x)
+                                    / ratio_x) as i32,
+                                ((world_data.tile_size as f32
+                                    * (chunks[i][j].points[0][0].y * camera.zoom)
+                                    - camera.y)
+                                    / ratio_y) as i32,
                             );
                             let render_rect = Rect::new(
-                                position.x,
-                                position.y,
-                                (world_data.chunk_size as i32 * world_data.tile_size) as u32,
-                                (world_data.chunk_size as i32 * world_data.tile_size) as u32,
+                                (position.x as f32) as i32,
+                                (position.y as f32) as i32,
+                                (world_data.chunk_size as i32
+                                    * (world_data.tile_size as f32 / ratio_x as f32) as i32)
+                                    as u32,
+                                (world_data.chunk_size as i32
+                                    * (world_data.tile_size as f32 / ratio_y as f32) as i32)
+                                    as u32,
                             );
                             match chunk_graphics_data.get(&chunks[i][j].name) {
                                 Some(cgd) => {
@@ -1122,7 +1127,7 @@ fn main_loop() -> Result<(), String> {
                                             &mut canvas,
                                             position,
                                             render_rect,
-                                            Color::RGBA(255, 255, 255, 125),
+                                            Color::RGBA(255, 255, 255, 55),
                                             camera.zoom,
                                         );
                                     } else {
@@ -1157,17 +1162,21 @@ fn main_loop() -> Result<(), String> {
                             .unwrap();
 
                             let text_position = Point::new(
-                                position.x()
+                                (((position.x()
                                     + (world_data.chunk_size as f32
                                         * world_data.tile_size as f32
                                         * camera.zoom) as i32
                                         / 2
-                                    - title.clone().len() as i32 * desc_font_size as i32 / 4,
-                                position.y()
-                                    + (world_data.chunk_size as f32
+                                    - title.clone().len() as i32 * desc_font_size as i32 / 4)
+                                    as f32)
+                                    * ratio_x) as i32,
+                                (position.y() as f32 * ratio_y) as i32
+                                    + (((world_data.chunk_size as f32
                                         * world_data.tile_size as f32
-                                        * camera.zoom) as i32
-                                        / 2,
+                                        * camera.zoom)
+                                        as i32
+                                        / 2) as f32
+                                        / 1.0) as i32,
                             );
                             graphics_utils::render_text(
                                 &mut canvas,
@@ -1185,8 +1194,8 @@ fn main_loop() -> Result<(), String> {
                 // political map button
                 let position = Point::new(political_button.x as i32, political_button.y as i32);
                 political_button.check_if_hovered(
-                    mouse_state.x() as f32,
-                    mouse_state.y() as f32,
+                    mouse_state.x() as f32 * ratio_x,
+                    mouse_state.y() as f32 * ratio_y,
                     ratio_x,
                     ratio_y,
                 );
@@ -1226,8 +1235,8 @@ fn main_loop() -> Result<(), String> {
                 // normal map button
                 let position = Point::new(normal_button.x as i32, normal_button.y as i32);
                 normal_button.check_if_hovered(
-                    mouse_state.x() as f32,
-                    mouse_state.y() as f32,
+                    mouse_state.x() as f32 * ratio_x,
+                    mouse_state.y() as f32 * ratio_y,
                     ratio_x,
                     ratio_y,
                 );
@@ -1308,10 +1317,9 @@ fn main_loop() -> Result<(), String> {
                 );
             }
         }
-
-        if normal_button.status == graphics_utils::ButtonStatus::Released {
+        if normal_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Normal;
-        } else if political_button.status == graphics_utils::ButtonStatus::Released {
+        } else if political_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Political;
         }
         canvas.present();

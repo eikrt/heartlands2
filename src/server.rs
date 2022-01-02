@@ -86,6 +86,7 @@ pub fn serve(world: world_structs::World) {
         let world_inner = world.clone();
         let client_states_inner = client_states.clone();
         world.write().unwrap().update_entities();
+        world.write().unwrap().update_political_situation();
         tokio::timer::Delay::new(Instant::now() + Duration::from_millis(100))
             .map_err(|_| ())
             .and_then(move |_| {
@@ -102,7 +103,6 @@ pub fn serve(world: world_structs::World) {
                         Some(c) => {
                             x = c.x;
                             y = c.y;
-                            println!("{}, {}", x, y);
                         }
                         None => (),
                     }

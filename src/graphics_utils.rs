@@ -21,7 +21,7 @@ pub enum MoveDirection {
     Zoomin,
     Zoomout,
 }
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum ButtonStatus {
     Neutral,
     Hovered,
