@@ -328,6 +328,7 @@ pub fn generate(
                                             id,
                                             world_structs::Entity {
                                                 id: id,
+                                                hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
                                                 y: (_ry + rng.gen_range(1.0..4.0))
@@ -342,11 +343,13 @@ pub fn generate(
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 current_action: world_structs::ActionType::Idle,
+                                                task_type: world_structs::TaskType::Nothing,
                                                 wielding_item:
                                                     world_structs::ItemType::WoodenShovel,
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,
+                                                time: 0,
                                             },
                                         );
                                     }
@@ -356,6 +359,7 @@ pub fn generate(
                                             id,
                                             world_structs::Entity {
                                                 id: id,
+                                                hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
                                                 y: (_ry + rng.gen_range(1.0..4.0))
@@ -367,6 +371,7 @@ pub fn generate(
                                                 target_y: 0.0,
                                                 entity_type: world_structs::EntityType::SoldierAnt,
                                                 category_type: world_structs::CategoryType::Ant,
+                                                task_type: world_structs::TaskType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 current_action: world_structs::ActionType::Idle,
@@ -374,6 +379,7 @@ pub fn generate(
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,
+                                                time: 0,
                                             },
                                         );
                                     }
@@ -387,12 +393,14 @@ pub fn generate(
                                                     * tile_size as f32,
                                                 y: (_ry + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
+                                                hp: 100,
                                                 stopped: false,
-                                                speed: 0.5,
+                                                speed: 1.5,
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
                                                 entity_type: world_structs::EntityType::DroneAnt,
+                                                task_type: world_structs::TaskType::Nothing,
                                                 category_type: world_structs::CategoryType::Ant,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
@@ -401,6 +409,7 @@ pub fn generate(
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,
+                                                time: 0,
                                             },
                                         );
                                     }
@@ -417,10 +426,12 @@ pub fn generate(
                                                 stopped: false,
                                                 speed: 0.5,
                                                 dir: 0.0,
+                                                hp: 100,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
                                                 entity_type: world_structs::EntityType::Mechant,
                                                 category_type: world_structs::CategoryType::Ant,
+                                                task_type: world_structs::TaskType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 current_action: world_structs::ActionType::Idle,
@@ -428,6 +439,7 @@ pub fn generate(
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,
+                                                time: 0,
                                             },
                                         );
                                     }
@@ -445,9 +457,10 @@ pub fn generate(
                                             id,
                                             world_structs::Entity {
                                                 id: id,
-                                                x: (_rx + rng.gen_range(1.0..4.0))
+                                                hp: 100,
+                                                x: (_rx + rng.gen_range(4.0..8.0))
                                                     * tile_size as f32,
-                                                y: (_ry + rng.gen_range(1.0..4.0))
+                                                y: (_ry + rng.gen_range(4.0..8.0))
                                                     * tile_size as f32,
                                                 stopped: false,
                                                 speed: 0.0,
@@ -455,6 +468,7 @@ pub fn generate(
                                                 target_x: 0.0,
                                                 target_y: 0.0,
                                                 entity_type: world_structs::EntityType::FoodStorage,
+                                                task_type: world_structs::TaskType::Nothing,
                                                 category_type:
                                                     world_structs::CategoryType::Furniture,
                                                 faction: chunk.name.clone().to_string(),
@@ -464,6 +478,7 @@ pub fn generate(
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,
+                                                time: 0,
                                             },
                                         );
                                         let id = rng.gen_range(0..999999);
@@ -471,6 +486,7 @@ pub fn generate(
                                             id,
                                             world_structs::Entity {
                                                 id: id,
+                                                hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
                                                 y: (_ry + rng.gen_range(1.0..4.0))
@@ -484,11 +500,13 @@ pub fn generate(
                                                 category_type: world_structs::CategoryType::Ant,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
+                                                task_type: world_structs::TaskType::Nothing,
                                                 current_action: world_structs::ActionType::Idle,
                                                 wielding_item: world_structs::ItemType::Nothing,
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
                                                 backpack_amount: 0,
+                                                time: 0,
                                             },
                                         );
                                     }
@@ -635,6 +653,7 @@ pub fn generate(
                                         id: id,
                                         x: _rx * tile_size as f32,
                                         y: _ry * tile_size as f32,
+                                        hp: 100,
                                         dir: 0.0,
                                         target_x: 0.0,
                                         target_y: 0.0,
@@ -645,23 +664,21 @@ pub fn generate(
                                         faction: chunk.name.clone().to_string(),
                                         faction_id: chunk.id,
                                         current_action: world_structs::ActionType::Idle,
+                                        task_type: world_structs::TaskType::Nothing,
                                         backpack_item: world_structs::ItemType::Nothing,
                                         wearable_item: world_structs::ItemType::Nothing,
                                         wielding_item: world_structs::ItemType::Nothing,
                                         backpack_amount: 0,
+                                        time: 0,
                                     },
                                 );
                             }
                         }
                     }
-
-                    //chunk_entities
-                    //   .into_iter()
-                    //  .map(|(k.try_into().unwrap(), v)| world_chunks[i][j].entities.insert(k, v));
                 }
             }
         }
-        // TreeS
+        // Trees
         if apply_trees {
             for i in 0..width {
                 for j in 0..height {
@@ -703,6 +720,7 @@ pub fn generate(
                                         id: id,
                                         x: _rx * tile_size as f32,
                                         y: _ry * tile_size as f32,
+                                        hp: 100,
                                         speed: 0.0,
                                         dir: 0.0,
                                         target_x: 0.0,
@@ -713,10 +731,12 @@ pub fn generate(
                                         faction: chunk.name.clone().to_string(),
                                         faction_id: chunk.id,
                                         current_action: world_structs::ActionType::Idle,
+                                        task_type: world_structs::TaskType::Nothing,
                                         backpack_item: world_structs::ItemType::Nothing,
                                         wearable_item: world_structs::ItemType::Nothing,
                                         wielding_item: world_structs::ItemType::Nothing,
                                         backpack_amount: 0,
+                                        time: 0,
                                     },
                                 );
                             }

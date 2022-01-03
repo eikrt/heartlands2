@@ -361,6 +361,8 @@ pub fn get_descriptions_for_entities() -> HashMap<world_structs::EntityType, Str
             world_structs::EntityType::FoodStorage,
             "Food storage".to_string(),
         ),
+        (world_structs::EntityType::AntEgg, "Ant egg".to_string()),
+        (world_structs::EntityType::AntEgg, "Ant egg".to_string()),
     ]);
     return entity_descriptions;
 }

@@ -33,12 +33,12 @@ const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
 const TILE_SIZE: f32 = 16.0;
 const CONNECTION: &'static str = "ws://127.0.0.1:5000";
-const WORKER_ANIMATION_SPEED: u128 = 500;
-const DRONE_ANIMATION_SPEED: u128 = 500;
-const QUEEN_ANIMATION_SPEED: u128 = 500;
-const SOLDIER_ANIMATION_SPEED: u128 = 500;
-const MECHANT_ANIMATION_SPEED: u128 = 500;
-const WATER_ANIMATION_SPEED: u128 = 600;
+const WORKER_ANIMATION_SPEED: u128 = 25;
+const DRONE_ANIMATION_SPEED: u128 = 25;
+const QUEEN_ANIMATION_SPEED: u128 = 25;
+const SOLDIER_ANIMATION_SPEED: u128 = 25;
+const MECHANT_ANIMATION_SPEED: u128 = 25;
+const WATER_ANIMATION_SPEED: u128 = 30;
 const ANIMATION_RANDOM: u128 = 50;
 fn main_loop() -> Result<(), String> {
     // sdl stuff
@@ -163,6 +163,10 @@ fn main_loop() -> Result<(), String> {
     let pine_texture = texture_creator.load_texture("res/pine.png")?;
     let spruce_texture = texture_creator.load_texture("res/spruce.png")?;
     let cactus_texture = texture_creator.load_texture("res/cactus.png")?;
+    let ant_egg_texture = texture_creator.load_texture("res/ant_egg.png")?;
+    let ant_egg_texture_2 = texture_creator.load_texture("res/ant_egg_2.png")?;
+    let ant_egg_texture_3 = texture_creator.load_texture("res/ant_egg_3.png")?;
+    let ant_egg_texture_4 = texture_creator.load_texture("res/ant_egg_4.png")?;
     let ant_worker_texture_1 = texture_creator.load_texture("res/ant_worker.png")?;
     let ant_worker_texture_2 = texture_creator.load_texture("res/ant_worker_2.png")?;
     let ant_soldier_texture_1 = texture_creator.load_texture("res/ant1.png")?;
@@ -214,6 +218,7 @@ fn main_loop() -> Result<(), String> {
         (10.0 * camera.zoom) as u32,
     );
     let sprite_2x5 = Rect::new(0, 0, (2.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
+    let sprite_8 = Rect::new(0, 0, (8.0 * camera.zoom) as u32, (8.0 * camera.zoom) as u32);
     let sprite_16 = Rect::new(
         0,
         0,
@@ -763,6 +768,9 @@ fn main_loop() -> Result<(), String> {
 
                         entities_vals.sort_by(|a, b| a.id.cmp(&b.id));
                         for entity in entities_vals.iter() {
+                            if entity.hp < 0 {
+                                continue;
+                            }
                             let tx = (entity.x) * camera.zoom - camera.x;
                             let ty = (entity.y) * camera.zoom - camera.y;
                             let tx_ant = (entity.x) * camera.zoom - camera.x;
@@ -875,8 +883,7 @@ fn main_loop() -> Result<(), String> {
                                 );
                                 let mut tex = &ant_worker_texture_1;
                                 if entity.current_action != world_structs::ActionType::Idle
-                                    && time / (DRONE_ANIMATION_SPEED + rng.gen_range(1..2) * 10) % 2
-                                        == 0
+                                    && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
                                 {
                                     tex = &ant_worker_texture_2;
                                 }
@@ -896,9 +903,7 @@ fn main_loop() -> Result<(), String> {
                                 );
                                 let mut tex = &ant_soldier_texture_1;
                                 if entity.current_action != world_structs::ActionType::Idle
-                                    && time / (SOLDIER_ANIMATION_SPEED + rng.gen_range(1..2) * 10)
-                                        % 2
-                                        == 0
+                                    && entity.time / (SOLDIER_ANIMATION_SPEED * 10) % 2 == 0
                                 {
                                     tex = &ant_soldier_texture_2;
                                 }
@@ -918,8 +923,7 @@ fn main_loop() -> Result<(), String> {
                                 );
                                 let mut tex = &ant_drone_texture_1;
                                 if entity.current_action != world_structs::ActionType::Idle
-                                    && time / (DRONE_ANIMATION_SPEED + rng.gen_range(1..2) * 10) % 2
-                                        == 0
+                                    && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
                                 {
                                     tex = &ant_drone_texture_2;
                                 }
@@ -985,6 +989,36 @@ fn main_loop() -> Result<(), String> {
                                     &food_storage_texture,
                                     position,
                                     sprite_16,
+                                    camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
+                                );
+                            } else if entity.entity_type == world_structs::EntityType::AntEgg {
+                                let position = Point::new(
+                                    tx_ant as i32 - sprite_8.width() as i32 / 2,
+                                    ty_ant as i32 - sprite_8.height() as i32 / 2,
+                                );
+                                let mut tex = &ant_egg_texture;
+                                if entity.time
+                                    > (world_structs::HATCH_TIME as f32 * (1.0 / 4.0)) as u128
+                                {
+                                    tex = &ant_egg_texture_2;
+                                }
+                                if entity.time
+                                    > (world_structs::HATCH_TIME as f32 * (2.0 / 4.0)) as u128
+                                {
+                                    tex = &ant_egg_texture_3;
+                                }
+                                if entity.time
+                                    > (world_structs::HATCH_TIME as f32 * (3.0 / 4.0)) as u128
+                                {
+                                    tex = &ant_egg_texture_4;
+                                }
+                                graphics_utils::render(
+                                    &mut canvas,
+                                    &tex,
+                                    position,
+                                    sprite_8,
                                     camera.zoom,
                                     ratio_x,
                                     ratio_y,
