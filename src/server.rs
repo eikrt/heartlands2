@@ -1,280 +1,192 @@
+extern crate futures;
+extern crate tokio;
+extern crate websocket;
+use crate::graphics_utils;
 use crate::world_structs;
 use serde_json;
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::str::from_utf8;
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::SystemTime;
-use tokio::net::{TcpListener, TcpStream};
-use tokio::prelude::*;
-use tokio::sync::mpsc;
-use tokio::time::Duration;
-/*async fn handle(mut stream: TcpStream, mut world: world_structs::World){
+use std::fmt::Debug;
+use std::time::{Duration, Instant};
+use tokio::runtime;
+use tokio::runtime::TaskExecutor;
 
-    let mut entities: Vec<world_structs::Entity> = Vec::new();
-    let mut compare_time = SystemTime::now();
-    let mut data = [0 as u8; 65536];
-    let mut update_political_change = 0.0;
-    let mut update_political_time = 10.0;
-    let ant_number_to_change_ownership = 3;
-    let mut is_ok = true;
-    //let (sender, receiver): (mpsc::Sender<world_structs::World>, mpsc::Receiver<world_structs::World>)  = mpsc::channel();
-    let (mut sender, mut receiver) = mpsc::channel(100);
-    println!("dsf");
-    tokio::spawn(async move {
-        while true {
-//            world.update_entities();
-            println!("dsf");
-          sender.send(world.clone()).await;
-        }
-    });
-    'main: while match stream.read(&mut data) {
-        Ok(_size) => {
-            // network stuff
-            let world_from = receiver.recv().await.unwrap();
-            let res = match from_utf8(&data) {
-                Ok(_v) => _v,
-                Err(e) => panic!("Invalid sequence: {}", e),
-            }.replace("\0", "").replace("\n", "").to_string();
-            let res_obj: world_structs::WorldRequest = match serde_json::from_str(&res) {
-                Ok(v) => v,
-                Err(e) => {is_ok = false;
-                            world_structs::WorldRequest{
-                            x: 0,
-                            y: 0,
-                            req_type: world_structs::RequestType::Chunk
-                    }
-                    },
-            };
-            if res_obj.req_type == world_structs::RequestType::Chunk {
-                let response = world_structs::WorldResponse {
-                    chunk: world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
-                    entities: world_from.get_entities_for_chunk(world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone()),
-                    valid: true
-                };
-                let msg = serde_json::to_string(&response).unwrap();
-                stream.write(msg.as_bytes()).unwrap();
-            }
+use websocket::message::OwnedMessage;
+use websocket::server::r#async::Server;
+use websocket::server::InvalidConnection;
 
-            else if res_obj.req_type == world_structs::RequestType::Data{
-                let msg = serde_json::to_string(&world_from.world_data).unwrap();
-                stream.write(msg.as_bytes()).unwrap();
-            }
-            // game tick
+use futures::future::{self, Loop};
+use futures::{Future, Sink, Stream};
 
-            let delta = SystemTime::now().duration_since(compare_time).unwrap();
-            let delta_as_millis = delta.as_millis();
-            /*
-            update_political_change += delta_as_millis as f32;
-            if update_political_change > update_political_time {
-                let mut biggest_value_data = (0,0,"Neutral".to_string());
-                for row in world_clone.chunks.clone().iter().enumerate() {
-                    for c in world_clone.chunks[row.0].clone().iter().enumerate() {
+use std::sync::{Arc, RwLock};
 
-                    let mut entity_types: HashMap<String, i32> = HashMap::new();
-                    let entities_for_chunks = world_clone.get_entities_for_chunk(c.1.clone());
-                    if (entities_for_chunks.len() as i32) < ant_number_to_change_ownership {
-                        world_clone.chunks[row.0][c.0].name = "Neutral".to_string();
-                    }
-                    for e in &entities_for_chunks {
-                            if !entity_types.contains_key(&e.faction) {
-
-                        if e.entity_type == world_structs::EntityType::DRONE_ANT {
-                                entity_types.insert(
-                                                        e.faction.clone(),
-                                                        0
-                                                    );
-
-                            }
-                            }
-                            else {
-
-                            if e.entity_type == world_structs::EntityType::DRONE_ANT {
-                                    *entity_types.get_mut(&e.faction).unwrap() += 1;
-
-                                }
-                            }
-                            let mut biggest_value = ("Neutral".to_string(), 0);
-                            for (key, value) in &entity_types {
-                                if value > &biggest_value.1 {
-                                   biggest_value = (key.to_string(), *value)
-                                }
-                            }
-                            biggest_value_data = (row.0, c.0, biggest_value.0);
-                            if biggest_value.1 <= ant_number_to_change_ownership {
-
-                                biggest_value_data = (row.0, c.0, "Neutral".to_string());
-                            }
-                            world_clone.chunks[biggest_value_data.0][biggest_value_data.1].name = biggest_value_data.2;
-
-                    }
-
-                }
-
-                }
-                update_political_change = 0.0;
-            }*/
-
-            // end of tick stuff
-            compare_time = SystemTime::now();
-
-            data = [0 as u8; 65536];
-            true
-        },
-        Err(_) => {
-            println!("Error occurred, closing connection with {}", stream.peer_addr().unwrap());
-            stream.shutdown(Shutdown::Both).unwrap();
-            false
-        }
-    } {}
+struct ClientState {
+    x: f32,
+    y: f32,
 }
-/*pub async fn serve(world: world_structs::World, _port: i32) {
-        let listener = TcpListener::bind("0.0.0.0:5000").await.unwrap();
-        println!("Server listening on port 5000");
-        loop {
-            let (socket, _) = listener.accept().await.unwrap();
-            tokio::spawn(async move {
-                process(socket).await;
-            });
-        }
-}*/
-*/
-#[tokio::main]
-pub async fn serve(mut world: world_structs::World, _port: i32) {
-    let (mut sender, mut receiver) = mpsc::channel(100);
-    let mut world_from = world.clone();
-    tokio::task::spawn(async move {
-        let entity_check_time = 10;
-        let mut entity_check_change = 0;
-        while true {
-            entity_check_change += 1;
-            if entity_check_change > entity_check_time {
-                for i in 0..world.world_data.width {
-                    for j in 0..world.world_data.height {
-                        let mut id = 0;
-                        for entity in world.chunks[i][j].entities.clone() {
-                            if entity.x
-                                < world.chunks[i][j].points[0][0].x
-                                    * world.world_data.tile_size as f32
-                            {
-                                id = entity.id;
-                                if i > 0 {
-                                    world.chunks[i - 1][j].entities.push(entity);
-                                }
-                            } else if entity.y
-                                < world.chunks[i][j].points[0][0].y
-                                    * world.world_data.tile_size as f32
-                            {
-                                id = entity.id;
-                                if j > 0 {
-                                    world.chunks[i][j - 1].entities.push(entity);
-                                }
-                            } else if entity.x
-                                > world.chunks[i][j].points[world.world_data.chunk_size - 1]
-                                    [world.world_data.chunk_size - 1]
-                                    .x
-                                    * world.world_data.tile_size as f32
-                            {
-                                id = entity.id;
-                                if i < world.world_data.width - 1 {
-                                    world.chunks[i + 1][j].entities.push(entity);
-                                }
-                            } else if entity.y
-                                > world.chunks[i][j].points[world.world_data.chunk_size - 1]
-                                    [world.world_data.chunk_size - 1]
-                                    .y
-                                    * world.world_data.tile_size as f32
-                            {
-                                id = entity.id;
-                                if j < world.world_data.height - 1 {
-                                    world.chunks[i][j + 1].entities.push(entity);
-                                }
-                            }
-                            if world.chunks[i][j].entities.len() > 0 {
-                                let index_option =
-                                    world.chunks[i][j].entities.iter().position(|x| x.id == id);
-                                match index_option {
-                                    Some(index) => {
-                                        //println!("{}, {}", i, world.chunks[i][j].entities.len());
-                                        world.chunks[i][j].entities.remove(index);
-                                    }
-                                    None => (),
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            world.update_entities();
-            sender.send(world.clone()).await;
-        }
-    });
-    if let Ok(mut tcp_listener) = TcpListener::bind("127.0.0.1:5000").await {
-        println!("Running socket server...");
-        while let Ok((mut tcp_stream, _socket_addr)) = tcp_listener.accept().await {
-            println!("Client connected");
-            //while let Some(message) = receiver.recv().await {
+pub fn serve(world: world_structs::World) {
+    let runtime = runtime::Builder::new().build().unwrap();
+    let executor = runtime.executor();
+    let server =
+        Server::bind("127.0.0.1:5000", &runtime.reactor()).expect("Failed to create server");
+    println!("Server running!");
+    let connections = Arc::new(RwLock::new(HashMap::new()));
+    let world = Arc::new(RwLock::from(world.clone()));
+    let client_states = Arc::new(RwLock::from(HashMap::new()));
+    let counter = Arc::new(RwLock::new(0));
+    let connections_inner = connections.clone();
+    let world_inner = world.clone();
+    let client_states_inner = client_states.clone();
+    let executor_inner = executor.clone();
+    let connection_handler = server
+        .incoming()
+        .map_err(|InvalidConnection { error, .. }| error)
+        .for_each(move |(upgrade, addr)| {
+            let connections_inner = connections_inner.clone();
+            let world = world_inner.clone();
+            let client_states = client_states_inner.clone();
+            let counter_inner = counter.clone();
+            let executor_to_inner = executor_inner.clone();
+            let accept = upgrade
+                .accept()
+                .and_then(move |(framed, _)| {
+                    let (sink, stream) = framed.split();
 
-            loop {
-                let mut data = [0; 65536];
-                match tokio::time::timeout(Duration::from_millis(14), receiver.recv()).await {
-                    Ok(result) => match result {
-                        Some(r) => {
-                            world_from = r;
+                    {
+                        let mut c = counter_inner.write().unwrap();
+                        *c += 1;
+                    }
+
+                    let id = *counter_inner.read().unwrap();
+                    println!("Client connected!");
+                    connections_inner.write().unwrap().insert(id, sink);
+                    let c = *counter_inner.read().unwrap();
+                    let f = stream
+                        .for_each(move |msg| {
+                            process_message(c.try_into().unwrap(), &msg, client_states.clone());
+                            Ok(())
+                        })
+                        .map_err(|_| ());
+
+                    executor_to_inner.spawn(f);
+
+                    Ok(())
+                })
+                .map_err(|_| ());
+
+            executor_inner.spawn(accept);
+            Ok(())
+        })
+        .map_err(|_| ());
+
+    // game loop
+    let send_handler = future::loop_fn((), move |_| {
+        let connections_inner = connections.clone();
+        let executor = executor.clone();
+        let world_inner = world.clone();
+        let client_states_inner = client_states.clone();
+        world.write().unwrap().update_entities();
+        world.write().unwrap().update_political_situation();
+        tokio::timer::Delay::new(Instant::now() + Duration::from_millis(100))
+            .map_err(|_| ())
+            .and_then(move |_| {
+                let mut conn = connections_inner.write().unwrap();
+                let ids = conn.iter().map(|(k, v)| k.clone()).collect::<Vec<_>>();
+                for id in ids.iter() {
+                    let sink = conn.remove(id).unwrap();
+
+                    let world = world_inner.read().unwrap();
+                    let client_states = client_states_inner.clone();
+                    let mut x = 0.0;
+                    let mut y = 0.0;
+                    match client_states.write().unwrap().get(id) {
+                        Some(c) => {
+                            x = c.x;
+                            y = c.y;
                         }
                         None => (),
-                    },
-                    Err(_) => (), //println!("Timeout: no response in 10 milliseconds."),
-                };
-
-                let n = match tcp_stream.read(&mut data).await {
-                    Ok(_n) if _n == 0 => return,
-                    Ok(n) => n,
-                    Err(e) => {
-                        println!("Failed to read from socket; err = {:?}", e);
-                        return;
                     }
-                };
+                    let serial_world = world.get(x as i32, y as i32);
+                    let connections = connections_inner.clone();
+                    let id = id.clone();
 
-                let res = match from_utf8(&data) {
-                    Ok(_v) => _v,
-                    Err(e) => panic!("Invalid sequence: {}", e),
+                    // send state to client
+                    let f = sink
+                        .send(OwnedMessage::Text(serial_world))
+                        .and_then(move |sink| {
+                            connections.write().unwrap().insert(id.clone(), sink);
+                            Ok(())
+                        })
+                        .map_err(|_| ());
+
+                    executor.spawn(f);
                 }
-                .replace("\0", "")
-                .replace("\n", "")
-                .to_string();
-                let res_obj: world_structs::WorldRequest = match serde_json::from_str(&res) {
-                    Ok(v) => v,
-                    Err(_e) => world_structs::WorldRequest {
-                        x: 0,
-                        y: 0,
-                        req_type: world_structs::RequestType::Chunk,
-                    },
-                };
 
-                if res_obj.req_type == world_structs::RequestType::Chunk {
-                    let response = world_structs::WorldResponse {
-                        chunk: world_from.chunks[res_obj.x as usize][res_obj.y as usize].clone(),
-                        valid: true,
-                    };
-                    let msg = serde_json::to_string(&response).unwrap();
-                    tcp_stream.write_all(msg.as_bytes()).await;
-                } else if res_obj.req_type == world_structs::RequestType::Data {
-                    let msg = serde_json::to_string(&world_from.world_data).unwrap();
-                    tcp_stream.write_all(msg.as_bytes()).await;
+                match true {
+                    true => Ok(Loop::Continue(())),
+                    false => Ok(Loop::Break(())),
                 }
-                // game tick
+            })
+    });
 
-                /*let delta = SystemTime::now().duration_since(compare_time).unwrap();
-                let delta_as_millis = delta.as_millis();*/
+    runtime
+        .block_on_all(connection_handler.select(send_handler))
+        .map_err(|_| println!("Error!"))
+        .unwrap();
+}
 
-                /*if let Err(e) = tcp_stream.write_all(&data[0..n]).await {
-                    eprintln!("Failed to write to socket; err = {:?}", e);
-                    return;
-                }*/
-            }
-            //}
-        }
+// update state
+fn process_message(
+    id: u32,
+    msg: &OwnedMessage,
+    client_states: Arc<RwLock<HashMap<i32, ClientState>>>,
+) {
+    if !client_states.write().unwrap().contains_key(&(id as i32)) {
+        client_states
+            .write()
+            .unwrap()
+            .insert((id as i32), ClientState { x: 0.0, y: 0.0 });
     }
+    if let OwnedMessage::Text(ref txt) = *msg {
+        let cut_string = txt.as_str()[0..txt.len() - 0].replace("\\", "");
+        let camera: graphics_utils::Camera = serde_json::from_str(&cut_string).unwrap();
+        client_states
+            .write()
+            .unwrap()
+            .entry(id as i32)
+            .and_modify(|e| {
+                e.x = camera.x;
+                e.y = camera.y
+            });
+        // client_states.write().unwrap().entry(id.unwrap().y = camera.y;
+    }
+    /*if let OwnedMessage::Text(ref txt) = *msg {
+        println!("Received msg '{}' from id {}", txt, id);
+
+        if txt == "right" {
+            world
+                .write()
+                .unwrap()
+                .entry(id)
+                .and_modify(|e| e.pos.0 += 10);
+        } else if txt == "left" {
+            world
+                .write()
+                .unwrap()
+                .entry(id)
+                .and_modify(|e| e.pos.0 -= 10);
+        } else if txt == "down" {
+            world
+                .write()
+                .unwrap()
+                .entry(id)
+                .and_modify(|e| e.pos.1 += 10);
+        } else if txt == "up" {
+            world
+                .write()
+                .unwrap()
+                .entry(id)
+                .and_modify(|e| e.pos.1 -= 10);
+        }
+    }*/
 }
