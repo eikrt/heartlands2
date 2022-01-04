@@ -24,7 +24,7 @@ use std::iter::FromIterator;
 use std::option::Option;
 use std::pin::Pin;
 use std::str::from_utf8;
-use std::sync::mpsc::channel;
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{thread, time};
 use websocket::client::ClientBuilder;
@@ -32,16 +32,16 @@ use websocket::{Message, OwnedMessage};
 const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
 const TILE_SIZE: f32 = 16.0;
-const CONNECTION: &'static str = "ws://127.0.0.1:5000";
 const WORKER_ANIMATION_SPEED: u128 = 25;
 const DRONE_ANIMATION_SPEED: u128 = 25;
 const QUEEN_ANIMATION_SPEED: u128 = 25;
 const SOLDIER_ANIMATION_SPEED: u128 = 25;
 const MECHANT_ANIMATION_SPEED: u128 = 25;
-const WATER_ANIMATION_SPEED: u128 = 30;
+const WATER_ANIMATION_SPEED: u128 = 800;
 const ANIMATION_RANDOM: u128 = 50;
 fn main_loop() -> Result<(), String> {
     // sdl stuff
+    let url = "ws://127.0.0.1:5000";
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let mut window = video_subsystem
@@ -187,6 +187,7 @@ fn main_loop() -> Result<(), String> {
     // tile textures
     let mut grass_texture = texture_creator.load_texture("res/grass.png")?;
     let mut water_texture = texture_creator.load_texture("res/water.png")?;
+    let mut water_texture_2 = texture_creator.load_texture("res/water_2.png")?;
     let mut ice_texture = texture_creator.load_texture("res/ice.png")?;
     let mut sand_texture = texture_creator.load_texture("res/sand.png")?;
     // menu textures
@@ -247,66 +248,68 @@ fn main_loop() -> Result<(), String> {
     let mut settings_menu_on = false;
     let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
     // network stuff
-    let client = ClientBuilder::new(CONNECTION)
-        .unwrap()
-        .add_protocol("rust-websocket")
-        .connect_insecure()
-        .unwrap();
-    println!("Succesfully connected");
-    let (mut receiver, mut sender) = client.split().unwrap();
-    let (tx, rx) = channel();
-    let (tx_w, rx_w) = channel();
+    let (tx, rx): (Sender<OwnedMessage>, Receiver<OwnedMessage>) = channel();
+    let (tx_w, rx_w): (Sender<String>, Receiver<String>) = channel();
     let tx_1 = tx.clone();
+    let connect = |url: &str, rx: Receiver<OwnedMessage>, tx_1: Sender<OwnedMessage>| {
+        let client = ClientBuilder::new(url)
+            .unwrap()
+            .add_protocol("rust-websocket")
+            .connect_insecure()
+            .unwrap();
+        println!("Succesfully connected");
+        let (mut receiver, mut sender) = client.split().unwrap();
 
-    let send_loop = thread::spawn(move || {
-        loop {
-            // Send loop
-            let message = match rx.recv() {
-                Ok(m) => m,
-                Err(e) => {
-                    println!("Send Loop: {:?}", e);
-                    return;
+        let send_loop = thread::spawn(move || {
+            loop {
+                // Send loop
+                let message = match rx.recv() {
+                    Ok(m) => m,
+                    Err(e) => {
+                        println!("Send Loop: {:?}", e);
+                        return;
+                    }
+                };
+                match message {
+                    OwnedMessage::Close(_) => {
+                        let _ = sender.send_message(&message);
+                        return;
+                    }
+                    _ => (),
                 }
-            };
-            match message {
-                OwnedMessage::Close(_) => {
-                    let _ = sender.send_message(&message);
-                    return;
-                }
-                _ => (),
-            }
-            match sender.send_message(&message) {
-                Ok(()) => (),
-                Err(e) => {
-                    println!("Send Loop: {:?}", e);
-                    let _ = sender.send_message(&Message::close());
-                    return;
-                }
-            }
-        }
-    });
-    let receive_loop = thread::spawn(move || {
-        for message in receiver.incoming_messages() {
-            let message = match message {
-                Ok(m) => m,
-                Err(e) => {
-                    println!("Receive Loop: {:?}", e);
-                    let _ = tx_1.send(OwnedMessage::Close(None));
-                    return;
-                }
-            };
-            match message {
-                OwnedMessage::Close(_) => {
-                    let _ = tx_1.send(OwnedMessage::Close(None));
-                    return;
-                }
-                _ => {
-                    tx_w.send(format!("{:?}", message));
+                match sender.send_message(&message) {
+                    Ok(()) => (),
+                    Err(e) => {
+                        println!("Send Loop: {:?}", e);
+                        let _ = sender.send_message(&Message::close());
+                        return;
+                    }
                 }
             }
-        }
-    });
-
+        });
+        let receive_loop = thread::spawn(move || {
+            for message in receiver.incoming_messages() {
+                let message = match message {
+                    Ok(m) => m,
+                    Err(e) => {
+                        println!("Receive Loop: {:?}", e);
+                        let _ = tx_1.send(OwnedMessage::Close(None));
+                        return;
+                    }
+                };
+                match message {
+                    OwnedMessage::Close(_) => {
+                        let _ = tx_1.send(OwnedMessage::Close(None));
+                        return;
+                    }
+                    _ => {
+                        tx_w.send(format!("{:?}", message));
+                    }
+                }
+            }
+        });
+    };
+    connect(url, rx, tx_1);
     while running {
         let delta = SystemTime::now().duration_since(compare_time).unwrap();
         let time = SystemTime::now()
@@ -730,6 +733,9 @@ fn main_loop() -> Result<(), String> {
                                 texture = &grass_texture;
                             } else if p.tile_type == world_structs::TileType::Water {
                                 texture = &water_texture;
+                                if (time / (WATER_ANIMATION_SPEED)) % 2 == 0 {
+                                    texture = &water_texture_2;
+                                }
                             } else if p.tile_type == world_structs::TileType::Ice {
                                 texture = &ice_texture;
                             } else if p.tile_type == world_structs::TileType::Sand
@@ -943,9 +949,7 @@ fn main_loop() -> Result<(), String> {
                                 );
                                 let mut tex = &mechant_texture_1;
                                 if entity.current_action != world_structs::ActionType::Idle
-                                    && time / (MECHANT_ANIMATION_SPEED + rng.gen_range(1..2) * 10)
-                                        % 2
-                                        == 0
+                                    && entity.time / (MECHANT_ANIMATION_SPEED) % 2 == 0
                                 {
                                     tex = &mechant_texture_2;
                                 }

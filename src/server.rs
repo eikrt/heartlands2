@@ -87,7 +87,7 @@ pub fn serve(world: world_structs::World) {
         let client_states_inner = client_states.clone();
         world.write().unwrap().update_entities();
         world.write().unwrap().update_political_situation();
-        tokio::timer::Delay::new(Instant::now() + Duration::from_millis(100))
+        tokio::timer::Delay::new(Instant::now() + Duration::from_millis(10))
             .map_err(|_| ())
             .and_then(move |_| {
                 let mut conn = connections_inner.write().unwrap();

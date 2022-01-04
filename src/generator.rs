@@ -413,7 +413,7 @@ pub fn generate(
                                             },
                                         );
                                     }
-                                    for _l in 0..rng.gen_range(1..2) {
+                                    /*for _l in 0..rng.gen_range(1..2) {
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
@@ -442,7 +442,7 @@ pub fn generate(
                                                 time: 0,
                                             },
                                         );
-                                    }
+                                    }*/
                                     let mut has_queen = false;
                                     for e in chunk_entities.values() {
                                         if e.faction == chunk.name
