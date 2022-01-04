@@ -743,7 +743,7 @@ fn main_loop() -> Result<(), String> {
                             {
                                 texture = &sand_texture;
                             }
-                            graphics_utils::render_with_color(
+                            graphics_utils::render_tile_with_color(
                                 &mut canvas,
                                 texture,
                                 position,

@@ -132,7 +132,7 @@ pub fn render(
     Ok(())
 }
 
-pub fn render_with_color(
+pub fn render_tile_with_color(
     canvas: &mut WindowCanvas,
     texture: &Texture,
     position: Point,
@@ -144,18 +144,18 @@ pub fn render_with_color(
 ) -> Result<(), String> {
     let (_width, _height) = canvas.output_size()?;
     let screen_rect = Rect::new(
-        (position.x as f32 / ratio_x) as i32,
-        (position.y as f32 / ratio_y) as i32,
-        (sprite.width() as f32 * zoom / ratio_x) as u32,
-        (sprite.height() as f32 * zoom / ratio_y) as u32,
+        (position.x as f32 / ratio_x - 1.0) as i32,
+        (position.y as f32 / ratio_y - 1.0) as i32,
+        (sprite.width() as f32 * zoom / ratio_x + 1.0) as u32,
+        (sprite.height() as f32 * zoom / ratio_y + 1.0) as u32,
     );
     canvas.copy(texture, sprite, screen_rect)?;
     canvas.set_draw_color(color);
     match canvas.fill_rect(Rect::new(
-        (position.x as f32 / ratio_x) as i32,
-        (position.y as f32 / ratio_y) as i32,
-        (sprite.width() as f32 * zoom / ratio_x) as u32,
-        (sprite.height() as f32 * zoom / ratio_y) as u32,
+        (position.x as f32 / ratio_x - 1.0) as i32,
+        (position.y as f32 / ratio_y - 1.0) as i32,
+        (sprite.width() as f32 * zoom / ratio_x + 1.0) as u32,
+        (sprite.height() as f32 * zoom / ratio_y + 1.0) as u32,
     )) {
         Ok(_v) => (),
         Err(_v) => (),
