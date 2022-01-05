@@ -37,6 +37,8 @@ use websocket::client::ClientBuilder;
 use websocket::{Message, OwnedMessage};
 const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
+const HUD_LOC: u32 = 336;
+
 const TILE_SIZE: f32 = 16.0;
 const WORKER_ANIMATION_SPEED: u128 = 25;
 const DRONE_ANIMATION_SPEED: u128 = 25;
@@ -46,9 +48,9 @@ const MECHANT_ANIMATION_SPEED: u128 = 25;
 const WATER_ANIMATION_SPEED: u128 = 800;
 const ANIMATION_RANDOM: u128 = 50;
 const CAMERA_BUFFER_TOP: f32 = 64.0;
-const CAMERA_BUFFER_LEFT: f32 = 64.0;
-const CAMERA_BUFFER_RIGHT: f32 = 64.0;
-const CAMERA_BUFFER_BOTTOM: f32 = 64.0;
+const CAMERA_BUFFER_LEFT: f32 = 96.0;
+const CAMERA_BUFFER_RIGHT: f32 = 96.0;
+const CAMERA_BUFFER_BOTTOM: f32 = 100.0;
 
 fn main_loop() -> Result<(), String> {
     // sdl stuff
@@ -229,6 +231,9 @@ fn main_loop() -> Result<(), String> {
         texture_creator.load_texture("res/ui_button_hovered.png")?;
     let mut ui_button_pressed_texture =
         texture_creator.load_texture("res/ui_button_pressed.png")?;
+
+    // hud textures
+    let mut hud_texture = texture_creator.load_texture("res/hud.png")?;
     // other texture stuff
 
     // description stuff
@@ -242,6 +247,7 @@ fn main_loop() -> Result<(), String> {
         (1.0 * camera.zoom) as u32,
         (10.0 * camera.zoom) as u32,
     );
+    let sprite_426x48 = Rect::new(0, 0, (426.0) as u32, (48.0) as u32);
     let sprite_2x5 = Rect::new(0, 0, (2.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
     let sprite_8 = Rect::new(0, 0, (8.0 * camera.zoom) as u32, (8.0 * camera.zoom) as u32);
     let sprite_16 = Rect::new(
@@ -800,7 +806,8 @@ fn main_loop() -> Result<(), String> {
                 camera.zoom(graphics_utils::MoveDirection::Zoomout, delta_as_millis);
                 zoom_button_minus = false;
             }
-
+            // tick
+            player.tick(delta_as_millis);
             // get entities and chunks from server
             let encoded: Vec<u8> = bincode::serialize(&camera).unwrap();
             let decoded: graphics_utils::Camera = bincode::deserialize(&encoded).unwrap();
@@ -1434,6 +1441,17 @@ fn main_loop() -> Result<(), String> {
                 }
 
                 // render ui
+
+                let position = Point::new(0 as i32, 192 as i32);
+                graphics_utils::render(
+                    &mut canvas,
+                    &hud_texture,
+                    position,
+                    sprite_426x48,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );
                 // political map button
                 let position = Point::new(political_button.x as i32, political_button.y as i32);
                 political_button.check_if_hovered(
@@ -1514,6 +1532,7 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 }
+
                 // normal map button
                 let position = Point::new(normal_button.x as i32, normal_button.y as i32);
                 normal_button.check_if_hovered(
