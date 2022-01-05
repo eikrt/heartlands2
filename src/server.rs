@@ -147,9 +147,10 @@ fn process_message(
             .unwrap()
             .insert((id as i32), ClientState { x: 0.0, y: 0.0 });
     }
-    if let OwnedMessage::Text(ref txt) = *msg {
-        let cut_string = txt.as_str()[0..txt.len() - 0].replace("\\", "");
-        let camera: graphics_utils::Camera = serde_json::from_str(&cut_string).unwrap();
+    if let OwnedMessage::Binary(ref txt) = *msg {
+        //let cut_string = txt.as_str()[0..txt.len() - 0].replace("\\", "");
+        let decoded: graphics_utils::Camera = bincode::deserialize(&txt).unwrap();
+        let camera: graphics_utils::Camera = decoded;
         client_states
             .write()
             .unwrap()

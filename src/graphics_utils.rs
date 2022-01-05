@@ -1,4 +1,5 @@
 use crate::world_structs;
+use bincode;
 use sdl2::image::{InitFlag, LoadTexture};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -29,6 +30,7 @@ pub enum ButtonStatus {
     Released,
 }
 #[derive(Serialize, Deserialize, Clone)]
+
 pub struct Camera {
     pub x: f32,
     pub y: f32,

@@ -2,6 +2,8 @@ extern crate websocket;
 use crate::graphics_utils;
 use crate::world_structs;
 
+use bincode;
+
 use crate::client_structs;
 use crate::client_structs::{ClientPacket, Player};
 use lerp::Lerp;
@@ -67,7 +69,9 @@ fn main_loop() -> Result<(), String> {
     canvas.set_blend_mode(BlendMode::Blend);
 
     let mut rng = rand::thread_rng();
+
     //canvas.window_mut().set_fullscreen(FullscreenType::True);
+
     // canvas.window_mut().set_size(500, 500);
     // canvas.window_mut().set_resizable(true);
     // texture stuff
@@ -787,8 +791,10 @@ fn main_loop() -> Result<(), String> {
             }
 
             // get entities and chunks from server
+            let encoded: Vec<u8> = bincode::serialize(&camera).unwrap();
+            let decoded: graphics_utils::Camera = bincode::deserialize(&encoded).unwrap();
 
-            match tx.send(OwnedMessage::Text(serde_json::to_string(&camera).unwrap())) {
+            match tx.send(OwnedMessage::Binary(encoded)) {
                 Ok(()) => (),
                 Err(e) => {
                     break;
