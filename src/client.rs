@@ -1,6 +1,9 @@
 extern crate websocket;
 use crate::graphics_utils;
 use crate::world_structs;
+
+use crate::client_structs;
+use crate::client_structs::{ClientPacket, Player};
 use lerp::Lerp;
 use rand::Rng;
 use sdl2::event::Event;
@@ -39,6 +42,11 @@ const SOLDIER_ANIMATION_SPEED: u128 = 25;
 const MECHANT_ANIMATION_SPEED: u128 = 25;
 const WATER_ANIMATION_SPEED: u128 = 800;
 const ANIMATION_RANDOM: u128 = 50;
+const CAMERA_BUFFER_TOP: f32 = 64.0;
+const CAMERA_BUFFER_LEFT: f32 = 64.0;
+const CAMERA_BUFFER_RIGHT: f32 = 64.0;
+const CAMERA_BUFFER_BOTTOM: f32 = 64.0;
+
 fn main_loop() -> Result<(), String> {
     // sdl stuff
     let url = "ws://127.0.0.1:5000";
@@ -58,6 +66,7 @@ fn main_loop() -> Result<(), String> {
         .expect("could not make a canvas");
     canvas.set_blend_mode(BlendMode::Blend);
 
+    let mut rng = rand::thread_rng();
     //canvas.window_mut().set_fullscreen(FullscreenType::True);
     // canvas.window_mut().set_size(500, 500);
     // canvas.window_mut().set_resizable(true);
@@ -72,15 +81,8 @@ fn main_loop() -> Result<(), String> {
     let tile_gs = graphics_utils::tile_graphics();
 
     let mut camera = graphics_utils::Camera {
-        x: 0.0,
-        y: 0.0,
-        zoom: 1.0,
-        zoom_speed: 0.05,
-        move_speed: 20.0,
-    };
-    let mut camera_state = graphics_utils::Camera {
-        x: 0.0,
-        y: 0.0,
+        x: rng.gen_range(256.0..1024.0),
+        y: rng.gen_range(256.0..1024.0),
         zoom: 1.0,
         zoom_speed: 0.05,
         move_speed: 20.0,
@@ -95,6 +97,10 @@ fn main_loop() -> Result<(), String> {
     let mut a = false;
     let mut s = false;
     let mut d = false;
+    let mut up = false;
+    let mut left = false;
+    let mut down = false;
+    let mut right = false;
     let mut zoom_button_plus = false;
     let mut zoom_button_minus = false;
     let mut event_pump = sdl_context.event_pump()?;
@@ -175,6 +181,10 @@ fn main_loop() -> Result<(), String> {
     let ant_drone_texture_2 = texture_creator.load_texture("res/ant_drone_2.png")?;
     let mechant_texture_1 = texture_creator.load_texture("res/mechant.png")?;
     let mechant_texture_2 = texture_creator.load_texture("res/mechant.png")?;
+    let plasmant_texture_1 = texture_creator.load_texture("res/plasmant.png")?;
+    let plasmant_texture_2 = texture_creator.load_texture("res/plasmant_2.png")?;
+    let cultist_ant_texture_1 = texture_creator.load_texture("res/plasmant.png")?;
+    let cultist_ant_texture_2 = texture_creator.load_texture("res/plasmant_2.png")?;
     let ant_queen_texture_1 = texture_creator.load_texture("res/ant_queen.png")?;
     let ant_queen_texture_2 = texture_creator.load_texture("res/ant_queen.png")?;
     let snail_texture = texture_creator.load_texture("res/snail.png")?;
@@ -242,7 +252,29 @@ fn main_loop() -> Result<(), String> {
 
     // gameplay stuff
 
-    let mut rng = rand::thread_rng();
+    let id = rng.gen_range(0..999999);
+    let mut player = client_structs::Player {
+        id: id,
+        hp: 100,
+        x: camera.x + 256.0,
+        y: camera.y + 128.0,
+        stopped: false,
+        speed: 5.5,
+        dir: 0.0,
+        target_x: 0.0,
+        target_y: 0.0,
+        entity_type: world_structs::EntityType::CultistAnt,
+        category_type: world_structs::CategoryType::Ant,
+        faction: "The Fringe".to_string(),
+        faction_id: 0,
+        task_type: world_structs::TaskType::Nothing,
+        current_action: world_structs::ActionType::Idle,
+        wielding_item: world_structs::ItemType::Nothing,
+        backpack_item: world_structs::ItemType::Nothing,
+        wearable_item: world_structs::ItemType::Nothing,
+        backpack_amount: 0,
+        time: 0,
+    };
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
     let mut settings_menu_on = false;
@@ -363,6 +395,30 @@ fn main_loop() -> Result<(), String> {
                     d = true;
                 }
                 Event::KeyDown {
+                    keycode: Some(Keycode::Up),
+                    ..
+                } => {
+                    up = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Left),
+                    ..
+                } => {
+                    left = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Right),
+                    ..
+                } => {
+                    right = true;
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => {
+                    down = true;
+                }
+                Event::KeyDown {
                     keycode: Some(Keycode::Plus),
                     ..
                 } => {
@@ -410,6 +466,30 @@ fn main_loop() -> Result<(), String> {
                 } => {
                     d = false;
                 }
+                Event::KeyUp {
+                    keycode: Some(Keycode::Up),
+                    ..
+                } => {
+                    up = false;
+                }
+                Event::KeyUp {
+                    keycode: Some(Keycode::Left),
+                    ..
+                } => {
+                    left = false;
+                }
+                Event::KeyUp {
+                    keycode: Some(Keycode::Right),
+                    ..
+                } => {
+                    right = false;
+                }
+                Event::KeyUp {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => {
+                    down = false;
+                }
 
                 Event::KeyUp {
                     keycode: Some(Keycode::Plus),
@@ -439,7 +519,8 @@ fn main_loop() -> Result<(), String> {
             - margin_x as f32) as f32;
         let mouse_y = (((mouse_state.y() as f32 + camera.y) / camera.zoom * ratio_y)
             - margin_y as f32) as f32;
-
+        let mx = mouse_state.x() as f32;
+        let my = mouse_state.y() as f32;
         if main_menu_on {
             //render menu background
             graphics_utils::render(
@@ -453,12 +534,12 @@ fn main_loop() -> Result<(), String> {
             );
             // render buttons
             let position = Point::new(play_button.x as i32, play_button.y as i32);
-            play_button.check_if_hovered(mouse_x, mouse_y, ratio_x, ratio_y);
-            play_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
-            settings_button.check_if_hovered(mouse_x, mouse_y, ratio_x, ratio_y);
-            settings_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
-            exit_button.check_if_hovered(mouse_x, mouse_y, ratio_x, ratio_y);
-            exit_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
+            play_button.check_if_hovered(mx, my, ratio_x, ratio_y);
+            play_button.check_if_pressed(mx, my, mouse_state.left());
+            settings_button.check_if_hovered(mx, my, ratio_x, ratio_y);
+            settings_button.check_if_pressed(mx, my, mouse_state.left());
+            exit_button.check_if_hovered(mx, my, ratio_x, ratio_y);
+            exit_button.check_if_pressed(mx, my, mouse_state.left());
             // play button
             if play_button.status == graphics_utils::ButtonStatus::Hovered {
                 graphics_utils::render(
@@ -644,17 +725,57 @@ fn main_loop() -> Result<(), String> {
                 running = false;
             }
         } else {
-            if w {
+            /*if up {
                 camera.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
             }
-            if a {
+            if left {
                 camera.mov(graphics_utils::MoveDirection::Left, delta_as_millis);
             }
-            if s {
+            if down {
                 camera.mov(graphics_utils::MoveDirection::Down, delta_as_millis);
             }
-            if d {
+            if right {
                 camera.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
+            }*/
+            if w {
+                player.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
+                if player.get_relative_y(&camera) <= CAMERA_BUFFER_TOP {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Up,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
+            }
+            if a {
+                player.mov(graphics_utils::MoveDirection::Left, delta_as_millis);
+                if player.get_relative_x(&camera) <= CAMERA_BUFFER_LEFT {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Left,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
+            }
+            if s {
+                player.mov(graphics_utils::MoveDirection::Down, delta_as_millis);
+                if player.get_relative_y(&camera) >= height as f32 - CAMERA_BUFFER_BOTTOM {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Down,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
+            }
+            if d {
+                player.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
+                if player.get_relative_x(&camera) >= width as f32 - CAMERA_BUFFER_RIGHT {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Right,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
             }
             if zoom_button_plus {
                 camera.zoom(graphics_utils::MoveDirection::Zoomin, delta_as_millis);
@@ -683,9 +804,6 @@ fn main_loop() -> Result<(), String> {
                 }
                 Err(e) => (),
             }
-            /*println!("{}", delta_as_millis);
-            thread::sleep(time::Duration::from_millis(10));
-            continue;*/
             // iterate chunks
             for i in 0..chunks.len() {
                 for j in 0..chunks[i].len() {
@@ -753,15 +871,6 @@ fn main_loop() -> Result<(), String> {
                                 ratio_x,
                                 ratio_y,
                             );
-                            /* match canvas.fill_rect(Rect::new(
-                                (tx * ratio_x) as i32,
-                                (ty * ratio_y) as i32,
-                                (TILE_SIZE * camera.zoom * ratio_x) as u32,
-                                (TILE_SIZE * camera.zoom * ratio_y) as u32,
-                            )) {
-                                Ok(_v) => (),
-                                Err(_v) => (),
-                            }*/
                         }
                     }
                 }
@@ -774,15 +883,16 @@ fn main_loop() -> Result<(), String> {
 
                         entities_vals.sort_by(|a, b| a.id.cmp(&b.id));
                         for entity in entities_vals.iter() {
-                            if entity.hp < 0 {
-                                continue;
-                            }
                             let tx = (entity.x) * camera.zoom - camera.x;
                             let ty = (entity.y) * camera.zoom - camera.y;
                             let tx_ant = (entity.x) * camera.zoom - camera.x;
                             let ty_ant = (entity.y) * camera.zoom - camera.y;
                             let tx_tree = (entity.x + TILE_SIZE / 2.0) * camera.zoom - camera.x;
                             let ty_tree = (entity.y - TILE_SIZE / 4.0) * camera.zoom - camera.y;
+                            if entity.hp < 0 {
+                                continue;
+                            }
+
                             canvas.set_draw_color(Color::RGB(0, 0, 0));
 
                             if tx < -64.0 || ty < -64.0 {
@@ -1078,6 +1188,29 @@ fn main_loop() -> Result<(), String> {
                     }
                 }
 
+                // render player
+
+                let mut player_tex = &cultist_ant_texture_1;
+
+                if player.stopped && (player.time / 100) % 2 == 0 {
+                    player_tex = &cultist_ant_texture_2;
+                }
+
+                let player_position = Point::new(
+                    (player.x * camera.zoom - camera.x) as i32,
+                    (player.y * camera.zoom - camera.y) as i32,
+                );
+                graphics_utils::render(
+                    &mut canvas,
+                    &cultist_ant_texture_1,
+                    player_position,
+                    sprite_16,
+                    camera.zoom,
+                    ratio_x,
+                    ratio_y,
+                );
+
+                // render hover
                 let mut hovered_tiletype = world_structs::TileType::Grass;
                 let mut hovered_tile: std::option::Option<world_structs::Point> = None;
                 let mut hovered_entity: std::option::Option<world_structs::Entity> = None;

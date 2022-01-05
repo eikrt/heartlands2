@@ -86,6 +86,8 @@ pub enum EntityType {
     QueenAnt,
     DroneAnt,
     SoldierAnt,
+    CultistAnt,
+    Plasmant,
     Mechant,
     Snail,
     FoodStorage,
@@ -129,12 +131,6 @@ impl Default for Point {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct WorldRequest {
-    pub x: i32,
-    pub y: i32,
-    pub req_type: RequestType,
-}
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Entity {
     pub x: f32,

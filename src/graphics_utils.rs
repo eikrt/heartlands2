@@ -44,15 +44,15 @@ impl Camera {
             self.zoom -= self.zoom_speed * delta as f32 / 100.0;
         }
     }
-    pub fn mov(&mut self, dir: MoveDirection, delta: u128) {
+    pub fn mov(&mut self, dir: MoveDirection, speed: f32, delta: u128) {
         if dir == MoveDirection::Up {
-            self.y -= self.move_speed * delta as f32 / 100.0;
+            self.y -= speed * delta as f32 / 100.0;
         } else if dir == MoveDirection::Left {
-            self.x -= self.move_speed * delta as f32 / 100.0;
+            self.x -= speed * delta as f32 / 100.0;
         } else if dir == MoveDirection::Down {
-            self.y += self.move_speed * delta as f32 / 100.0;
+            self.y += speed * delta as f32 / 100.0;
         } else if dir == MoveDirection::Right {
-            self.x += self.move_speed * delta as f32 / 100.0;
+            self.x += speed * delta as f32 / 100.0;
         }
     }
 }
