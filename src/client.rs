@@ -6,6 +6,7 @@ use bincode;
 
 use crate::client_structs;
 use crate::client_structs::{ClientPacket, Player};
+use crate::world_structs::ReligionType;
 use lerp::Lerp;
 use rand::Rng;
 use sdl2::event::Event;
@@ -166,6 +167,15 @@ fn main_loop() -> Result<(), String> {
         width: 32.0,
         height: 32.0,
     };
+
+    let mut religion_button = graphics_utils::Button {
+        status: graphics_utils::ButtonStatus::Hovered,
+        previous_status: graphics_utils::ButtonStatus::Hovered,
+        x: 4.0 + 64.0 + 8.0,
+        y: (SCREEN_HEIGHT - 32 - 4) as f32,
+        width: 32.0,
+        height: 32.0,
+    };
     // entity textures
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
@@ -268,6 +278,7 @@ fn main_loop() -> Result<(), String> {
         target_x: 0.0,
         target_y: 0.0,
         entity_type: world_structs::EntityType::CultistAnt,
+        religion_type: ReligionType::Nothing,
         category_type: world_structs::CategoryType::Ant,
         faction: "The Fringe".to_string(),
         faction_id: 0,
@@ -1463,7 +1474,46 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 }
-
+                // religion_button
+                let position = Point::new(religion_button.x as i32, religion_button.y as i32);
+                religion_button.check_if_hovered(
+                    mouse_state.x() as f32 * ratio_x,
+                    mouse_state.y() as f32 * ratio_y,
+                    ratio_x,
+                    ratio_y,
+                );
+                religion_button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
+                if religion_button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &ui_button_hovered_texture,
+                        position,
+                        sprite_32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if religion_button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &ui_button_pressed_texture,
+                        position,
+                        sprite_32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &ui_button_texture,
+                        position,
+                        sprite_32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
                 // normal map button
                 let position = Point::new(normal_button.x as i32, normal_button.y as i32);
                 normal_button.check_if_hovered(
@@ -1525,7 +1575,6 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
-
                 let political_text_margin = 4;
                 let political_text = graphics_utils::get_text(
                     "P".to_string(),
@@ -1547,11 +1596,33 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
+
+                let religion_text_margin = 4;
+                let religion_text = graphics_utils::get_text(
+                    "R".to_string(),
+                    Color::RGBA(255, 255, 255, 255),
+                    desc_font_size,
+                    &font,
+                    &texture_creator,
+                )
+                .unwrap();
+                let position = Point::new(
+                    religion_button.x as i32 + 8 + religion_text_margin,
+                    religion_button.y as i32 + religion_text_margin,
+                );
+                graphics_utils::render_text(
+                    &mut canvas,
+                    &religion_text.text_texture,
+                    position,
+                    religion_text.text_sprite,
+                    ratio_x,
+                    ratio_y,
+                );
             }
         }
         if normal_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Normal;
-        } else if political_button.status == graphics_utils::ButtonStatus::Pressed {
+        } else if religion_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Political;
         }
         canvas.present();

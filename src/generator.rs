@@ -1,4 +1,5 @@
 use crate::world_structs;
+use crate::world_structs::ReligionType;
 use rand::seq::IteratorRandom;
 use rand::Rng;
 use simdnoise::*;
@@ -342,6 +343,7 @@ pub fn generate(
                                                 category_type: world_structs::CategoryType::Ant,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
+                                                religion_type: ReligionType::Nothing,
                                                 current_action: world_structs::ActionType::Idle,
                                                 task_type: world_structs::TaskType::Nothing,
                                                 wielding_item:
@@ -371,6 +373,7 @@ pub fn generate(
                                                 target_y: 0.0,
                                                 entity_type: world_structs::EntityType::SoldierAnt,
                                                 category_type: world_structs::CategoryType::Ant,
+                                                religion_type: ReligionType::Nothing,
                                                 task_type: world_structs::TaskType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
@@ -405,6 +408,7 @@ pub fn generate(
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 current_action: world_structs::ActionType::Idle,
+                                                religion_type: ReligionType::Nothing,
                                                 wielding_item: world_structs::ItemType::Nothing,
                                                 backpack_item: world_structs::ItemType::Nothing,
                                                 wearable_item: world_structs::ItemType::Nothing,
@@ -471,6 +475,7 @@ pub fn generate(
                                                 task_type: world_structs::TaskType::Nothing,
                                                 category_type:
                                                     world_structs::CategoryType::Furniture,
+                                                religion_type: ReligionType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 current_action: world_structs::ActionType::Idle,
@@ -498,6 +503,7 @@ pub fn generate(
                                                 target_y: 0.0,
                                                 entity_type: world_structs::EntityType::QueenAnt,
                                                 category_type: world_structs::CategoryType::Ant,
+                                                religion_type: ReligionType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
                                                 task_type: world_structs::TaskType::Nothing,
@@ -662,6 +668,7 @@ pub fn generate(
                                         entity_type: entity_type,
                                         category_type: world_structs::CategoryType::Vegetation,
                                         faction: chunk.name.clone().to_string(),
+                                        religion_type: ReligionType::Nothing,
                                         faction_id: chunk.id,
                                         current_action: world_structs::ActionType::Idle,
                                         task_type: world_structs::TaskType::Nothing,
@@ -728,6 +735,7 @@ pub fn generate(
                                         stopped: true,
                                         entity_type: entity_type,
                                         category_type: world_structs::CategoryType::Tree,
+                                        religion_type: ReligionType::Nothing,
                                         faction: chunk.name.clone().to_string(),
                                         faction_id: chunk.id,
                                         current_action: world_structs::ActionType::Idle,
@@ -767,8 +775,8 @@ pub fn generate(
 
         v_x: 0,
         v_y: 0,
-        v_w: 4,
-        v_h: 3,
+        v_w: 3,
+        v_h: 2,
     };
 }
 fn get_chunk_name() -> String {

@@ -1,5 +1,7 @@
 use crate::graphics_utils::{Camera, MoveDirection};
-use crate::world_structs::{ActionType, CategoryType, EntityType, ItemType, TaskType};
+use crate::world_structs::{
+    ActionType, CategoryType, EntityType, ItemType, ReligionType, TaskType,
+};
 pub struct Player {
     pub x: f32,
     pub y: f32,
@@ -13,6 +15,7 @@ pub struct Player {
     pub entity_type: EntityType,
     pub category_type: CategoryType,
     pub faction: String,
+    pub religion_type: ReligionType,
     pub faction_id: i32,
     pub current_action: ActionType,
     pub task_type: TaskType,

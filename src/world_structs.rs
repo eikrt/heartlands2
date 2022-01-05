@@ -12,6 +12,20 @@ const BACKPACKSIZE: u8 = 64;
 const INTERACTION_COOLDOWN: u128 = 10;
 pub const HATCH_TIME: u128 = 500;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(tag = "ReligionType")]
+pub enum ReligionType {
+    Plasma,
+    Moon,
+    Technology,
+    Giants,
+    Element,
+    Spiral,
+    Infinity,
+    Sacrifice,
+    Love,
+    Nothing,
+}
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "TaskType")]
 pub enum TaskType {
     Reproduce,
@@ -143,6 +157,7 @@ pub struct Entity {
     pub stopped: bool,
     pub id: i32,
     pub entity_type: EntityType,
+    pub religion_type: ReligionType,
     pub category_type: CategoryType,
     pub faction: String,
     pub faction_id: i32,
@@ -216,6 +231,7 @@ impl Default for Entity {
             stopped: true,
             entity_type: EntityType::Oak,
             category_type: CategoryType::Tree,
+            religion_type: ReligionType::Nothing,
             faction: "Neutral".to_string(),
             faction_id: 0,
             current_action: ActionType::Idle,
@@ -349,22 +365,22 @@ impl fmt::Display for World {
 impl World {
     pub fn get(&self, x: i32, y: i32) -> String {
         let mut view_x =
-            x / self.world_data.tile_size / self.world_data.chunk_size as i32 - self.v_w;
+            x / self.world_data.tile_size / self.world_data.chunk_size as i32 - self.v_w + 1;
         let mut view_y =
-            y / self.world_data.tile_size / self.world_data.chunk_size as i32 - self.v_h;
+            y / self.world_data.tile_size / self.world_data.chunk_size as i32 - self.v_h + 1;
         let mut view_width = view_x + self.v_w * 2;
         let mut view_height = view_y + self.v_h * 2;
         if view_x < 0 {
-            view_x = 0;
+            view_x = 1;
         }
         if view_y < 0 {
-            view_y = 0;
+            view_y = 1;
         }
-        if view_x > self.chunks.len() as i32 - 2 {
-            view_x = self.chunks.len() as i32 - 2;
+        if view_x > self.chunks.len() as i32 - 0 {
+            view_x = self.chunks.len() as i32 - 0;
         }
-        if view_y > self.chunks.len() as i32 - 2 {
-            view_y = self.chunks.len() as i32 - 2;
+        if view_y > self.chunks.len() as i32 - 0 {
+            view_y = self.chunks.len() as i32 - 0;
         }
 
         if view_width < 0 {
@@ -373,11 +389,11 @@ impl World {
         if view_height < 0 {
             view_height = 1;
         }
-        if view_width > self.chunks.len() as i32 - 1 {
-            view_width = self.chunks.len() as i32 - 1;
+        if view_width > self.chunks.len() as i32 - 0 {
+            view_width = self.chunks.len() as i32 - 0;
         }
-        if view_height > self.chunks.len() as i32 - 1 {
-            view_height = self.chunks.len() as i32 - 1;
+        if view_height > self.chunks.len() as i32 - 0 {
+            view_height = self.chunks.len() as i32 - 0;
         }
         /*let mut selected_chunks: Vec<Vec<Chunk>> = Vec::from(Vec::new());
         for i in view_x as usize..view_height as usize as usize {
@@ -549,6 +565,7 @@ impl World {
                                 target_y: 0.0,
                                 entity_type: EntityType::WorkerAnt,
                                 category_type: CategoryType::Ant,
+                                religion_type: ReligionType::Nothing,
                                 faction: chunk_clone.name.clone().to_string(),
                                 faction_id: chunk_clone.id,
                                 current_action: ActionType::Idle,
@@ -727,6 +744,7 @@ impl World {
                                                     stopped: true,
                                                     entity_type: EntityType::AntEgg,
                                                     category_type: CategoryType::Vegetation,
+                                                    religion_type: ReligionType::Nothing,
                                                     faction: chunk_clone.name.clone().to_string(),
                                                     faction_id: chunk_clone.id,
                                                     current_action: ActionType::Idle,
