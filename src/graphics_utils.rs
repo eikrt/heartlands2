@@ -20,6 +20,7 @@ pub enum MoveDirection {
     Left,
     Down,
     Right,
+    Nothing,
     Zoomin,
     Zoomout,
 }

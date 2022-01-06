@@ -48,6 +48,7 @@ const DRONE_ANIMATION_SPEED: u128 = 25;
 const QUEEN_ANIMATION_SPEED: u128 = 25;
 const SOLDIER_ANIMATION_SPEED: u128 = 25;
 const MECHANT_ANIMATION_SPEED: u128 = 25;
+const PLAYER_ANIMATION_SPEED: u128 = 50;
 const WATER_ANIMATION_SPEED: u128 = 800;
 const ANIMATION_RANDOM: u128 = 50;
 const CAMERA_BUFFER_TOP: f32 = 64.0;
@@ -194,16 +195,32 @@ fn main_loop() -> Result<(), String> {
     let ant_egg_texture_2 = texture_creator.load_texture("res/ant_egg_2.png")?;
     let ant_egg_texture_3 = texture_creator.load_texture("res/ant_egg_3.png")?;
     let ant_egg_texture_4 = texture_creator.load_texture("res/ant_egg_4.png")?;
-    let ant_worker_texture_1 = texture_creator.load_texture("res/ant_worker.png")?;
-    let ant_worker_texture_2 = texture_creator.load_texture("res/ant_worker_2.png")?;
-    let ant_soldier_texture_1 = texture_creator.load_texture("res/ant1.png")?;
-    let ant_soldier_texture_2 = texture_creator.load_texture("res/ant1.png")?;
+    let ant_worker_texture_front_1 = texture_creator.load_texture("res/ant_worker_front_1.png")?;
+    let ant_worker_texture_front_2 = texture_creator.load_texture("res/ant_worker_front_2.png")?;
+    let ant_worker_texture_back_1 = texture_creator.load_texture("res/ant_worker_back_1.png")?;
+    let ant_worker_texture_back_2 = texture_creator.load_texture("res/ant_worker_back_2.png")?;
+    let ant_worker_texture_side_1 = texture_creator.load_texture("res/ant_worker_side_1.png")?;
+    let ant_worker_texture_side_2 = texture_creator.load_texture("res/ant_worker_side_2.png")?;
+    let ant_worker_texture_side_mirror_1 =
+        texture_creator.load_texture("res/ant_worker_side_mirror_1.png")?;
+    let ant_worker_texture_side_mirror_2 =
+        texture_creator.load_texture("res/ant_worker_side_mirror_2.png")?;
+    let plasmant_texture_front_1 = texture_creator.load_texture("res/plasmant_front_1.png")?;
+    let plasmant_texture_front_2 = texture_creator.load_texture("res/plasmant_front_2.png")?;
+    let plasmant_texture_back_1 = texture_creator.load_texture("res/plasmant_back_1.png")?;
+    let plasmant_texture_back_2 = texture_creator.load_texture("res/plasmant_back_2.png")?;
+    let plasmant_texture_side_1 = texture_creator.load_texture("res/plasmant_side_1.png")?;
+    let plasmant_texture_side_2 = texture_creator.load_texture("res/plasmant_side_2.png")?;
+    let plasmant_texture_side_mirror_1 =
+        texture_creator.load_texture("res/plasmant_side_mirror_1.png")?;
+    let plasmant_texture_side_mirror_2 =
+        texture_creator.load_texture("res/plasmant_side_mirror_2.png")?;
+    let ant_soldier_texture_1 = texture_creator.load_texture("res/ant_worker_side_1.png")?;
+    let ant_soldier_texture_2 = texture_creator.load_texture("res/ant_worker_side_2.png")?;
     let ant_drone_texture_1 = texture_creator.load_texture("res/ant_drone.png")?;
     let ant_drone_texture_2 = texture_creator.load_texture("res/ant_drone_2.png")?;
     let mechant_texture_1 = texture_creator.load_texture("res/mechant.png")?;
     let mechant_texture_2 = texture_creator.load_texture("res/mechant.png")?;
-    let plasmant_texture_1 = texture_creator.load_texture("res/plasmant.png")?;
-    let plasmant_texture_2 = texture_creator.load_texture("res/plasmant_2.png")?;
     let cultist_ant_texture_1 = texture_creator.load_texture("res/plasmant.png")?;
     let cultist_ant_texture_2 = texture_creator.load_texture("res/plasmant_2.png")?;
     let ant_queen_texture_1 = texture_creator.load_texture("res/ant_queen.png")?;
@@ -766,6 +783,7 @@ fn main_loop() -> Result<(), String> {
             if right {
                 camera.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
             }*/
+            player.mov(graphics_utils::MoveDirection::Nothing, delta_as_millis);
             if w {
                 player.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
                 if player.get_relative_y(&camera) <= CAMERA_BUFFER_TOP {
@@ -1042,11 +1060,27 @@ fn main_loop() -> Result<(), String> {
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
-                                let mut tex = &ant_worker_texture_1;
-                                if entity.current_action != ActionType::Idle
-                                    && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
+                                let mut tex = &ant_worker_texture_side_1;
+                                if entity.dir >= std::f64::consts::PI as f32 * (0.0)
+                                    && entity.dir <= std::f64::consts::PI as f32 * (1.0)
                                 {
-                                    tex = &ant_worker_texture_2;
+                                    if entity.current_action != ActionType::Idle
+                                        && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
+                                    {
+                                        tex = &ant_worker_texture_side_1;
+                                    } else {
+                                        tex = &ant_worker_texture_side_2;
+                                    }
+                                } else if entity.dir >= std::f64::consts::PI as f32 * (1.0)
+                                    && entity.dir <= std::f64::consts::PI as f32 * (2.0)
+                                {
+                                    if entity.current_action != ActionType::Idle
+                                        && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
+                                    {
+                                        tex = &ant_worker_texture_side_mirror_2;
+                                    } else {
+                                        tex = &ant_worker_texture_side_mirror_1;
+                                    }
                                 }
                                 graphics_utils::render(
                                     &mut canvas,
@@ -1229,19 +1263,39 @@ fn main_loop() -> Result<(), String> {
 
                 // render player
 
-                let mut player_tex = &cultist_ant_texture_1;
-
-                if player.stopped && (player.time / 100) % 2 == 0 {
-                    player_tex = &cultist_ant_texture_2;
+                let mut tex = &plasmant_texture_side_1;
+                if !player.stopped && (player.time / PLAYER_ANIMATION_SPEED) % 2 == 0 {
+                    tex = &plasmant_texture_side_2;
                 }
 
+                if player.dir >= std::f64::consts::PI as f32 * (0.0)
+                    && player.dir <= std::f64::consts::PI as f32 * (1.0)
+                {
+                    if player.current_action != ActionType::Idle
+                        && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0
+                    {
+                        tex = &plasmant_texture_side_1;
+                    } else {
+                        tex = &plasmant_texture_side_2;
+                    }
+                } else if player.dir >= std::f64::consts::PI as f32 * (1.0)
+                    && player.dir <= std::f64::consts::PI as f32 * (2.0)
+                {
+                    if player.current_action != ActionType::Idle
+                        && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0
+                    {
+                        tex = &plasmant_texture_side_mirror_2;
+                    } else {
+                        tex = &plasmant_texture_side_mirror_1;
+                    }
+                }
                 let player_position = Point::new(
                     (player.x * camera.zoom - camera.x) as i32,
                     (player.y * camera.zoom - camera.y) as i32,
                 );
                 graphics_utils::render(
                     &mut canvas,
-                    &cultist_ant_texture_1,
+                    &tex,
                     player_position,
                     sprite_16,
                     camera.zoom,

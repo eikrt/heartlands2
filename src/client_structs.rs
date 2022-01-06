@@ -30,19 +30,24 @@ impl Player {
     pub fn mov(&mut self, dir: MoveDirection, delta: u128) {
         if dir == MoveDirection::Up {
             self.y -= self.speed * delta as f32 / 100.0;
-            self.stopped = false;
         } else if dir == MoveDirection::Left {
             self.x -= self.speed * delta as f32 / 100.0;
-            self.stopped = false;
+            self.dir = std::f64::consts::PI as f32 * (2.0);
         } else if dir == MoveDirection::Down {
             self.y += self.speed * delta as f32 / 100.0;
-            self.stopped = false;
         } else if dir == MoveDirection::Right {
             self.x += self.speed * delta as f32 / 100.0;
+            self.dir = std::f64::consts::PI as f32 / 2.0;
+        }
+        if dir == MoveDirection::Nothing {
+            self.stopped = true;
+        } else {
             self.stopped = false;
         }
     }
-    pub fn tick(&mut self, delta: u128) {}
+    pub fn tick(&mut self, delta: u128) {
+        self.time += 10;
+    }
     pub fn get_relative_x(&self, camera: &Camera) -> f32 {
         return self.x - camera.x;
     }
