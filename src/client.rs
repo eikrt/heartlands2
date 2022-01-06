@@ -548,8 +548,8 @@ fn main_loop() -> Result<(), String> {
             - margin_x as f32) as f32;
         let mouse_y = (((mouse_state.y() as f32 + camera.y) / camera.zoom * ratio_y)
             - margin_y as f32) as f32;
-        let mx = mouse_state.x() as f32;
-        let my = mouse_state.y() as f32;
+        let mx = mouse_state.x() as f32 * ratio_x;
+        let my = mouse_state.y() as f32 * ratio_y;
         if main_menu_on {
             //render menu background
             graphics_utils::render(
@@ -788,7 +788,7 @@ fn main_loop() -> Result<(), String> {
             }
             if s {
                 player.mov(graphics_utils::MoveDirection::Down, delta_as_millis);
-                if player.get_relative_y(&camera) >= height as f32 - CAMERA_BUFFER_BOTTOM {
+                if player.get_relative_y(&camera) >= SCREEN_HEIGHT as f32 - CAMERA_BUFFER_BOTTOM {
                     camera.mov(
                         graphics_utils::MoveDirection::Down,
                         player.speed,
@@ -798,7 +798,7 @@ fn main_loop() -> Result<(), String> {
             }
             if d {
                 player.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
-                if player.get_relative_x(&camera) >= width as f32 - CAMERA_BUFFER_RIGHT {
+                if player.get_relative_x(&camera) >= SCREEN_WIDTH as f32 - CAMERA_BUFFER_RIGHT {
                     camera.mov(
                         graphics_utils::MoveDirection::Right,
                         player.speed,
