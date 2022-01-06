@@ -212,6 +212,7 @@ pub fn generate(
             }
 
             let religion_type: ReligionType = rand::random();
+
             world_chunks[i as usize].push(Chunk {
                 x: i as i32,
                 y: j as i32,
@@ -223,7 +224,66 @@ pub fn generate(
             });
         }
     }
-
+    for i in 0..width {
+        for j in 0..height {
+            let mut faction_type = world_chunks[i][j].name.clone().to_string();
+            let mut minus_x = 1;
+            let mut minus_y = 1;
+            let mut plus_x = 1;
+            let mut plus_y = 1;
+            if i as i32 - minus_x >= 0 {
+                if world_chunks[i - 1][j].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i - 1][j].name.clone();
+                }
+            }
+            if j as i32 - minus_y >= 0 {
+                if world_chunks[i][j - 1].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i][j - 1].name.clone();
+                }
+            }
+            if i as i32 + plus_x <= (world_chunks[i].len() - 1 as usize) as i32 {
+                if world_chunks[i + 1][j].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i + 1][j].name.clone();
+                }
+            }
+            if j as i32 + plus_y <= (world_chunks.len() - 1 as usize) as i32 {
+                if world_chunks[i][j + 1].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i][j + 1].name.clone();
+                }
+            }
+            world_chunks[i][j].name = faction_type;
+        }
+    }
+    for i in width..0 {
+        for j in height..0 {
+            let mut faction_type = world_chunks[i][j].name.clone().to_string();
+            let mut minus_x = 1;
+            let mut minus_y = 1;
+            let mut plus_x = 1;
+            let mut plus_y = 1;
+            if i as i32 - minus_x >= 0 {
+                if world_chunks[i - 1][j].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i - 1][j].name.clone();
+                }
+            }
+            if j as i32 - minus_y >= 0 {
+                if world_chunks[i][j - 1].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i][j - 1].name.clone();
+                }
+            }
+            if i as i32 + plus_x <= (world_chunks[i].len() - 1 as usize) as i32 {
+                if world_chunks[i + 1][j].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i + 1][j].name.clone();
+                }
+            }
+            if j as i32 + plus_y <= (world_chunks.len() - 1 as usize) as i32 {
+                if world_chunks[i][j + 1].name != "Neutral".to_string() {
+                    faction_type = world_chunks[i][j + 1].name.clone();
+                }
+            }
+            world_chunks[i][j].name = faction_type;
+        }
+    }
     // SEAS AND BIG SHAPES
     if apply_seas {
         for i in 0..width {
@@ -327,6 +387,7 @@ pub fn generate(
                                     && point.tile_type != TileType::RedSand
                                 {
                                     point.tile_type = TileType::MudHiveFloor;
+
                                     for _l in 0..rng.gen_range(2..4) {
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
