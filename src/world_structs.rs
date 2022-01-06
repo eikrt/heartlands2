@@ -1,4 +1,7 @@
-use rand::Rng;
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -22,8 +25,23 @@ pub enum ReligionType {
     Spiral,
     Infinity,
     Sacrifice,
-    Love,
     Nothing,
+}
+impl Distribution<ReligionType> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> ReligionType {
+        // match rng.gen_range(0, 3) { // rand 0.5, 0.6, 0.7
+        match rng.gen_range(0..=7) {
+            0 => ReligionType::Plasma,
+            1 => ReligionType::Moon,
+            2 => ReligionType::Technology,
+            3 => ReligionType::Giants,
+            4 => ReligionType::Element,
+            5 => ReligionType::Spiral,
+            6 => ReligionType::Infinity,
+            7 => ReligionType::Sacrifice,
+            _ => ReligionType::Nothing,
+        }
+    }
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "TaskType")]
@@ -256,6 +274,7 @@ pub struct Chunk {
     pub points: Vec<Vec<Point>>,
     pub entities: HashMap<i32, Entity>,
     pub name: String,
+    pub religion: ReligionType,
     pub id: i32,
 }
 impl Chunk {
@@ -428,7 +447,8 @@ impl World {
         //write!(f, "\"x\":{}", 5)
     }
 
-    pub fn update_political_situation(&mut self) {
+    pub fn update_political_and_religion_situation(&mut self) {
+        // political
         let mut biggest_value_data = (0, 0, "Neutral".to_string());
         let ant_number_to_change_ownership = 1;
         for row in self.chunks.clone().iter().enumerate() {
@@ -458,6 +478,41 @@ impl World {
                         biggest_value_data = (row.0, c.0, "Neutral".to_string());
                     }
                     self.chunks[biggest_value_data.0][biggest_value_data.1].name =
+                        biggest_value_data.2;
+                }
+            }
+        }
+
+        // religion
+        let mut biggest_value_data = (0, 0, ReligionType::Nothing);
+        let ant_number_to_change_religion = 1;
+        for row in self.chunks.clone().iter().enumerate() {
+            for c in self.chunks[row.0].clone().iter().enumerate() {
+                let mut entity_types: HashMap<ReligionType, i32> = HashMap::new();
+                if (c.1.entities.len() as i32) < ant_number_to_change_ownership {
+                    self.chunks[row.0][c.0].religion = ReligionType::Nothing;
+                }
+                for e in c.1.entities.values() {
+                    if !entity_types.contains_key(&e.religion_type) {
+                        if e.category_type == CategoryType::Ant {
+                            entity_types.insert(e.religion_type.clone(), 0);
+                        }
+                    } else {
+                        if e.category_type == CategoryType::Ant {
+                            *entity_types.get_mut(&e.religion_type).unwrap() += 1;
+                        }
+                    }
+                    let mut biggest_value = (ReligionType::Nothing, 0);
+                    for (key, value) in &entity_types {
+                        if value > &biggest_value.1 {
+                            biggest_value = (key.clone(), *value);
+                        }
+                    }
+                    biggest_value_data = (row.0, c.0, biggest_value.0);
+                    if biggest_value.1 <= ant_number_to_change_ownership {
+                        biggest_value_data = (row.0, c.0, ReligionType::Nothing);
+                    }
+                    self.chunks[biggest_value_data.0][biggest_value_data.1].religion =
                         biggest_value_data.2;
                 }
             }

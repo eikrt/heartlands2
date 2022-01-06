@@ -2,7 +2,10 @@ extern crate futures;
 extern crate tokio;
 extern crate websocket;
 use crate::graphics_utils;
-use crate::world_structs;
+use crate::world_structs::{
+    ActionType, Biome, CategoryType, Chunk, Entity, EntityType, ItemType, Point, ReligionType,
+    TaskType, TileType, World, WorldData,
+};
 use serde_json;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
@@ -24,7 +27,7 @@ struct ClientState {
     x: f32,
     y: f32,
 }
-pub fn serve(world: world_structs::World) {
+pub fn serve(world: World) {
     let runtime = runtime::Builder::new().build().unwrap();
     let executor = runtime.executor();
     let server =
@@ -86,7 +89,10 @@ pub fn serve(world: world_structs::World) {
         let world_inner = world.clone();
         let client_states_inner = client_states.clone();
         world.write().unwrap().update_entities();
-        world.write().unwrap().update_political_situation();
+        world
+            .write()
+            .unwrap()
+            .update_political_and_religion_situation();
         tokio::timer::Delay::new(Instant::now() + Duration::from_millis(10))
             .map_err(|_| ())
             .and_then(move |_| {

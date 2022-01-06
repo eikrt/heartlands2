@@ -1,5 +1,7 @@
-use crate::world_structs;
-use crate::world_structs::ReligionType;
+use crate::world_structs::{
+    ActionType, Biome, CategoryType, Chunk, Entity, EntityType, ItemType, Point, ReligionType,
+    TaskType, TileType, World, WorldData,
+};
 use rand::seq::IteratorRandom;
 use rand::Rng;
 use simdnoise::*;
@@ -13,65 +15,65 @@ pub fn generate(
     chunk_size: usize,
     sea_level: f32,
     name: String,
-) -> world_structs::World {
+) -> World {
     let tile_size = 16;
     let temperature_margin = 5;
-    let biomes: Vec<world_structs::Biome> = vec![
-        world_structs::Biome {
+    let biomes: Vec<Biome> = vec![
+        Biome {
             name: "glacier".to_string(),
             temperature: 0,
-            tile_type: world_structs::TileType::Ice,
+            tile_type: TileType::Ice,
         },
-        world_structs::Biome {
+        Biome {
             name: "tundra".to_string(),
             temperature: 5,
-            tile_type: world_structs::TileType::PermaFrost,
+            tile_type: TileType::PermaFrost,
         },
-        world_structs::Biome {
+        Biome {
             name: "taiga".to_string(),
             temperature: 10,
-            tile_type: world_structs::TileType::ColdLand,
+            tile_type: TileType::ColdLand,
         },
-        world_structs::Biome {
+        Biome {
             name: "forest".to_string(),
             temperature: 15,
-            tile_type: world_structs::TileType::ColdLand,
+            tile_type: TileType::ColdLand,
         },
-        world_structs::Biome {
+        Biome {
             name: "grasslands".to_string(),
             temperature: 20,
-            tile_type: world_structs::TileType::Grass,
+            tile_type: TileType::Grass,
         },
-        world_structs::Biome {
+        Biome {
             name: "mediterraean".to_string(),
             temperature: 25,
-            tile_type: world_structs::TileType::CoarseLand,
+            tile_type: TileType::CoarseLand,
         },
-        world_structs::Biome {
+        Biome {
             name: "savannah".to_string(),
             temperature: 30,
-            tile_type: world_structs::TileType::SavannahLand,
+            tile_type: TileType::SavannahLand,
         },
-        world_structs::Biome {
+        Biome {
             name: "desert".to_string(),
             temperature: 35,
-            tile_type: world_structs::TileType::Sand,
+            tile_type: TileType::Sand,
         },
-        world_structs::Biome {
+        Biome {
             name: "red_desert".to_string(),
             temperature: 40,
-            tile_type: world_structs::TileType::RedSand,
+            tile_type: TileType::RedSand,
         },
-        world_structs::Biome {
+        Biome {
             name: "rainforest".to_string(),
             temperature: 45,
-            tile_type: world_structs::TileType::Grass,
+            tile_type: TileType::Grass,
         },
     ];
     let max_temp = 45;
 
     println!("Generating world...");
-    let mut world_chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
+    let mut world_chunks: Vec<Vec<Chunk>> = Vec::new();
     let mut rng = rand::thread_rng();
     let ground_noise = NoiseBuilder::fbm_2d(chunk_size * width, chunk_size * height)
         .with_freq(0.15)
@@ -175,7 +177,7 @@ pub fn generate(
     for i in 0..width {
         world_chunks.push(vec![]);
         for j in 0..height {
-            let mut chunk_points: Vec<Vec<world_structs::Point>> = Vec::new();
+            let mut chunk_points: Vec<Vec<Point>> = Vec::new();
             for k in 0..chunk_size {
                 chunk_points.push(vec![]);
                 for h in 0..chunk_size {
@@ -200,7 +202,7 @@ pub fn generate(
                             break;
                         }
                     }
-                    chunk_points[k].push(world_structs::Point {
+                    chunk_points[k].push(Point {
                         x: rx,
                         y: ry,
                         z: rz,
@@ -209,12 +211,14 @@ pub fn generate(
                 }
             }
 
-            world_chunks[i as usize].push(world_structs::Chunk {
+            let religion_type: ReligionType = rand::random();
+            world_chunks[i as usize].push(Chunk {
                 x: i as i32,
                 y: j as i32,
                 points: chunk_points,
                 entities: HashMap::new(),
                 name: get_chunk_name(),
+                religion: religion_type,
                 id: rng.gen_range(0..999999),
             });
         }
@@ -291,7 +295,7 @@ pub fn generate(
 
                         if point.z < sea_level {
                             point.z = (512.0 - point.z);
-                            point.tile_type = world_structs::TileType::Water;
+                            point.tile_type = TileType::Water;
                         }
                     }
                 }
@@ -317,17 +321,17 @@ pub fn generate(
                                 [(_ry + _rx * width as f32 * chunk_size as f32) as usize];
                             if village_val > village_threshold {
                                 if village_building_val > village_building_threshold
-                                    && point.tile_type != world_structs::TileType::Water
-                                    && point.tile_type != world_structs::TileType::Ice
-                                    && point.tile_type != world_structs::TileType::Sand
-                                    && point.tile_type != world_structs::TileType::RedSand
+                                    && point.tile_type != TileType::Water
+                                    && point.tile_type != TileType::Ice
+                                    && point.tile_type != TileType::Sand
+                                    && point.tile_type != TileType::RedSand
                                 {
-                                    point.tile_type = world_structs::TileType::MudHiveFloor;
+                                    point.tile_type = TileType::MudHiveFloor;
                                     for _l in 0..rng.gen_range(2..4) {
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
-                                            world_structs::Entity {
+                                            Entity {
                                                 id: id,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
@@ -339,17 +343,16 @@ pub fn generate(
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
-                                                entity_type: world_structs::EntityType::WorkerAnt,
-                                                category_type: world_structs::CategoryType::Ant,
+                                                entity_type: EntityType::WorkerAnt,
+                                                category_type: CategoryType::Ant,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
-                                                religion_type: ReligionType::Nothing,
-                                                current_action: world_structs::ActionType::Idle,
-                                                task_type: world_structs::TaskType::Nothing,
-                                                wielding_item:
-                                                    world_structs::ItemType::WoodenShovel,
-                                                backpack_item: world_structs::ItemType::Nothing,
-                                                wearable_item: world_structs::ItemType::Nothing,
+                                                religion_type: chunk.religion.clone(),
+                                                current_action: ActionType::Idle,
+                                                task_type: TaskType::Nothing,
+                                                wielding_item: ItemType::WoodenShovel,
+                                                backpack_item: ItemType::Nothing,
+                                                wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
                                             },
@@ -359,7 +362,7 @@ pub fn generate(
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
-                                            world_structs::Entity {
+                                            Entity {
                                                 id: id,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
@@ -371,16 +374,16 @@ pub fn generate(
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
-                                                entity_type: world_structs::EntityType::SoldierAnt,
-                                                category_type: world_structs::CategoryType::Ant,
-                                                religion_type: ReligionType::Nothing,
-                                                task_type: world_structs::TaskType::Nothing,
+                                                entity_type: EntityType::SoldierAnt,
+                                                category_type: CategoryType::Ant,
+                                                religion_type: chunk.religion.clone(),
+                                                task_type: TaskType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
-                                                current_action: world_structs::ActionType::Idle,
-                                                wielding_item: world_structs::ItemType::WoodenSpear,
-                                                backpack_item: world_structs::ItemType::Nothing,
-                                                wearable_item: world_structs::ItemType::Nothing,
+                                                current_action: ActionType::Idle,
+                                                wielding_item: ItemType::WoodenSpear,
+                                                backpack_item: ItemType::Nothing,
+                                                wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
                                             },
@@ -390,7 +393,7 @@ pub fn generate(
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
-                                            world_structs::Entity {
+                                            Entity {
                                                 id: id,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
@@ -402,16 +405,16 @@ pub fn generate(
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
-                                                entity_type: world_structs::EntityType::DroneAnt,
-                                                task_type: world_structs::TaskType::Nothing,
-                                                category_type: world_structs::CategoryType::Ant,
+                                                entity_type: EntityType::DroneAnt,
+                                                task_type: TaskType::Nothing,
+                                                category_type: CategoryType::Ant,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
-                                                current_action: world_structs::ActionType::Idle,
-                                                religion_type: ReligionType::Nothing,
-                                                wielding_item: world_structs::ItemType::Nothing,
-                                                backpack_item: world_structs::ItemType::Nothing,
-                                                wearable_item: world_structs::ItemType::Nothing,
+                                                current_action: ActionType::Idle,
+                                                religion_type: chunk.religion.clone(),
+                                                wielding_item: ItemType::Nothing,
+                                                backpack_item: ItemType::Nothing,
+                                                wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
                                             },
@@ -421,7 +424,7 @@ pub fn generate(
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
-                                            world_structs::Entity {
+                                            Entity {
                                                 id: id,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
@@ -433,15 +436,16 @@ pub fn generate(
                                                 hp: 100,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
-                                                entity_type: world_structs::EntityType::Mechant,
-                                                category_type: world_structs::CategoryType::Ant,
-                                                task_type: world_structs::TaskType::Nothing,
+                                                entity_type: EntityType::Mechant,
+                                                category_type: CategoryType::Ant,
+                                                religion_type: ReligionType::Plasma,
+                                                task_type: TaskType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
-                                                current_action: world_structs::ActionType::Idle,
-                                                wielding_item: world_structs::ItemType::Nothing,
-                                                backpack_item: world_structs::ItemType::Nothing,
-                                                wearable_item: world_structs::ItemType::Nothing,
+                                                current_action: ActionType::Idle,
+                                                wielding_item: ItemType::Nothing,
+                                                backpack_item: ItemType::Nothing,
+                                                wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
                                             },
@@ -450,7 +454,7 @@ pub fn generate(
                                     let mut has_queen = false;
                                     for e in chunk_entities.values() {
                                         if e.faction == chunk.name
-                                            && e.entity_type == world_structs::EntityType::QueenAnt
+                                            && e.entity_type == EntityType::QueenAnt
                                         {
                                             has_queen = true;
                                         }
@@ -459,7 +463,7 @@ pub fn generate(
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
-                                            world_structs::Entity {
+                                            Entity {
                                                 id: id,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(4.0..8.0))
@@ -471,17 +475,16 @@ pub fn generate(
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
-                                                entity_type: world_structs::EntityType::FoodStorage,
-                                                task_type: world_structs::TaskType::Nothing,
-                                                category_type:
-                                                    world_structs::CategoryType::Furniture,
+                                                entity_type: EntityType::FoodStorage,
+                                                task_type: TaskType::Nothing,
+                                                category_type: CategoryType::Furniture,
                                                 religion_type: ReligionType::Nothing,
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
-                                                current_action: world_structs::ActionType::Idle,
-                                                wielding_item: world_structs::ItemType::Nothing,
-                                                backpack_item: world_structs::ItemType::Nothing,
-                                                wearable_item: world_structs::ItemType::Nothing,
+                                                current_action: ActionType::Idle,
+                                                wielding_item: ItemType::Nothing,
+                                                backpack_item: ItemType::Nothing,
+                                                wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
                                             },
@@ -489,7 +492,7 @@ pub fn generate(
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
-                                            world_structs::Entity {
+                                            Entity {
                                                 id: id,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
@@ -501,16 +504,16 @@ pub fn generate(
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
-                                                entity_type: world_structs::EntityType::QueenAnt,
-                                                category_type: world_structs::CategoryType::Ant,
-                                                religion_type: ReligionType::Nothing,
+                                                entity_type: EntityType::QueenAnt,
+                                                category_type: CategoryType::Ant,
+                                                religion_type: chunk.religion.clone(),
                                                 faction: chunk.name.clone().to_string(),
                                                 faction_id: chunk.id,
-                                                task_type: world_structs::TaskType::Nothing,
-                                                current_action: world_structs::ActionType::Idle,
-                                                wielding_item: world_structs::ItemType::Nothing,
-                                                backpack_item: world_structs::ItemType::Nothing,
-                                                wearable_item: world_structs::ItemType::Nothing,
+                                                task_type: TaskType::Nothing,
+                                                current_action: ActionType::Idle,
+                                                wielding_item: ItemType::Nothing,
+                                                backpack_item: ItemType::Nothing,
+                                                wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
                                             },
@@ -527,7 +530,7 @@ pub fn generate(
                                         for y in sp_2..ep_2 {
                                             if x < chunk_size && y < chunk_size {
                                                 chunk.points[x][y].tile_type =
-                                                    world_structs::TileType::MudHiveFloor;
+                                                    TileType::MudHiveFloor;
                                             }
                                         }
                                     }
@@ -572,21 +575,36 @@ pub fn generate(
                                                 && y > 0
                                                 && !(x == door_x && y == door_y)
                                             {
-                                                if (chunk.points[x-1][y].tile_type != world_structs::TileType::MudHiveFloor && chunk.points[x-1][y].tile_type != world_structs::TileType::MudHiveWall) || (chunk.points[x+1][y].tile_type !=  world_structs::TileType::MudHiveFloor && chunk.points[x+1][y].tile_type != world_structs::TileType::MudHiveFloor) || (chunk.points[x][y-1].tile_type != world_structs::TileType::MudHiveFloor && chunk.points[x][y-1].tile_type != world_structs::TileType::MudHiveWall) || (chunk.points[x][y+1].tile_type != world_structs::TileType::MudHiveFloor && chunk.points[x][y+1].tile_type != world_structs::TileType::MudHiveWall)   {
-
-                                            chunk.points[x][y].tile_type = world_structs::TileType::MudHiveWall;
-
-                                    }
+                                                if (chunk.points[x - 1][y].tile_type
+                                                    != TileType::MudHiveFloor
+                                                    && chunk.points[x - 1][y].tile_type
+                                                        != TileType::MudHiveWall)
+                                                    || (chunk.points[x + 1][y].tile_type
+                                                        != TileType::MudHiveFloor
+                                                        && chunk.points[x + 1][y].tile_type
+                                                            != TileType::MudHiveFloor)
+                                                    || (chunk.points[x][y - 1].tile_type
+                                                        != TileType::MudHiveFloor
+                                                        && chunk.points[x][y - 1].tile_type
+                                                            != TileType::MudHiveWall)
+                                                    || (chunk.points[x][y + 1].tile_type
+                                                        != TileType::MudHiveFloor
+                                                        && chunk.points[x][y + 1].tile_type
+                                                            != TileType::MudHiveWall)
+                                                {
+                                                    chunk.points[x][y].tile_type =
+                                                        TileType::MudHiveWall;
+                                                }
                                             } else if (x == chunk_size - 1 || x == 0)
                                                 && y < chunk_size
                                             {
                                                 chunk.points[x][y].tile_type =
-                                                    world_structs::TileType::MudHiveWall;
+                                                    TileType::MudHiveWall;
                                             } else if (y == chunk_size - 1 || y == 0)
                                                 && x < chunk_size
                                             {
                                                 chunk.points[x][y].tile_type =
-                                                    world_structs::TileType::MudHiveWall;
+                                                    TileType::MudHiveWall;
                                             }
                                         }
                                     }
@@ -615,13 +633,13 @@ pub fn generate(
                                 [(_ry + _rx * width as f32 * chunk_size as f32) as usize];
                             if city_val > city_threshold {
                                 if city_building_val > city_threshold
-                                    && point.tile_type != world_structs::TileType::Water
-                                    && point.tile_type != world_structs::TileType::Ice
-                                    && point.tile_type != world_structs::TileType::Sand
-                                    && point.tile_type != world_structs::TileType::RedSand
+                                    && point.tile_type != TileType::Water
+                                    && point.tile_type != TileType::Ice
+                                    && point.tile_type != TileType::Sand
+                                    && point.tile_type != TileType::RedSand
                                 {
                                     world_chunks[i as usize][j as usize].points[k][h].tile_type =
-                                        world_structs::TileType::StoneHiveFloor;
+                                        TileType::StoneHiveFloor;
                                 }
                             }
                         }
@@ -643,19 +661,19 @@ pub fn generate(
                             let _ry = ((j * chunk_size) as usize + h) as f32;
                             let chunk = &mut world_chunks[i as usize][j as usize];
                             let point = &mut chunk.points[k][h];
-                            let mut entity_type = world_structs::EntityType::Cactus;
-                            if point.tile_type == world_structs::TileType::Sand {
-                                entity_type = world_structs::EntityType::Cactus;
+                            let mut entity_type = EntityType::Cactus;
+                            if point.tile_type == TileType::Sand {
+                                entity_type = EntityType::Cactus;
                             }
                             let vegetation_val = vegetation_noise
                                 [(_ry + _rx * width as f32 * chunk_size as f32) as usize];
                             if vegetation_val > vegetation_threshold
-                                && (point.tile_type == world_structs::TileType::Sand)
+                                && (point.tile_type == TileType::Sand)
                             {
                                 let id = rng.gen_range(0..999999);
                                 chunk_entities.insert(
                                     id,
-                                    world_structs::Entity {
+                                    Entity {
                                         id: id,
                                         x: _rx * tile_size as f32,
                                         y: _ry * tile_size as f32,
@@ -666,15 +684,15 @@ pub fn generate(
                                         speed: 0.0,
                                         stopped: true,
                                         entity_type: entity_type,
-                                        category_type: world_structs::CategoryType::Vegetation,
+                                        category_type: CategoryType::Vegetation,
                                         faction: chunk.name.clone().to_string(),
                                         religion_type: ReligionType::Nothing,
                                         faction_id: chunk.id,
-                                        current_action: world_structs::ActionType::Idle,
-                                        task_type: world_structs::TaskType::Nothing,
-                                        backpack_item: world_structs::ItemType::Nothing,
-                                        wearable_item: world_structs::ItemType::Nothing,
-                                        wielding_item: world_structs::ItemType::Nothing,
+                                        current_action: ActionType::Idle,
+                                        task_type: TaskType::Nothing,
+                                        backpack_item: ItemType::Nothing,
+                                        wearable_item: ItemType::Nothing,
+                                        wielding_item: ItemType::Nothing,
                                         backpack_amount: 0,
                                         time: 0,
                                     },
@@ -696,34 +714,34 @@ pub fn generate(
                             let _ry = ((j * chunk_size) as usize + h) as f32;
                             let chunk = &mut world_chunks[i as usize][j as usize];
                             let point = &mut chunk.points[k][h];
-                            let mut entity_type = world_structs::EntityType::Oak;
+                            let mut entity_type = EntityType::Oak;
                             let tree_rand = rng.gen_range(0..2);
-                            if point.tile_type == world_structs::TileType::Grass {
+                            if point.tile_type == TileType::Grass {
                                 if tree_rand == 0 {
-                                    entity_type = world_structs::EntityType::Oak;
+                                    entity_type = EntityType::Oak;
                                     if rng.gen_range(0..6) == 1 {
-                                        entity_type = world_structs::EntityType::AppleTree;
+                                        entity_type = EntityType::AppleTree;
                                     }
                                 } else if tree_rand == 1 {
-                                    entity_type = world_structs::EntityType::Birch;
+                                    entity_type = EntityType::Birch;
                                 }
-                            } else if point.tile_type == world_structs::TileType::ColdLand {
+                            } else if point.tile_type == TileType::ColdLand {
                                 if tree_rand == 0 {
-                                    entity_type = world_structs::EntityType::Spruce;
+                                    entity_type = EntityType::Spruce;
                                 } else if tree_rand == 1 {
-                                    entity_type = world_structs::EntityType::Pine;
+                                    entity_type = EntityType::Pine;
                                 }
                             }
                             let tree_val =
                                 tree_noise[(_ry + _rx * width as f32 * chunk_size as f32) as usize];
                             if tree_val > tree_threshold
-                                && (point.tile_type == world_structs::TileType::Grass
-                                    || point.tile_type == world_structs::TileType::ColdLand)
+                                && (point.tile_type == TileType::Grass
+                                    || point.tile_type == TileType::ColdLand)
                             {
                                 let id = rng.gen_range(0..999999);
                                 chunk_entities.insert(
                                     id,
-                                    world_structs::Entity {
+                                    Entity {
                                         id: id,
                                         x: _rx * tile_size as f32,
                                         y: _ry * tile_size as f32,
@@ -734,15 +752,15 @@ pub fn generate(
                                         target_y: 0.0,
                                         stopped: true,
                                         entity_type: entity_type,
-                                        category_type: world_structs::CategoryType::Tree,
+                                        category_type: CategoryType::Tree,
                                         religion_type: ReligionType::Nothing,
                                         faction: chunk.name.clone().to_string(),
                                         faction_id: chunk.id,
-                                        current_action: world_structs::ActionType::Idle,
-                                        task_type: world_structs::TaskType::Nothing,
-                                        backpack_item: world_structs::ItemType::Nothing,
-                                        wearable_item: world_structs::ItemType::Nothing,
-                                        wielding_item: world_structs::ItemType::Nothing,
+                                        current_action: ActionType::Idle,
+                                        task_type: TaskType::Nothing,
+                                        backpack_item: ItemType::Nothing,
+                                        wearable_item: ItemType::Nothing,
+                                        wielding_item: ItemType::Nothing,
                                         backpack_amount: 0,
                                         time: 0,
                                     },
@@ -761,9 +779,9 @@ pub fn generate(
 
     // SETTLEMENTS
 
-    return world_structs::World {
+    return World {
         chunks: world_chunks,
-        world_data: world_structs::WorldData {
+        world_data: WorldData {
             name: name,
             sea_level: sea_level,
             width: width,

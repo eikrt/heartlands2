@@ -1,6 +1,5 @@
 extern crate websocket;
 use crate::graphics_utils;
-use crate::world_structs;
 
 use bincode;
 
@@ -8,7 +7,8 @@ use crate::client_structs;
 use crate::client_structs::{ClientPacket, Player};
 use crate::graphics_utils::{Camera, MoveDirection};
 use crate::world_structs::{
-    ActionType, CategoryType, EntityType, ItemType, ReligionType, TaskType, TileType,
+    ActionType, CategoryType, Chunk, Entity, EntityType, ItemType, ReligionType, TaskType,
+    TileType, World, WorldData, HATCH_TIME,
 };
 use lerp::Lerp;
 use rand::Rng;
@@ -118,7 +118,7 @@ fn main_loop() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let mut compare_time = SystemTime::now();
     let mut update_data = true;
-    let mut world_data: world_structs::WorldData = world_structs::WorldData {
+    let mut world_data: WorldData = WorldData {
         ..Default::default()
     };
     // mouse
@@ -130,8 +130,8 @@ fn main_loop() -> Result<(), String> {
     let mut chunk_fetch_height = 2;
     let mut chunk_fetch_x = -1;
     let mut chunk_fetch_y = -1;
-    let mut chunks: Vec<Vec<world_structs::Chunk>> = Vec::new();
-    let mut entities: HashMap<i32, world_structs::Entity> = HashMap::new();
+    let mut chunks: Vec<Vec<Chunk>> = Vec::new();
+    let mut entities: HashMap<i32, Entity> = HashMap::new();
     // menu buttons
     let mut play_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
@@ -162,7 +162,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: 4 as f32,
-        y: (SCREEN_HEIGHT - 32 - 4) as f32,
+        y: (SCREEN_HEIGHT - 32 - 8) as f32,
         width: 32.0,
         height: 32.0,
     };
@@ -170,7 +170,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: 4.0 + 32.0 + 4.0,
-        y: (SCREEN_HEIGHT - 32 - 4) as f32,
+        y: (SCREEN_HEIGHT - 32 - 8) as f32,
         width: 32.0,
         height: 32.0,
     };
@@ -179,7 +179,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: 4.0 + 64.0 + 8.0,
-        y: (SCREEN_HEIGHT - 32 - 4) as f32,
+        y: (SCREEN_HEIGHT - 32 - 8) as f32,
         width: 32.0,
         height: 32.0,
     };
@@ -244,6 +244,7 @@ fn main_loop() -> Result<(), String> {
     // description stuff
     let descriptions_for_entities = graphics_utils::get_descriptions_for_entities();
     let descriptions_for_tiles = graphics_utils::get_descriptions_for_tiles();
+    let descriptions_for_religions = graphics_utils::get_descriptions_for_religions();
     let sprite_4 = Rect::new(0, 0, (4.0 * camera.zoom) as u32, (4.0 * camera.zoom) as u32);
     let sprite_1x5 = Rect::new(0, 0, (1.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
     let sprite_1x10 = Rect::new(
@@ -291,7 +292,7 @@ fn main_loop() -> Result<(), String> {
         target_y: 0.0,
         entity_type: EntityType::CultistAnt,
         religion_type: ReligionType::Nothing,
-        category_type: world_structs::CategoryType::Ant,
+        category_type: CategoryType::Ant,
         faction: "The Fringe".to_string(),
         faction_id: 0,
         task_type: TaskType::Nothing,
@@ -306,6 +307,7 @@ fn main_loop() -> Result<(), String> {
     let mut main_menu_on = true;
     let mut settings_menu_on = false;
     let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
+    let mut religion_graphics_data: HashMap<ReligionType, Color> = HashMap::new();
     // network stuff
     let (tx, rx): (Sender<OwnedMessage>, Receiver<OwnedMessage>) = channel();
     let (tx_w, rx_w): (Sender<String>, Receiver<String>) = channel();
@@ -827,8 +829,7 @@ fn main_loop() -> Result<(), String> {
             match rx_w.try_recv() {
                 Ok(w) => {
                     let cut_string = &w.as_str()[6..w.len() - 2].replace("\\", "");
-                    let world_from: world_structs::World =
-                        serde_json::from_str(cut_string).unwrap();
+                    let world_from: World = serde_json::from_str(cut_string).unwrap();
                     chunks = world_from.chunks;
                     world_data = world_from.world_data;
                 }
@@ -848,7 +849,21 @@ fn main_loop() -> Result<(), String> {
                             ),
                         );
                     }
-
+                    for i in 0..chunks.len() {
+                        for j in 0..chunks[i].len() {
+                            if !religion_graphics_data.contains_key(&chunks[i][j].religion) {
+                                religion_graphics_data.insert(
+                                    chunks[i][j].religion.clone(),
+                                    Color::RGBA(
+                                        rng.gen_range(0..255),
+                                        rng.gen_range(0..255),
+                                        rng.gen_range(0..255),
+                                        55,
+                                    ),
+                                );
+                            }
+                        }
+                    }
                     for k in 0..chunks[i][j].points.len() {
                         for h in 0..chunks[i][j].points.len() {
                             let p = &chunks[i][j].points[k][h];
@@ -908,7 +923,7 @@ fn main_loop() -> Result<(), String> {
                 //render entities
                 for i in 0..chunks.len() {
                     for j in 0..chunks[i].len() {
-                        let mut entities_vals: Vec<world_structs::Entity> =
+                        let mut entities_vals: Vec<Entity> =
                             chunks[i][j].entities.values().cloned().collect();
 
                         entities_vals.sort_by(|a, b| a.id.cmp(&b.id));
@@ -1143,19 +1158,13 @@ fn main_loop() -> Result<(), String> {
                                     ty_ant as i32 - sprite_8.height() as i32 / 2,
                                 );
                                 let mut tex = &ant_egg_texture;
-                                if entity.time
-                                    > (world_structs::HATCH_TIME as f32 * (1.0 / 4.0)) as u128
-                                {
+                                if entity.time > (HATCH_TIME as f32 * (1.0 / 4.0)) as u128 {
                                     tex = &ant_egg_texture_2;
                                 }
-                                if entity.time
-                                    > (world_structs::HATCH_TIME as f32 * (2.0 / 4.0)) as u128
-                                {
+                                if entity.time > (HATCH_TIME as f32 * (2.0 / 4.0)) as u128 {
                                     tex = &ant_egg_texture_3;
                                 }
-                                if entity.time
-                                    > (world_structs::HATCH_TIME as f32 * (3.0 / 4.0)) as u128
-                                {
+                                if entity.time > (HATCH_TIME as f32 * (3.0 / 4.0)) as u128 {
                                     tex = &ant_egg_texture_4;
                                 }
                                 graphics_utils::render(
@@ -1242,8 +1251,8 @@ fn main_loop() -> Result<(), String> {
 
                 // render hover
                 let mut hovered_tiletype = TileType::Grass;
-                let mut hovered_tile: std::option::Option<world_structs::Point> = None;
-                let mut hovered_entity: std::option::Option<world_structs::Entity> = None;
+                let mut hovered_tile: std::option::Option<crate::world_structs::Point> = None;
+                let mut hovered_entity: std::option::Option<Entity> = None;
                 let mut hovering_entity = false;
                 if mouse_not_moved_for > hover_time {
                     let e_x = (camera.x / ratio_x + mouse_state.x() as f32) * ratio_x;
@@ -1313,7 +1322,7 @@ fn main_loop() -> Result<(), String> {
                         Some(he) => {
                             let mut name = descriptions_for_entities.get(&he.entity_type).unwrap();
                             let mut title = "".to_string();
-                            if he.category_type == world_structs::CategoryType::Ant {
+                            if he.category_type == CategoryType::Ant {
                                 title = he.faction;
                                 title.push_str("ese ");
                             }
@@ -1445,7 +1454,107 @@ fn main_loop() -> Result<(), String> {
                         }
                     }
                 }
+                // religion map
+                if map_state == graphics_utils::MapState::Religion {
+                    for i in 0..chunks.len() {
+                        for j in 0..chunks[i].len() {
+                            let position = Point::new(
+                                ((world_data.tile_size as f32
+                                    * chunks[i][j].points[0][0].x
+                                    * camera.zoom
+                                    - camera.x)
+                                    / ratio_x) as i32,
+                                ((world_data.tile_size as f32
+                                    * (chunks[i][j].points[0][0].y * camera.zoom)
+                                    - camera.y)
+                                    / ratio_y) as i32,
+                            );
+                            let render_rect = Rect::new(
+                                (position.x as f32) as i32,
+                                (position.y as f32) as i32,
+                                (world_data.chunk_size as i32
+                                    * (world_data.tile_size as f32 / ratio_x as f32) as i32)
+                                    as u32,
+                                (world_data.chunk_size as i32
+                                    * (world_data.tile_size as f32 / ratio_y as f32) as i32)
+                                    as u32,
+                            );
+                            match religion_graphics_data.get(&chunks[i][j].religion) {
+                                Some(cgd) => {
+                                    if chunks[i][j].religion == ReligionType::Nothing {
+                                        graphics_utils::render_rect(
+                                            &mut canvas,
+                                            position,
+                                            render_rect,
+                                            *religion_graphics_data
+                                                .get(&chunks[i][j].religion)
+                                                .unwrap(),
+                                            camera.zoom,
+                                        );
+                                    } else {
+                                        graphics_utils::render_rect(
+                                            &mut canvas,
+                                            position,
+                                            render_rect,
+                                            *religion_graphics_data
+                                                .get(&chunks[i][j].religion)
+                                                .unwrap(),
+                                            camera.zoom,
+                                        );
+                                    }
+                                }
+                                None => {
+                                    graphics_utils::render_rect(
+                                        &mut canvas,
+                                        position,
+                                        render_rect,
+                                        Color::RGBA(255, 255, 255, 125),
+                                        camera.zoom,
+                                    );
+                                }
+                            }
+                            // render chunk faction description
+                            let title = descriptions_for_religions
+                                .get(&chunks[i][j].religion)
+                                .unwrap()
+                                .to_string();
+                            let text = graphics_utils::get_text(
+                                title.clone(),
+                                Color::RGBA(55, 185, 90, 255),
+                                desc_font_size,
+                                &font,
+                                &texture_creator,
+                            )
+                            .unwrap();
 
+                            let text_position = Point::new(
+                                (((position.x()
+                                    + (world_data.chunk_size as f32
+                                        * world_data.tile_size as f32
+                                        * camera.zoom) as i32
+                                        / 2
+                                    - title.clone().len() as i32 * desc_font_size as i32 / 4)
+                                    as f32)
+                                    * ratio_x) as i32,
+                                (position.y() as f32 * ratio_y) as i32
+                                    + (((world_data.chunk_size as f32
+                                        * world_data.tile_size as f32
+                                        * camera.zoom)
+                                        as i32
+                                        / 2) as f32
+                                        / 1.0) as i32,
+                            );
+                            graphics_utils::render_text(
+                                &mut canvas,
+                                &text.text_texture,
+                                text_position,
+                                text.text_sprite,
+                                ratio_x,
+                                ratio_y,
+                            );
+                        }
+                    }
+                }
                 // render ui
 
                 let position = Point::new(0 as i32, 192 as i32);
@@ -1468,8 +1577,8 @@ fn main_loop() -> Result<(), String> {
                 )
                 .unwrap();
                 let position = Point::new(
-                    (SCREEN_WIDTH - 116).try_into().unwrap(),
-                    (SCREEN_HEIGHT - 46).try_into().unwrap(),
+                    (SCREEN_WIDTH as f32 - 116.0) as i32,
+                    (SCREEN_HEIGHT as f32 - 46.0) as i32,
                 );
                 graphics_utils::render_text(
                     &mut canvas,
@@ -1500,12 +1609,15 @@ fn main_loop() -> Result<(), String> {
                     ratio_y,
                 );
 
-                let position = Point::new((SCREEN_WIDTH - 78) as i32, (SCREEN_HEIGHT - 44) as i32);
+                let position = Point::new(
+                    ((SCREEN_WIDTH - 78) as f32 / ratio_x) as i32,
+                    ((SCREEN_HEIGHT - 44) as f32 / ratio_y) as i32,
+                );
                 let render_rect = Rect::new(
                     (position.x as f32) as i32,
                     (position.y as f32) as i32,
-                    (1.0.lerp(64.0, player.hp as f32 / 100.0)) as u32,
-                    8,
+                    ((1.0.lerp(64.0, player.hp as f32 / 100.0)) / ratio_x) as u32,
+                    (8.0 / ratio_y) as u32,
                 );
 
                 graphics_utils::render_rect(
@@ -1515,12 +1627,15 @@ fn main_loop() -> Result<(), String> {
                     Color::RGBA(255, 0, 0, 55),
                     1.0,
                 );
-                let position = Point::new((SCREEN_WIDTH - 78) as i32, (SCREEN_HEIGHT - 34) as i32);
+                let position = Point::new(
+                    ((SCREEN_WIDTH - 78) as f32 / ratio_x) as i32,
+                    ((SCREEN_HEIGHT - 34) as f32 / ratio_y) as i32,
+                );
                 let render_rect = Rect::new(
                     (position.x as f32) as i32,
                     (position.y as f32) as i32,
-                    (1.0.lerp(64.0, player.energy as f32 / 100.0)) as u32,
-                    8,
+                    ((1.0.lerp(64.0, player.hp as f32 / 100.0)) / ratio_x) as u32,
+                    (8.0 / ratio_y) as u32,
                 );
 
                 graphics_utils::render_rect(

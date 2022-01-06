@@ -1,4 +1,4 @@
-use crate::world_structs::{EntityType, TileType};
+use crate::world_structs::{EntityType, ReligionType, TileType};
 use bincode;
 use sdl2::image::{InitFlag, LoadTexture};
 use sdl2::pixels::Color;
@@ -369,4 +369,18 @@ pub fn get_descriptions_for_tiles() -> HashMap<TileType, String> {
         (TileType::MudHiveFloor, "Mud floor".to_string()),
     ]);
     return tile_descriptions;
+}
+pub fn get_descriptions_for_religions() -> HashMap<ReligionType, String> {
+    let religion_descriptions = HashMap::from([
+        (ReligionType::Plasma, "Plasma".to_string()),
+        (ReligionType::Moon, "Moon".to_string()),
+        (ReligionType::Technology, "Technology".to_string()),
+        (ReligionType::Giants, "Giants".to_string()),
+        (ReligionType::Element, "Element".to_string()),
+        (ReligionType::Spiral, "Spiral".to_string()),
+        (ReligionType::Infinity, "Infinity".to_string()),
+        (ReligionType::Sacrifice, "Sacrifice".to_string()),
+        (ReligionType::Nothing, "No religion".to_string()),
+    ]);
+    return religion_descriptions;
 }
