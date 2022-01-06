@@ -6,7 +6,10 @@ use bincode;
 
 use crate::client_structs;
 use crate::client_structs::{ClientPacket, Player};
-use crate::world_structs::ReligionType;
+use crate::graphics_utils::{Camera, MoveDirection};
+use crate::world_structs::{
+    ActionType, CategoryType, EntityType, ItemType, ReligionType, TaskType, TileType,
+};
 use lerp::Lerp;
 use rand::Rng;
 use sdl2::event::Event;
@@ -81,10 +84,12 @@ fn main_loop() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
     // font stuff
-    let desc_font_size = 20;
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+    let desc_font_size = 20;
     let mut font = ttf_context.load_font("fonts/PixelOperator.ttf", desc_font_size)?;
 
+    let hp_font_size = 10;
+    let mut hp_font = ttf_context.load_font("fonts/PixelOperator.ttf", hp_font_size)?;
     let tile_gs = graphics_utils::tile_graphics();
 
     let mut camera = graphics_utils::Camera {
@@ -276,6 +281,7 @@ fn main_loop() -> Result<(), String> {
     let mut player = client_structs::Player {
         id: id,
         hp: 100,
+        energy: 100,
         x: camera.x + 256.0,
         y: camera.y + 128.0,
         stopped: false,
@@ -283,16 +289,16 @@ fn main_loop() -> Result<(), String> {
         dir: 0.0,
         target_x: 0.0,
         target_y: 0.0,
-        entity_type: world_structs::EntityType::CultistAnt,
+        entity_type: EntityType::CultistAnt,
         religion_type: ReligionType::Nothing,
         category_type: world_structs::CategoryType::Ant,
         faction: "The Fringe".to_string(),
         faction_id: 0,
-        task_type: world_structs::TaskType::Nothing,
-        current_action: world_structs::ActionType::Idle,
-        wielding_item: world_structs::ItemType::Nothing,
-        backpack_item: world_structs::ItemType::Nothing,
-        wearable_item: world_structs::ItemType::Nothing,
+        task_type: TaskType::Nothing,
+        current_action: ActionType::Idle,
+        wielding_item: ItemType::Nothing,
+        backpack_item: ItemType::Nothing,
+        wearable_item: ItemType::Nothing,
         backpack_amount: 0,
         time: 0,
     };
@@ -871,17 +877,17 @@ fn main_loop() -> Result<(), String> {
                             let ty = (p.y) * TILE_SIZE * camera.zoom - camera.y;
                             let position = Point::new(tx as i32, ty as i32);
                             let mut texture = &grass_texture;
-                            if p.tile_type == world_structs::TileType::Grass {
+                            if p.tile_type == TileType::Grass {
                                 texture = &grass_texture;
-                            } else if p.tile_type == world_structs::TileType::Water {
+                            } else if p.tile_type == TileType::Water {
                                 texture = &water_texture;
                                 if (time / (WATER_ANIMATION_SPEED)) % 2 == 0 {
                                     texture = &water_texture_2;
                                 }
-                            } else if p.tile_type == world_structs::TileType::Ice {
+                            } else if p.tile_type == TileType::Ice {
                                 texture = &ice_texture;
-                            } else if p.tile_type == world_structs::TileType::Sand
-                                || p.tile_type == world_structs::TileType::RedSand
+                            } else if p.tile_type == TileType::Sand
+                                || p.tile_type == TileType::RedSand
                             {
                                 texture = &sand_texture;
                             }
@@ -928,7 +934,7 @@ fn main_loop() -> Result<(), String> {
                             }
 
                             // trees
-                            if entity.entity_type == world_structs::EntityType::Oak {
+                            if entity.entity_type == EntityType::Oak {
                                 let position = Point::new(
                                     tx_tree as i32 - sprite_32.width() as i32 / 2,
                                     ty_tree as i32 - sprite_32.height() as i32 / 2,
@@ -942,7 +948,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::AppleTree {
+                            } else if entity.entity_type == EntityType::AppleTree {
                                 let position = Point::new(
                                     tx_tree as i32 - sprite_32.width() as i32 / 2,
                                     ty_tree as i32 - sprite_32.height() as i32 / 2,
@@ -956,7 +962,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::Spruce {
+                            } else if entity.entity_type == EntityType::Spruce {
                                 let position = Point::new(
                                     tx_tree as i32 - sprite_32.width() as i32 / 2,
                                     ty_tree as i32 - sprite_32.height() as i32 / 2,
@@ -970,7 +976,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::Pine {
+                            } else if entity.entity_type == EntityType::Pine {
                                 let position = Point::new(
                                     tx_tree as i32 - sprite_32.width() as i32 / 2,
                                     ty_tree as i32 - sprite_32.height() as i32 / 2,
@@ -984,7 +990,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::Birch {
+                            } else if entity.entity_type == EntityType::Birch {
                                 let position = Point::new(
                                     tx_tree as i32 - sprite_32.width() as i32 / 2,
                                     ty_tree as i32 - sprite_32.height() as i32 / 2,
@@ -1000,7 +1006,7 @@ fn main_loop() -> Result<(), String> {
                                 );
                             }
                             // vegetation
-                            else if entity.entity_type == world_structs::EntityType::Cactus {
+                            else if entity.entity_type == EntityType::Cactus {
                                 let position = Point::new(
                                     tx_tree as i32 - sprite_32.width() as i32 / 2,
                                     ty_tree as i32 - sprite_32.height() as i32 / 2,
@@ -1016,13 +1022,13 @@ fn main_loop() -> Result<(), String> {
                                 );
                             }
                             // ants and other lifeforms
-                            else if entity.entity_type == world_structs::EntityType::WorkerAnt {
+                            else if entity.entity_type == EntityType::WorkerAnt {
                                 let position = Point::new(
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
                                 let mut tex = &ant_worker_texture_1;
-                                if entity.current_action != world_structs::ActionType::Idle
+                                if entity.current_action != ActionType::Idle
                                     && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
                                 {
                                     tex = &ant_worker_texture_2;
@@ -1036,13 +1042,13 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::SoldierAnt {
+                            } else if entity.entity_type == EntityType::SoldierAnt {
                                 let position = Point::new(
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
                                 let mut tex = &ant_soldier_texture_1;
-                                if entity.current_action != world_structs::ActionType::Idle
+                                if entity.current_action != ActionType::Idle
                                     && entity.time / (SOLDIER_ANIMATION_SPEED * 10) % 2 == 0
                                 {
                                     tex = &ant_soldier_texture_2;
@@ -1056,13 +1062,13 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::DroneAnt {
+                            } else if entity.entity_type == EntityType::DroneAnt {
                                 let position = Point::new(
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
                                 let mut tex = &ant_drone_texture_1;
-                                if entity.current_action != world_structs::ActionType::Idle
+                                if entity.current_action != ActionType::Idle
                                     && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
                                 {
                                     tex = &ant_drone_texture_2;
@@ -1076,13 +1082,13 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::Mechant {
+                            } else if entity.entity_type == EntityType::Mechant {
                                 let position = Point::new(
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
                                 );
                                 let mut tex = &mechant_texture_1;
-                                if entity.current_action != world_structs::ActionType::Idle
+                                if entity.current_action != ActionType::Idle
                                     && entity.time / (MECHANT_ANIMATION_SPEED) % 2 == 0
                                 {
                                     tex = &mechant_texture_2;
@@ -1096,13 +1102,13 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::QueenAnt {
+                            } else if entity.entity_type == EntityType::QueenAnt {
                                 let position = Point::new(
                                     tx_ant as i32 - sprite_32.width() as i32 / 2,
                                     ty_ant as i32 - sprite_32.height() as i32 / 2,
                                 );
                                 let mut tex = &ant_queen_texture_1;
-                                if entity.current_action != world_structs::ActionType::Idle
+                                if entity.current_action != ActionType::Idle
                                     && time / (QUEEN_ANIMATION_SPEED + rng.gen_range(1..2) * 10) % 2
                                         == 0
                                 {
@@ -1117,7 +1123,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::FoodStorage {
+                            } else if entity.entity_type == EntityType::FoodStorage {
                                 let position = Point::new(
                                     tx_ant as i32 - sprite_16.width() as i32 / 2,
                                     ty_ant as i32 - sprite_16.height() as i32 / 2,
@@ -1131,7 +1137,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
-                            } else if entity.entity_type == world_structs::EntityType::AntEgg {
+                            } else if entity.entity_type == EntityType::AntEgg {
                                 let position = Point::new(
                                     tx_ant as i32 - sprite_8.width() as i32 / 2,
                                     ty_ant as i32 - sprite_8.height() as i32 / 2,
@@ -1163,7 +1169,7 @@ fn main_loop() -> Result<(), String> {
                                 );
                             }
 
-                            if entity.backpack_item == world_structs::ItemType::Fruit {
+                            if entity.backpack_item == ItemType::Fruit {
                                 let item_position = Point::new(
                                     tx_ant as i32 - sprite_4.width() as i32 / 2 + 4,
                                     ty_ant as i32 - sprite_4.height() as i32 / 2 + 4,
@@ -1178,7 +1184,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_y,
                                 );
                             }
-                            if entity.wielding_item == world_structs::ItemType::WoodenSpear {
+                            if entity.wielding_item == ItemType::WoodenSpear {
                                 let item_position = Point::new(
                                     tx_ant as i32 - sprite_1x10.width() as i32 / 2 + 7,
                                     ty_ant as i32 - sprite_1x10.height() as i32 / 2 - 1,
@@ -1193,7 +1199,7 @@ fn main_loop() -> Result<(), String> {
                                     ratio_y,
                                 );
                             }
-                            if entity.wielding_item == world_structs::ItemType::WoodenShovel {
+                            if entity.wielding_item == ItemType::WoodenShovel {
                                 let item_position = Point::new(
                                     tx_ant as i32 - sprite_2x5.width() as i32 / 2 + 7,
                                     ty_ant as i32 - sprite_2x5.height() as i32 / 2 + 2,
@@ -1235,7 +1241,7 @@ fn main_loop() -> Result<(), String> {
                 );
 
                 // render hover
-                let mut hovered_tiletype = world_structs::TileType::Grass;
+                let mut hovered_tiletype = TileType::Grass;
                 let mut hovered_tile: std::option::Option<world_structs::Point> = None;
                 let mut hovered_entity: std::option::Option<world_structs::Entity> = None;
                 let mut hovering_entity = false;
@@ -1452,6 +1458,78 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
+
+                let hp_text = graphics_utils::get_text(
+                    "LIFE: ".to_string(),
+                    Color::RGBA(255, 255, 255, 255),
+                    hp_font_size,
+                    &hp_font,
+                    &texture_creator,
+                )
+                .unwrap();
+                let position = Point::new(
+                    (SCREEN_WIDTH - 116).try_into().unwrap(),
+                    (SCREEN_HEIGHT - 46).try_into().unwrap(),
+                );
+                graphics_utils::render_text(
+                    &mut canvas,
+                    &hp_text.text_texture,
+                    position,
+                    hp_text.text_sprite,
+                    ratio_x,
+                    ratio_y,
+                );
+                let magic_text = graphics_utils::get_text(
+                    "ENERGY: ".to_string(),
+                    Color::RGBA(255, 255, 255, 255),
+                    hp_font_size,
+                    &hp_font,
+                    &texture_creator,
+                )
+                .unwrap();
+                let position = Point::new(
+                    (SCREEN_WIDTH - 116).try_into().unwrap(),
+                    (SCREEN_HEIGHT - 36).try_into().unwrap(),
+                );
+                graphics_utils::render_text(
+                    &mut canvas,
+                    &magic_text.text_texture,
+                    position,
+                    magic_text.text_sprite,
+                    ratio_x,
+                    ratio_y,
+                );
+
+                let position = Point::new((SCREEN_WIDTH - 78) as i32, (SCREEN_HEIGHT - 44) as i32);
+                let render_rect = Rect::new(
+                    (position.x as f32) as i32,
+                    (position.y as f32) as i32,
+                    (1.0.lerp(64.0, player.hp as f32 / 100.0)) as u32,
+                    8,
+                );
+
+                graphics_utils::render_rect(
+                    &mut canvas,
+                    position,
+                    render_rect,
+                    Color::RGBA(255, 0, 0, 55),
+                    1.0,
+                );
+                let position = Point::new((SCREEN_WIDTH - 78) as i32, (SCREEN_HEIGHT - 34) as i32);
+                let render_rect = Rect::new(
+                    (position.x as f32) as i32,
+                    (position.y as f32) as i32,
+                    (1.0.lerp(64.0, player.energy as f32 / 100.0)) as u32,
+                    8,
+                );
+
+                graphics_utils::render_rect(
+                    &mut canvas,
+                    position,
+                    render_rect,
+                    Color::RGBA(0, 255, 100, 55),
+                    1.0,
+                );
                 // political map button
                 let position = Point::new(political_button.x as i32, political_button.y as i32);
                 political_button.check_if_hovered(
@@ -1641,8 +1719,10 @@ fn main_loop() -> Result<(), String> {
         }
         if normal_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Normal;
-        } else if religion_button.status == graphics_utils::ButtonStatus::Pressed {
+        } else if political_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Political;
+        } else if religion_button.status == graphics_utils::ButtonStatus::Pressed {
+            map_state = graphics_utils::MapState::Religion;
         }
         canvas.present();
         thread::sleep(time::Duration::from_millis(10));

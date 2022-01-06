@@ -1,4 +1,4 @@
-use crate::world_structs;
+use crate::world_structs::{EntityType, TileType};
 use bincode;
 use sdl2::image::{InitFlag, LoadTexture};
 use sdl2::pixels::Color;
@@ -12,6 +12,7 @@ use std::collections::HashMap;
 pub enum MapState {
     Normal,
     Political,
+    Religion,
 }
 #[derive(PartialEq)]
 pub enum MoveDirection {
@@ -200,94 +201,94 @@ pub fn render_text(
     );
     canvas.copy(texture, None, screen_rect);
 }
-pub fn tile_graphics() -> HashMap<world_structs::TileType, TileGraphics> {
+pub fn tile_graphics() -> HashMap<TileType, TileGraphics> {
     return HashMap::from([
         (
-            world_structs::TileType::Grass,
+            TileType::Grass,
             TileGraphics {
                 sc: Color::RGB(58, 132, 56),
                 tc: Color::RGB(5, 85, 5),
             },
         ),
         (
-            world_structs::TileType::ColdLand,
+            TileType::ColdLand,
             TileGraphics {
                 sc: Color::RGB(58, 132, 56),
                 tc: Color::RGB(5, 85, 5),
             },
         ),
         (
-            world_structs::TileType::Water,
+            TileType::Water,
             TileGraphics {
                 sc: Color::RGB(65, 65, 195),
                 tc: Color::RGB(17, 17, 87),
             },
         ),
         (
-            world_structs::TileType::Ice,
+            TileType::Ice,
             TileGraphics {
                 sc: Color::RGB(255, 255, 255),
                 tc: Color::RGB(200, 200, 250),
             },
         ),
         (
-            world_structs::TileType::PermaFrost,
+            TileType::PermaFrost,
             TileGraphics {
                 sc: Color::RGB(58, 125, 50),
                 tc: Color::RGB(95, 110, 95),
             },
         ),
         (
-            world_structs::TileType::CoarseLand,
+            TileType::CoarseLand,
             TileGraphics {
                 sc: Color::RGB(150, 145, 105),
                 tc: Color::RGB(90, 85, 45),
             },
         ),
         (
-            world_structs::TileType::SavannahLand,
+            TileType::SavannahLand,
             TileGraphics {
                 sc: Color::RGB(186, 165, 80),
                 tc: Color::RGB(150, 150, 105),
             },
         ),
         (
-            world_structs::TileType::Sand,
+            TileType::Sand,
             TileGraphics {
                 sc: Color::RGB(255, 247, 56),
                 tc: Color::RGB(170, 165, 90),
             },
         ),
         (
-            world_structs::TileType::RedSand,
+            TileType::RedSand,
             TileGraphics {
                 sc: Color::RGB(190, 130, 80),
                 tc: Color::RGB(150, 90, 35),
             },
         ),
         (
-            world_structs::TileType::MudHiveWall,
+            TileType::MudHiveWall,
             TileGraphics {
                 sc: Color::RGB(90, 90, 60),
                 tc: Color::RGB(90, 90, 60),
             },
         ),
         (
-            world_structs::TileType::MudHiveFloor,
+            TileType::MudHiveFloor,
             TileGraphics {
                 sc: Color::RGB(120, 120, 75),
                 tc: Color::RGB(120, 120, 75),
             },
         ),
         (
-            world_structs::TileType::StoneHiveWall,
+            TileType::StoneHiveWall,
             TileGraphics {
                 sc: Color::RGB(110, 110, 110),
                 tc: Color::RGB(110, 110, 110),
             },
         ),
         (
-            world_structs::TileType::StoneHiveFloor,
+            TileType::StoneHiveFloor,
             TileGraphics {
                 sc: Color::RGB(50, 50, 50),
                 tc: Color::RGB(50, 50, 50),
@@ -332,67 +333,40 @@ pub fn get_text<'a, T>(
     };
     return Some(text);
 }
-pub fn get_descriptions_for_entities() -> HashMap<world_structs::EntityType, String> {
+pub fn get_descriptions_for_entities() -> HashMap<EntityType, String> {
     let entity_descriptions = HashMap::from([
-        (world_structs::EntityType::Oak, "Oak".to_string()),
-        (world_structs::EntityType::Birch, "Birch".to_string()),
-        (
-            world_structs::EntityType::AppleTree,
-            "Apple tree".to_string(),
-        ),
-        (world_structs::EntityType::Pine, "Pine".to_string()),
-        (world_structs::EntityType::Spruce, "Spruce".to_string()),
-        (world_structs::EntityType::Cactus, "Cactus".to_string()),
-        (
-            world_structs::EntityType::WorkerAnt,
-            "ant worker".to_string(),
-        ),
-        (world_structs::EntityType::QueenAnt, "ant queen".to_string()),
-        (world_structs::EntityType::DroneAnt, "ant drone".to_string()),
-        (
-            world_structs::EntityType::SoldierAnt,
-            "ant soldier".to_string(),
-        ),
-        (world_structs::EntityType::Mechant, "mechant".to_string()),
-        (
-            world_structs::EntityType::FoodStorage,
-            "Food storage".to_string(),
-        ),
-        (world_structs::EntityType::Snail, "Snail".to_string()),
-        (
-            world_structs::EntityType::FoodStorage,
-            "Food storage".to_string(),
-        ),
-        (world_structs::EntityType::AntEgg, "Ant egg".to_string()),
-        (world_structs::EntityType::AntEgg, "Ant egg".to_string()),
+        (EntityType::Oak, "Oak".to_string()),
+        (EntityType::Birch, "Birch".to_string()),
+        (EntityType::AppleTree, "Apple tree".to_string()),
+        (EntityType::Pine, "Pine".to_string()),
+        (EntityType::Spruce, "Spruce".to_string()),
+        (EntityType::Cactus, "Cactus".to_string()),
+        (EntityType::WorkerAnt, "ant worker".to_string()),
+        (EntityType::QueenAnt, "ant queen".to_string()),
+        (EntityType::DroneAnt, "ant drone".to_string()),
+        (EntityType::SoldierAnt, "ant soldier".to_string()),
+        (EntityType::Mechant, "mechant".to_string()),
+        (EntityType::FoodStorage, "Food storage".to_string()),
+        (EntityType::Snail, "Snail".to_string()),
+        (EntityType::FoodStorage, "Food storage".to_string()),
+        (EntityType::AntEgg, "Ant egg".to_string()),
+        (EntityType::AntEgg, "Ant egg".to_string()),
     ]);
     return entity_descriptions;
 }
-pub fn get_descriptions_for_tiles() -> HashMap<world_structs::TileType, String> {
+pub fn get_descriptions_for_tiles() -> HashMap<TileType, String> {
     let tile_descriptions = HashMap::from([
-        (world_structs::TileType::Grass, "Grass".to_string()),
-        (world_structs::TileType::ColdLand, "Grass".to_string()),
-        (world_structs::TileType::Ice, "Ice".to_string()),
-        (world_structs::TileType::Water, "Water".to_string()),
-        (
-            world_structs::TileType::CoarseLand,
-            "Coarse grass".to_string(),
-        ),
-        (
-            world_structs::TileType::SavannahLand,
-            "Savannah grass".to_string(),
-        ),
-        (world_structs::TileType::Sand, "Sand".to_string()),
-        (world_structs::TileType::RedSand, "Red sand".to_string()),
-        (
-            world_structs::TileType::PermaFrost,
-            "Frozen ground".to_string(),
-        ),
-        (world_structs::TileType::MudHiveWall, "Mud wall".to_string()),
-        (
-            world_structs::TileType::MudHiveFloor,
-            "Mud floor".to_string(),
-        ),
+        (TileType::Grass, "Grass".to_string()),
+        (TileType::ColdLand, "Grass".to_string()),
+        (TileType::Ice, "Ice".to_string()),
+        (TileType::Water, "Water".to_string()),
+        (TileType::CoarseLand, "Coarse grass".to_string()),
+        (TileType::SavannahLand, "Savannah grass".to_string()),
+        (TileType::Sand, "Sand".to_string()),
+        (TileType::RedSand, "Red sand".to_string()),
+        (TileType::PermaFrost, "Frozen ground".to_string()),
+        (TileType::MudHiveWall, "Mud wall".to_string()),
+        (TileType::MudHiveFloor, "Mud floor".to_string()),
     ]);
     return tile_descriptions;
 }

@@ -6,6 +6,7 @@ pub struct Player {
     pub x: f32,
     pub y: f32,
     pub hp: i32,
+    pub energy: i32,
     pub speed: f32,
     pub dir: f32,
     pub target_x: f32,
