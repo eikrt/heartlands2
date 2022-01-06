@@ -2,6 +2,8 @@ use crate::graphics_utils::{Camera, MoveDirection};
 use crate::world_structs::{
     ActionType, CategoryType, EntityType, ItemType, ReligionType, TaskType,
 };
+use serde::{Deserialize, Serialize};
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Player {
     pub x: f32,
     pub y: f32,
@@ -13,16 +15,8 @@ pub struct Player {
     pub target_y: f32,
     pub stopped: bool,
     pub id: i32,
-    pub entity_type: EntityType,
-    pub category_type: CategoryType,
     pub faction: String,
-    pub religion_type: ReligionType,
     pub faction_id: i32,
-    pub current_action: ActionType,
-    pub task_type: TaskType,
-    pub wielding_item: ItemType,
-    pub backpack_item: ItemType,
-    pub wearable_item: ItemType,
     pub backpack_amount: u8,
     pub time: u128,
 }
@@ -55,7 +49,8 @@ impl Player {
         return self.y - camera.y;
     }
 }
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ClientPacket {
-    camera: Camera,
-    player: Player,
+    pub camera: Camera,
+    pub player: Player,
 }

@@ -1,3 +1,5 @@
+use crate::client_structs::ClientPacket;
+use crate::client_structs::Player;
 use rand::{
     distributions::{Distribution, Standard},
     Rng,
@@ -309,6 +311,7 @@ impl Default for WorldData {
 pub struct World {
     pub chunks: Vec<Vec<Chunk>>,
     pub world_data: WorldData,
+    pub players: Vec<Player>,
     pub v_x: i32, // slice dimensions for formatting
     pub v_y: i32,
     pub v_w: i32,
@@ -434,9 +437,10 @@ impl World {
         }
 
         format!(
-            "{{\"chunks\": {}, \"world_data\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
+            "{{\"chunks\": {}, \"world_data\": {}, \"players\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
             serde_json::to_string(&selected_chunks2).unwrap(),
             serde_json::to_string(&self.world_data).unwrap(),
+            serde_json::to_string(&self.players).unwrap(),
             serde_json::to_string(&view_x).unwrap(),
             serde_json::to_string(&view_y).unwrap(),
             serde_json::to_string(&view_width).unwrap(),

@@ -1,3 +1,4 @@
+use crate::client_structs::Player;
 use crate::world_structs::{
     ActionType, Biome, CategoryType, Chunk, Entity, EntityType, ItemType, Point, ReligionType,
     TaskType, TileType, World, WorldData,
@@ -852,6 +853,7 @@ pub fn generate(
             is_default: false,
         },
 
+        players: Vec::new(),
         v_x: 0,
         v_y: 0,
         v_w: 3,

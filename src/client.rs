@@ -307,16 +307,8 @@ fn main_loop() -> Result<(), String> {
         dir: 0.0,
         target_x: 0.0,
         target_y: 0.0,
-        entity_type: EntityType::CultistAnt,
-        religion_type: ReligionType::Nothing,
-        category_type: CategoryType::Ant,
         faction: "The Fringe".to_string(),
         faction_id: 0,
-        task_type: TaskType::Nothing,
-        current_action: ActionType::Idle,
-        wielding_item: ItemType::Nothing,
-        backpack_item: ItemType::Nothing,
-        wearable_item: ItemType::Nothing,
         backpack_amount: 0,
         time: 0,
     };
@@ -835,8 +827,12 @@ fn main_loop() -> Result<(), String> {
             // tick
             player.tick(delta_as_millis);
             // get entities and chunks from server
-            let encoded: Vec<u8> = bincode::serialize(&camera).unwrap();
-            let decoded: graphics_utils::Camera = bincode::deserialize(&encoded).unwrap();
+            let packet = ClientPacket {
+                player: player.clone(),
+                camera: camera.clone(),
+            };
+            let encoded: Vec<u8> = bincode::serialize(&packet).unwrap();
+            //let decoded: ClientPacket = bincode::deserialize(&encoded).unwrap();
 
             match tx.send(OwnedMessage::Binary(encoded)) {
                 Ok(()) => (),
@@ -1271,9 +1267,7 @@ fn main_loop() -> Result<(), String> {
                 if player.dir >= std::f64::consts::PI as f32 * (0.0)
                     && player.dir <= std::f64::consts::PI as f32 * (1.0)
                 {
-                    if player.current_action != ActionType::Idle
-                        && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0
-                    {
+                    if !player.stopped && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0 {
                         tex = &plasmant_texture_side_1;
                     } else {
                         tex = &plasmant_texture_side_2;
@@ -1281,9 +1275,7 @@ fn main_loop() -> Result<(), String> {
                 } else if player.dir >= std::f64::consts::PI as f32 * (1.0)
                     && player.dir <= std::f64::consts::PI as f32 * (2.0)
                 {
-                    if player.current_action != ActionType::Idle
-                        && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0
-                    {
+                    if !player.stopped && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0 {
                         tex = &plasmant_texture_side_mirror_2;
                     } else {
                         tex = &plasmant_texture_side_mirror_1;

@@ -1,7 +1,8 @@
 extern crate futures;
 extern crate tokio;
 extern crate websocket;
-use crate::graphics_utils;
+use crate::client_structs::ClientPacket;
+use crate::graphics_utils::Camera;
 use crate::world_structs::{
     ActionType, Biome, CategoryType, Chunk, Entity, EntityType, ItemType, Point, ReligionType,
     TaskType, TileType, World, WorldData,
@@ -66,7 +67,12 @@ pub fn serve(world: World) {
                     let c = *counter_inner.read().unwrap();
                     let f = stream
                         .for_each(move |msg| {
-                            process_message(c.try_into().unwrap(), &msg, client_states.clone());
+                            process_message(
+                                c.try_into().unwrap(),
+                                &msg,
+                                client_states.clone(),
+                                &world,
+                            );
                             Ok(())
                         })
                         .map_err(|_| ());
@@ -146,6 +152,7 @@ fn process_message(
     id: u32,
     msg: &OwnedMessage,
     client_states: Arc<RwLock<HashMap<i32, ClientState>>>,
+    world: &Arc<RwLock<World>>,
 ) {
     if !client_states.write().unwrap().contains_key(&(id as i32)) {
         client_states
@@ -155,16 +162,19 @@ fn process_message(
     }
     if let OwnedMessage::Binary(ref txt) = *msg {
         //let cut_string = txt.as_str()[0..txt.len() - 0].replace("\\", "");
-        let decoded: graphics_utils::Camera = bincode::deserialize(&txt).unwrap();
-        let camera: graphics_utils::Camera = decoded;
+        let decoded: ClientPacket = bincode::deserialize(&txt).unwrap();
+        let packet: ClientPacket = decoded;
+
         client_states
             .write()
             .unwrap()
             .entry(id as i32)
             .and_modify(|e| {
-                e.x = camera.x;
-                e.y = camera.y
+                e.x = packet.camera.x;
+                e.y = packet.camera.y
             });
+        let player = packet.player;
+        (*world).write().unwrap().players.push(player);
         // client_states.write().unwrap().entry(id.unwrap().y = camera.y;
     }
     /*if let OwnedMessage::Text(ref txt) = *msg {
