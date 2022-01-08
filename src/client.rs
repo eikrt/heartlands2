@@ -138,7 +138,7 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 64.0 + 4.0,
+        y: 62.0,
         width: 128.0,
         height: 32.0,
     };
@@ -146,7 +146,15 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 128.0 + 4.0,
+        y: 62.0 + 32.0 + 8.0,
+        width: 128.0,
+        height: 32.0,
+    };
+    let mut manual_button = graphics_utils::Button {
+        status: graphics_utils::ButtonStatus::Hovered,
+        previous_status: graphics_utils::ButtonStatus::Hovered,
+        x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
+        y: 62.0 + 64.0 + 16.0,
         width: 128.0,
         height: 32.0,
     };
@@ -154,10 +162,14 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 192.0 + 4.0,
+        y: 62.0 + 96.0 + 24.0,
         width: 128.0,
         height: 32.0,
     };
+
+    // universal menu buttons
+    // settings menu buttons
+    // manual menu buttons
     // ui buttons
     let mut normal_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
@@ -315,6 +327,7 @@ fn main_loop() -> Result<(), String> {
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
     let mut settings_menu_on = false;
+    let mut manual_menu_on = false;
     let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
     let mut religion_graphics_data: HashMap<ReligionType, Color> = HashMap::new();
     // network stuff
@@ -576,6 +589,8 @@ fn main_loop() -> Result<(), String> {
             play_button.check_if_pressed(mx, my, mouse_state.left());
             settings_button.check_if_hovered(mx, my, ratio_x, ratio_y);
             settings_button.check_if_pressed(mx, my, mouse_state.left());
+            manual_button.check_if_hovered(mx, my, ratio_x, ratio_y);
+            manual_button.check_if_pressed(mx, my, mouse_state.left());
             exit_button.check_if_hovered(mx, my, ratio_x, ratio_y);
             exit_button.check_if_pressed(mx, my, mouse_state.left());
             // play button
@@ -590,6 +605,39 @@ fn main_loop() -> Result<(), String> {
                     ratio_y,
                 );
             } else if play_button.status == graphics_utils::ButtonStatus::Pressed {
+                graphics_utils::render(
+                    &mut canvas,
+                    &menu_button_pressed_texture,
+                    position,
+                    sprite_128x32,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );
+            } else {
+                graphics_utils::render(
+                    &mut canvas,
+                    &menu_button_texture,
+                    position,
+                    sprite_128x32,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );
+            }
+            let position = Point::new(manual_button.x as i32, manual_button.y as i32);
+            // manual button
+            if manual_button.status == graphics_utils::ButtonStatus::Hovered {
+                graphics_utils::render(
+                    &mut canvas,
+                    &menu_button_hovered_texture,
+                    position,
+                    sprite_128x32,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );
+            } else if manual_button.status == graphics_utils::ButtonStatus::Pressed {
                 graphics_utils::render(
                     &mut canvas,
                     &menu_button_pressed_texture,
@@ -678,14 +726,14 @@ fn main_loop() -> Result<(), String> {
             }
             // render texts
             let title_text = graphics_utils::get_text(
-                "MechAnts".to_string(),
+                "Armageddon on Planet Ant".to_string(),
                 Color::RGBA(255, 255, 255, 255),
                 desc_font_size,
                 &font,
                 &texture_creator,
             )
             .unwrap();
-            let position = Point::new((SCREEN_WIDTH / 2 - 42) as i32, 16 as i32);
+            let position = Point::new((SCREEN_WIDTH / 2 - 120) as i32, 16 as i32);
             graphics_utils::render_text(
                 &mut canvas,
                 &title_text.text_texture,
@@ -735,6 +783,26 @@ fn main_loop() -> Result<(), String> {
                 ratio_x,
                 ratio_y,
             );
+            let manual_text = graphics_utils::get_text(
+                "Manual".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(
+                manual_button.x as i32 + text_margin,
+                manual_button.y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &manual_text.text_texture,
+                position,
+                manual_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
             let exit_text = graphics_utils::get_text(
                 "Exit".to_string(),
                 Color::RGBA(255, 255, 255, 255),
@@ -762,6 +830,37 @@ fn main_loop() -> Result<(), String> {
             } else if exit_button.status == graphics_utils::ButtonStatus::Released {
                 running = false;
             }
+            if play_button.status == graphics_utils::ButtonStatus::Released {
+                main_menu_on = false;
+            } else if settings_button.status == graphics_utils::ButtonStatus::Released {
+                main_menu_on = false;
+                settings_menu_on = true;
+            } else if manual_button.status == graphics_utils::ButtonStatus::Released {
+                main_menu_on = false;
+                manual_menu_on = true;
+            } else if exit_button.status == graphics_utils::ButtonStatus::Released {
+                running = false;
+            }
+        } else if settings_menu_on {
+            graphics_utils::render(
+                &mut canvas,
+                &menu_background,
+                Point::new(0, 0),
+                sprite_720x480,
+                1.0,
+                ratio_x,
+                ratio_y,
+            );
+        } else if manual_menu_on {
+            graphics_utils::render(
+                &mut canvas,
+                &menu_background,
+                Point::new(0, 0),
+                sprite_720x480,
+                1.0,
+                ratio_x,
+                ratio_y,
+            );
         } else {
             /*if up {
                 camera.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
