@@ -5,7 +5,7 @@ use bincode;
 
 use crate::client_structs;
 use crate::client_structs::{ClientPacket, Player};
-use crate::graphics_utils::{Camera, MoveDirection};
+use crate::graphics_utils::{Button, ButtonStatus, Camera, MoveDirection};
 use crate::world_structs::{
     ActionType, CategoryType, Chunk, Entity, EntityType, ItemType, ReligionType, TaskType,
     TileType, World, WorldData, HATCH_TIME,
@@ -133,39 +133,57 @@ fn main_loop() -> Result<(), String> {
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<Vec<Chunk>> = Vec::new();
     let mut entities: HashMap<i32, Entity> = HashMap::new();
-    // menu buttons
-    let mut play_button = graphics_utils::Button {
-        status: graphics_utils::ButtonStatus::Hovered,
+    let mut settings_buttons = vec![Button {
+        status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 62.0,
+        x: 16.0,
+        y: 150.0,
         width: 128.0,
         height: 32.0,
-    };
-    let mut settings_button = graphics_utils::Button {
-        status: graphics_utils::ButtonStatus::Hovered,
+    }];
+    let mut manual_buttons = vec![Button {
+        status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 62.0 + 32.0 + 8.0,
+        x: SCREEN_WIDTH as f32 - 128.0 - 8.0,
+        y: (SCREEN_HEIGHT as f32 - 32.0 - 8.0) as f32,
         width: 128.0,
         height: 32.0,
-    };
-    let mut manual_button = graphics_utils::Button {
-        status: graphics_utils::ButtonStatus::Hovered,
-        previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 62.0 + 64.0 + 16.0,
-        width: 128.0,
-        height: 32.0,
-    };
-    let mut exit_button = graphics_utils::Button {
-        status: graphics_utils::ButtonStatus::Hovered,
-        previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-        y: 62.0 + 96.0 + 24.0,
-        width: 128.0,
-        height: 32.0,
-    };
+    }];
+    let mut menu_buttons: Vec<Button> = vec![
+        // menu buttons
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
+            y: 62.0,
+            width: 128.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // settings button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
+            y: 62.0 + 32.0 + 8.0,
+            width: 128.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, //  manual button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
+            y: 62.0 + 64.0 + 16.0,
+            width: 128.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // exit
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
+            y: 62.0 + 96.0 + 24.0,
+            width: 128.0,
+            height: 32.0,
+        },
+    ];
 
     // universal menu buttons
     // settings menu buttons
@@ -257,6 +275,7 @@ fn main_loop() -> Result<(), String> {
     let mut menu_button_pressed_texture =
         texture_creator.load_texture("res/menu_button_pressed.png")?;
     let mut menu_background = texture_creator.load_texture("res/background_image_1.png")?;
+    let mut wiki_text_background = texture_creator.load_texture("res/wiki_text_background.png")?;
 
     // ui textures
 
@@ -283,6 +302,7 @@ fn main_loop() -> Result<(), String> {
         (10.0 * camera.zoom) as u32,
     );
     let sprite_426x48 = Rect::new(0, 0, (426.0) as u32, (48.0) as u32);
+    let sprite_158x212 = Rect::new(0, 0, (158.0) as u32, (212.0) as u32);
     let sprite_2x5 = Rect::new(0, 0, (2.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
     let sprite_8 = Rect::new(0, 0, (8.0 * camera.zoom) as u32, (8.0 * camera.zoom) as u32);
     let sprite_16 = Rect::new(
@@ -584,149 +604,51 @@ fn main_loop() -> Result<(), String> {
                 ratio_y,
             );
             // render buttons
-            let position = Point::new(play_button.x as i32, play_button.y as i32);
-            play_button.check_if_hovered(mx, my, ratio_x, ratio_y);
-            play_button.check_if_pressed(mx, my, mouse_state.left());
-            settings_button.check_if_hovered(mx, my, ratio_x, ratio_y);
-            settings_button.check_if_pressed(mx, my, mouse_state.left());
-            manual_button.check_if_hovered(mx, my, ratio_x, ratio_y);
-            manual_button.check_if_pressed(mx, my, mouse_state.left());
-            exit_button.check_if_hovered(mx, my, ratio_x, ratio_y);
-            exit_button.check_if_pressed(mx, my, mouse_state.left());
+            for button in menu_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+
             // play button
-            if play_button.status == graphics_utils::ButtonStatus::Hovered {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_hovered_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else if play_button.status == graphics_utils::ButtonStatus::Pressed {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_pressed_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
+            for button in menu_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
             }
-            let position = Point::new(manual_button.x as i32, manual_button.y as i32);
-            // manual button
-            if manual_button.status == graphics_utils::ButtonStatus::Hovered {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_hovered_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else if manual_button.status == graphics_utils::ButtonStatus::Pressed {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_pressed_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            }
-            // settings button
-            let position = Point::new(settings_button.x as i32, settings_button.y as i32);
-            if settings_button.status == graphics_utils::ButtonStatus::Hovered {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_hovered_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else if settings_button.status == graphics_utils::ButtonStatus::Pressed {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_pressed_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            }
-            // exit button
-            let position = Point::new(exit_button.x as i32, exit_button.y as i32);
-            if exit_button.status == graphics_utils::ButtonStatus::Hovered {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_hovered_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else if exit_button.status == graphics_utils::ButtonStatus::Pressed {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_pressed_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            } else {
-                graphics_utils::render(
-                    &mut canvas,
-                    &menu_button_texture,
-                    position,
-                    sprite_128x32,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-            }
-            // render texts
+            let position = Point::new(menu_buttons[0].x as i32, menu_buttons[0].y as i32);
+            // render text
             let title_text = graphics_utils::get_text(
-                "Armageddon on Planet Ant".to_string(),
+                "Terrant: Cult of Plasma".to_string(),
                 Color::RGBA(255, 255, 255, 255),
                 desc_font_size,
                 &font,
@@ -734,6 +656,7 @@ fn main_loop() -> Result<(), String> {
             )
             .unwrap();
             let position = Point::new((SCREEN_WIDTH / 2 - 120) as i32, 16 as i32);
+            let text_margin = 4;
             graphics_utils::render_text(
                 &mut canvas,
                 &title_text.text_texture,
@@ -742,27 +665,7 @@ fn main_loop() -> Result<(), String> {
                 ratio_x,
                 ratio_y,
             );
-            let text_margin = 4;
-            let play_text = graphics_utils::get_text(
-                "Play".to_string(),
-                Color::RGBA(255, 255, 255, 255),
-                desc_font_size,
-                &font,
-                &texture_creator,
-            )
-            .unwrap();
-            let position = Point::new(
-                play_button.x as i32 + text_margin,
-                play_button.y as i32 + text_margin,
-            );
-            graphics_utils::render_text(
-                &mut canvas,
-                &play_text.text_texture,
-                position,
-                play_text.text_sprite,
-                ratio_x,
-                ratio_y,
-            );
+
             let settings_text = graphics_utils::get_text(
                 "Settings".to_string(),
                 Color::RGBA(255, 255, 255, 255),
@@ -772,8 +675,8 @@ fn main_loop() -> Result<(), String> {
             )
             .unwrap();
             let position = Point::new(
-                settings_button.x as i32 + text_margin,
-                settings_button.y as i32 + text_margin,
+                menu_buttons[1].x as i32 + text_margin,
+                menu_buttons[1].y as i32 + text_margin,
             );
             graphics_utils::render_text(
                 &mut canvas,
@@ -782,6 +685,31 @@ fn main_loop() -> Result<(), String> {
                 settings_text.text_sprite,
                 ratio_x,
                 ratio_y,
+            );
+            let position = Point::new((SCREEN_WIDTH / 2 - 120) as i32, 16 as i32);
+            let play_text = graphics_utils::get_text(
+                "Play".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(
+                menu_buttons[0].x as i32 + text_margin,
+                menu_buttons[0].y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &play_text.text_texture,
+                position,
+                play_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let position = Point::new(
+                menu_buttons[1].x as i32 + text_margin,
+                menu_buttons[1].y as i32 + text_margin,
             );
             let manual_text = graphics_utils::get_text(
                 "Manual".to_string(),
@@ -792,9 +720,10 @@ fn main_loop() -> Result<(), String> {
             )
             .unwrap();
             let position = Point::new(
-                manual_button.x as i32 + text_margin,
-                manual_button.y as i32 + text_margin,
+                menu_buttons[2].x as i32 + text_margin,
+                menu_buttons[2].y as i32 + text_margin,
             );
+            let text_margin = 4;
             graphics_utils::render_text(
                 &mut canvas,
                 &manual_text.text_texture,
@@ -803,6 +732,7 @@ fn main_loop() -> Result<(), String> {
                 ratio_x,
                 ratio_y,
             );
+
             let exit_text = graphics_utils::get_text(
                 "Exit".to_string(),
                 Color::RGBA(255, 255, 255, 255),
@@ -812,8 +742,20 @@ fn main_loop() -> Result<(), String> {
             )
             .unwrap();
             let position = Point::new(
-                exit_button.x as i32 + text_margin,
-                exit_button.y as i32 + text_margin,
+                menu_buttons[3].x as i32 + text_margin,
+                menu_buttons[3].y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &exit_text.text_texture,
+                position,
+                exit_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let position = Point::new(
+                menu_buttons[3].x as i32 + text_margin,
+                menu_buttons[3].y as i32 + text_margin,
             );
             graphics_utils::render_text(
                 &mut canvas,
@@ -824,21 +766,20 @@ fn main_loop() -> Result<(), String> {
                 ratio_y,
             );
 
-            if play_button.status == graphics_utils::ButtonStatus::Released {
+            if menu_buttons[0].status == ButtonStatus::Released {
                 main_menu_on = false;
-            } else if settings_button.status == graphics_utils::ButtonStatus::Released {
-            } else if exit_button.status == graphics_utils::ButtonStatus::Released {
-                running = false;
-            }
-            if play_button.status == graphics_utils::ButtonStatus::Released {
-                main_menu_on = false;
-            } else if settings_button.status == graphics_utils::ButtonStatus::Released {
+            } else if menu_buttons[1].status == ButtonStatus::Released {
                 main_menu_on = false;
                 settings_menu_on = true;
-            } else if manual_button.status == graphics_utils::ButtonStatus::Released {
+            }
+            if menu_buttons[1].status == ButtonStatus::Released {
+            } else if menu_buttons[1].status == ButtonStatus::Released {
+                main_menu_on = false;
+                settings_menu_on = true;
+            } else if menu_buttons[2].status == ButtonStatus::Released {
                 main_menu_on = false;
                 manual_menu_on = true;
-            } else if exit_button.status == graphics_utils::ButtonStatus::Released {
+            } else if menu_buttons[3].status == ButtonStatus::Released {
                 running = false;
             }
         } else if settings_menu_on {
@@ -848,6 +789,138 @@ fn main_loop() -> Result<(), String> {
                 Point::new(0, 0),
                 sprite_720x480,
                 1.0,
+                ratio_x,
+                ratio_y,
+            );
+            for button in settings_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+
+            for button in settings_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+            if settings_buttons[0].status == ButtonStatus::Released {
+                main_menu_on = true;
+                settings_menu_on = false;
+                manual_menu_on = false;
+            }
+            for button in settings_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+            for button in settings_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+            let position = Point::new(settings_buttons[0].x as i32, settings_buttons[0].y as i32);
+            let text_margin = 4;
+            let back_text = graphics_utils::get_text(
+                "Back".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+
+            graphics_utils::render_text(
+                &mut canvas,
+                &back_text.text_texture,
+                position,
+                back_text.text_sprite,
                 ratio_x,
                 ratio_y,
             );
@@ -861,6 +934,94 @@ fn main_loop() -> Result<(), String> {
                 ratio_x,
                 ratio_y,
             );
+            graphics_utils::render(
+                &mut canvas,
+                &wiki_text_background,
+                Point::new(16, 16),
+                sprite_158x212,
+                1.0,
+                ratio_x,
+                ratio_y,
+            );
+            let back_text = graphics_utils::get_text(
+                "Back".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+
+            let position = Point::new(manual_buttons[0].x as i32, manual_buttons[0].y as i32);
+            let text_margin = 4;
+
+            for button in manual_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+            for button in manual_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+
+            let position = Point::new(
+                manual_buttons[0].x as i32 + 4,
+                manual_buttons[0].y as i32 + 4,
+            );
+            let text_margin = 4;
+            let back_text = graphics_utils::get_text(
+                "Back".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            graphics_utils::render_text(
+                &mut canvas,
+                &back_text.text_texture,
+                position,
+                back_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+
+            if manual_buttons[0].status == ButtonStatus::Released {
+                main_menu_on = true;
+                settings_menu_on = false;
+                manual_menu_on = false;
+            }
         } else {
             /*if up {
                 camera.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
