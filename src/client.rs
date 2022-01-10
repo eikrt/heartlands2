@@ -26,6 +26,7 @@ use sdl2::video::FullscreenType;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
+use std::fs;
 use std::future::Future;
 use std::io::stdin;
 use std::io::{Read, Write};
@@ -76,7 +77,25 @@ fn main_loop() -> Result<(), String> {
     canvas.set_blend_mode(BlendMode::Blend);
 
     let mut rng = rand::thread_rng();
+    let wiki_text_paths = ["text/terrant.md", "text/ants.md"];
+    let mut wiki_index = 0;
+    let mut wiki_texts = vec![];
+    let mut wiki_text_contents: Vec<Vec<String>> = vec![];
 
+    for path in wiki_text_paths.iter() {
+        wiki_text_contents.push(vec![fs::read_to_string(path).unwrap()]);
+    }
+    for vector in wiki_text_contents.iter() {
+        let mut wiki_text_lines: Vec<&str> = vec![];
+        for content in vector.iter() {
+            let split_string: Vec<&str> = content.lines().collect();
+            for line in split_string {
+                wiki_text_lines.push(line);
+            }
+            wiki_texts.push(wiki_text_lines.clone());
+        }
+    }
+    println!("{:?}", wiki_text_contents);
     //canvas.window_mut().set_fullscreen(FullscreenType::True);
 
     // canvas.window_mut().set_size(500, 500);
@@ -91,8 +110,14 @@ fn main_loop() -> Result<(), String> {
 
     let hp_font_size = 10;
     let mut hp_font = ttf_context.load_font("fonts/PixelOperator.ttf", hp_font_size)?;
+    let wiki_text_font_size = 12;
+    let mut wiki_text_font =
+        ttf_context.load_font("fonts/PixelOperator.ttf", wiki_text_font_size)?;
+    let wiki_h1_font_size = 20;
+    let mut wiki_h1_font = ttf_context.load_font("fonts/PixelOperator.ttf", wiki_h1_font_size)?;
+    let wiki_h2_font_size = 16;
+    let mut wiki_h2_font = ttf_context.load_font("fonts/PixelOperator.ttf", wiki_h2_font_size)?;
     let tile_gs = graphics_utils::tile_graphics();
-
     let mut camera = graphics_utils::Camera {
         x: rng.gen_range(256.0..1024.0),
         y: rng.gen_range(256.0..1024.0),
@@ -133,6 +158,7 @@ fn main_loop() -> Result<(), String> {
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<Vec<Chunk>> = Vec::new();
     let mut entities: HashMap<i32, Entity> = HashMap::new();
+
     let mut settings_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
@@ -144,11 +170,29 @@ fn main_loop() -> Result<(), String> {
     let mut manual_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: SCREEN_WIDTH as f32 - 128.0 - 8.0,
-        y: (SCREEN_HEIGHT as f32 - 32.0 - 8.0) as f32,
+        x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
+        y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
         width: 128.0,
         height: 32.0,
     }];
+    let mut wiki_buttons = vec![
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 24.0,
+            y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
+            width: 32.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 64.0,
+            y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
+            width: 32.0,
+            height: 32.0,
+        },
+    ];
     let mut menu_buttons: Vec<Button> = vec![
         // menu buttons
         Button {
@@ -323,6 +367,7 @@ fn main_loop() -> Result<(), String> {
         (128.0 * camera.zoom) as u32,
         (32.0 * camera.zoom) as u32,
     );
+    let sprite_698x212 = Rect::new(0, 0, (392) as u32, 212 as u32);
     let sprite_720x480 = Rect::new(0, 0, 720.0 as u32, 480.0 as u32);
 
     // gameplay stuff
@@ -648,14 +693,14 @@ fn main_loop() -> Result<(), String> {
             let position = Point::new(menu_buttons[0].x as i32, menu_buttons[0].y as i32);
             // render text
             let title_text = graphics_utils::get_text(
-                "Terrant: Cult of Plasma".to_string(),
+                "Tales of Terrant: Cult of Plasma Ocean".to_string(),
                 Color::RGBA(255, 255, 255, 255),
                 desc_font_size,
                 &font,
                 &texture_creator,
             )
             .unwrap();
-            let position = Point::new((SCREEN_WIDTH / 2 - 120) as i32, 16 as i32);
+            let position = Point::new((SCREEN_WIDTH / 2 - 185) as i32, 16 as i32);
             let text_margin = 4;
             graphics_utils::render_text(
                 &mut canvas,
@@ -934,12 +979,134 @@ fn main_loop() -> Result<(), String> {
                 ratio_x,
                 ratio_y,
             );
+            // wiki text
             graphics_utils::render(
                 &mut canvas,
                 &wiki_text_background,
                 Point::new(16, 16),
-                sprite_158x212,
+                sprite_698x212,
                 1.0,
+                ratio_x,
+                ratio_y,
+            );
+            // wiki texts
+            let vector = &wiki_texts[wiki_index];
+            let mut line_number = 0;
+            for line in vector.iter() {
+                let mut header_factor = 0;
+                line_number += 1;
+                let mut l = line.clone().to_string();
+                let mut wiki_text: Option<graphics_utils::Text> = None;
+                let mut retained_l = l.clone();
+                retained_l.retain(|x| x != '#');
+                if &l[..2] == "##" {
+                    wiki_text = graphics_utils::get_text(
+                        retained_l,
+                        Color::RGBA(255, 255, 255, 255),
+                        wiki_h1_font_size,
+                        &wiki_h1_font,
+                        &texture_creator,
+                    );
+                    header_factor = 1;
+                } else if &l[..1] == "#" {
+                    wiki_text = graphics_utils::get_text(
+                        retained_l,
+                        Color::RGBA(255, 255, 255, 255),
+                        wiki_h1_font_size,
+                        &wiki_h1_font,
+                        &texture_creator,
+                    );
+                    header_factor = 1;
+                } else {
+                    wiki_text = graphics_utils::get_text(
+                        l,
+                        Color::RGBA(255, 255, 255, 255),
+                        wiki_text_font_size,
+                        &wiki_text_font,
+                        &texture_creator,
+                    );
+                }
+                let position =
+                    Point::new(32 as i32 - header_factor * 8, 8 as i32 + line_number * 14);
+                let w_text = wiki_text.unwrap();
+                graphics_utils::render_text(
+                    &mut canvas,
+                    &w_text.text_texture,
+                    position,
+                    w_text.text_sprite,
+                    ratio_x,
+                    ratio_y,
+                );
+            }
+            for button in wiki_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &ui_button_hovered_texture,
+                        position,
+                        sprite_32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &ui_button_pressed_texture,
+                        position,
+                        sprite_32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &ui_button_texture,
+                        position,
+                        sprite_32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+
+            let forward_text = graphics_utils::get_text(
+                "->".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let back_text = graphics_utils::get_text(
+                "<-".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(wiki_buttons[0].x as i32 + 4, wiki_buttons[0].y as i32 + 4);
+            graphics_utils::render_text(
+                &mut canvas,
+                &back_text.text_texture,
+                position,
+                back_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let position = Point::new(wiki_buttons[1].x as i32 + 4, wiki_buttons[1].y as i32 + 4);
+            graphics_utils::render_text(
+                &mut canvas,
+                &forward_text.text_texture,
+                position,
+                back_text.text_sprite,
                 ratio_x,
                 ratio_y,
             );
@@ -1022,6 +1189,18 @@ fn main_loop() -> Result<(), String> {
                 settings_menu_on = false;
                 manual_menu_on = false;
             }
+            if wiki_buttons[0].status == ButtonStatus::Released {
+                if wiki_index > 0 {
+                    wiki_index -= 1;
+                }
+            }
+            if wiki_buttons[1].status == ButtonStatus::Released {
+                if wiki_index < wiki_texts.len() - 1 {
+                    wiki_index += 1;
+                }
+            }
+
+            // main loop no menus
         } else {
             /*if up {
                 camera.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
