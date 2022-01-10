@@ -1,8 +1,10 @@
 extern crate websocket;
 use crate::graphics_utils;
+use std::sync::{Arc, Mutex};
 
 use bincode;
-
+extern crate ears;
+use crate::client::ears::AudioTags;
 use crate::client_structs;
 use crate::client_structs::{ClientPacket, Player};
 use crate::graphics_utils::{Button, ButtonStatus, Camera, MoveDirection};
@@ -10,11 +12,14 @@ use crate::world_structs::{
     ActionType, CategoryType, Chunk, Entity, EntityType, ItemType, ReligionType, TaskType,
     TileType, World, WorldData, HATCH_TIME,
 };
+use ears::{AudioController, Music, Sound};
 use lerp::Lerp;
 use rand::Rng;
+
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, LoadSurface, LoadTexture};
 use sdl2::keyboard::Keycode;
+use sdl2::mixer::{InitFlag as AudioInitFlag, AUDIO_S16LSB, DEFAULT_CHANNELS};
 use sdl2::mouse::MouseState;
 use sdl2::mouse::MouseWheelDirection;
 use sdl2::pixels::Color;
@@ -23,6 +28,7 @@ use sdl2::render::{BlendMode, Texture, TextureCreator, WindowCanvas};
 use sdl2::surface::Surface;
 use sdl2::ttf::Font;
 use sdl2::video::FullscreenType;
+use sdl2::Sdl;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -32,6 +38,7 @@ use std::io::stdin;
 use std::io::{Read, Write};
 use std::iter::FromIterator;
 use std::option::Option;
+use std::path::Path;
 use std::pin::Pin;
 use std::str::from_utf8;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -49,14 +56,13 @@ const DRONE_ANIMATION_SPEED: u128 = 25;
 const QUEEN_ANIMATION_SPEED: u128 = 25;
 const SOLDIER_ANIMATION_SPEED: u128 = 25;
 const MECHANT_ANIMATION_SPEED: u128 = 25;
-const PLAYER_ANIMATION_SPEED: u128 = 50;
+const PLAYER_ANIMATION_SPEED: u128 = 200;
 const WATER_ANIMATION_SPEED: u128 = 800;
 const ANIMATION_RANDOM: u128 = 50;
 const CAMERA_BUFFER_TOP: f32 = 64.0;
 const CAMERA_BUFFER_LEFT: f32 = 96.0;
 const CAMERA_BUFFER_RIGHT: f32 = 96.0;
 const CAMERA_BUFFER_BOTTOM: f32 = 100.0;
-
 fn main_loop() -> Result<(), String> {
     // sdl stuff
     let url = "ws://127.0.0.1:5000";
@@ -77,6 +83,18 @@ fn main_loop() -> Result<(), String> {
     canvas.set_blend_mode(BlendMode::Blend);
 
     let mut rng = rand::thread_rng();
+    // audio
+    let music_path_1 = "music/tribal_hero.flac";
+    let music_path_2 = "music/sundown_of_terrant.flac";
+    let footstep_path = "sound/footstep.flac";
+    let mut songs = vec![
+        Music::new(music_path_1).unwrap(),
+        Music::new(music_path_2).unwrap(),
+    ];
+    let mut player_footstep = Sound::new(footstep_path).unwrap();
+    player_footstep.set_volume(0.7);
+    let songs_len = songs.len();
+    let mut current_song = &mut songs[0];
     let wiki_text_paths = ["text/terrant.md", "text/ants.md"];
     let mut wiki_index = 0;
     let mut wiki_texts = vec![];
@@ -459,6 +477,10 @@ fn main_loop() -> Result<(), String> {
     };
     connect(url, rx, tx_1);
     while running {
+        if !current_song.is_playing() {
+            current_song = &mut songs[rng.gen_range(0..songs_len)];
+            current_song.play();
+        }
         let delta = SystemTime::now().duration_since(compare_time).unwrap();
         let time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -1697,7 +1719,11 @@ fn main_loop() -> Result<(), String> {
                 }
 
                 // render player
-
+                if !player.stopped && player.time % 100 == 0 {
+                    if !player_footstep.is_playing() {
+                        player_footstep.play();
+                    }
+                }
                 let mut tex = &plasmant_texture_side_1;
                 if !player.stopped && (player.time / PLAYER_ANIMATION_SPEED) % 2 == 0 {
                     tex = &plasmant_texture_side_2;
@@ -1706,7 +1732,7 @@ fn main_loop() -> Result<(), String> {
                 if player.dir >= std::f64::consts::PI as f32 * (0.0)
                     && player.dir <= std::f64::consts::PI as f32 * (1.0)
                 {
-                    if !player.stopped && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0 {
+                    if !player.stopped && player.time / (PLAYER_ANIMATION_SPEED) % 2 == 0 {
                         tex = &plasmant_texture_side_1;
                     } else {
                         tex = &plasmant_texture_side_2;
@@ -1714,7 +1740,7 @@ fn main_loop() -> Result<(), String> {
                 } else if player.dir >= std::f64::consts::PI as f32 * (1.0)
                     && player.dir <= std::f64::consts::PI as f32 * (2.0)
                 {
-                    if !player.stopped && player.time / (DRONE_ANIMATION_SPEED) % 2 == 0 {
+                    if !player.stopped && player.time / (PLAYER_ANIMATION_SPEED) % 2 == 0 {
                         tex = &plasmant_texture_side_mirror_2;
                     } else {
                         tex = &plasmant_texture_side_mirror_1;
