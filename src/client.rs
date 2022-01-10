@@ -87,12 +87,17 @@ fn main_loop() -> Result<(), String> {
     let music_path_1 = "music/tribal_hero.flac";
     let music_path_2 = "music/sundown_of_terrant.flac";
     let footstep_path = "sound/footstep.flac";
+    let button_click_path = "sound/button_click.flac";
     let mut songs = vec![
         Music::new(music_path_1).unwrap(),
         Music::new(music_path_2).unwrap(),
     ];
+    let mut sounds_volume = 0.7;
+    let mut song_volume = 0.0;
+    let mut button_click = Sound::new(button_click_path).unwrap();
+    button_click.set_volume(sounds_volume);
     let mut player_footstep = Sound::new(footstep_path).unwrap();
-    player_footstep.set_volume(0.7);
+    player_footstep.set_volume(sounds_volume);
     let songs_len = songs.len();
     let mut current_song = &mut songs[0];
     let wiki_text_paths = ["text/terrant.md", "text/ants.md"];
@@ -124,6 +129,9 @@ fn main_loop() -> Result<(), String> {
     // font stuff
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
     let desc_font_size = 20;
+    let main_title_font_size = 17;
+    let mut main_title_font =
+        ttf_context.load_font("fonts/PixelOperator.ttf", main_title_font_size)?;
     let mut font = ttf_context.load_font("fonts/PixelOperator.ttf", desc_font_size)?;
 
     let hp_font_size = 10;
@@ -180,11 +188,29 @@ fn main_loop() -> Result<(), String> {
     let mut settings_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: 16.0,
-        y: 150.0,
+        x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
+        y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
         width: 128.0,
         height: 32.0,
     }];
+    let mut settings_action_buttons = vec![
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 16.0,
+            y: 16.0,
+            width: 128.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 16.0,
+            y: 60.0,
+            width: 128.0,
+            height: 32.0,
+        },
+    ];
     let mut manual_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
@@ -477,8 +503,9 @@ fn main_loop() -> Result<(), String> {
     };
     connect(url, rx, tx_1);
     while running {
-        if !current_song.is_playing() {
+        if current_song.get_state() == ears::State::Stopped {
             current_song = &mut songs[rng.gen_range(0..songs_len)];
+            current_song.set_volume(song_volume);
             current_song.play();
         }
         let delta = SystemTime::now().duration_since(compare_time).unwrap();
@@ -691,6 +718,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &menu_button_pressed_texture,
@@ -715,10 +746,10 @@ fn main_loop() -> Result<(), String> {
             let position = Point::new(menu_buttons[0].x as i32, menu_buttons[0].y as i32);
             // render text
             let title_text = graphics_utils::get_text(
-                "Tales of Terrant: Cult of Plasma Ocean".to_string(),
+                "Tales of Terrant: The Cult of Plasmic Ocean".to_string(),
                 Color::RGBA(255, 255, 255, 255),
-                desc_font_size,
-                &font,
+                main_title_font_size,
+                &main_title_font,
                 &texture_creator,
             )
             .unwrap();
@@ -859,6 +890,103 @@ fn main_loop() -> Result<(), String> {
                 ratio_x,
                 ratio_y,
             );
+            for button in settings_action_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+            for button in settings_action_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+            let position = Point::new(
+                settings_action_buttons[0].x as i32 + 4,
+                settings_action_buttons[0].y as i32 + 4,
+            );
+            let text_margin = 4;
+            let back_text = graphics_utils::get_text(
+                "Music".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+
+            graphics_utils::render_text(
+                &mut canvas,
+                &back_text.text_texture,
+                position,
+                back_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let position = Point::new(
+                settings_action_buttons[1].x as i32 + 4,
+                settings_action_buttons[1].y as i32 + 4,
+            );
+            let text_margin = 4;
+            let back_text = graphics_utils::get_text(
+                "Sounds".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+
+            graphics_utils::render_text(
+                &mut canvas,
+                &back_text.text_texture,
+                position,
+                back_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            if settings_action_buttons[0].status == ButtonStatus::Released {
+                if current_song.is_playing() {
+                    current_song.pause();
+                } else {
+                    current_song.play();
+                }
+            }
+            if settings_action_buttons[1].status == ButtonStatus::Released {
+                if sounds_volume == 0.0 {
+                    sounds_volume = 0.7;
+                } else {
+                    sounds_volume = 0.0;
+                }
+            }
             for button in settings_buttons.iter_mut() {
                 let position = Point::new(button.x as i32, button.y as i32);
                 if button.status == graphics_utils::ButtonStatus::Hovered {
@@ -872,6 +1000,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &menu_button_pressed_texture,
@@ -917,6 +1049,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &menu_button_pressed_texture,
@@ -951,6 +1087,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &menu_button_pressed_texture,
@@ -972,7 +1112,10 @@ fn main_loop() -> Result<(), String> {
                     );
                 }
             }
-            let position = Point::new(settings_buttons[0].x as i32, settings_buttons[0].y as i32);
+            let position = Point::new(
+                settings_buttons[0].x as i32 + 4,
+                settings_buttons[0].y as i32 + 4,
+            );
             let text_margin = 4;
             let back_text = graphics_utils::get_text(
                 "Back".to_string(),
@@ -1073,6 +1216,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &ui_button_pressed_texture,
@@ -1162,6 +1309,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &menu_button_pressed_texture,
@@ -1721,6 +1872,7 @@ fn main_loop() -> Result<(), String> {
                 // render player
                 if !player.stopped && player.time % 100 == 0 {
                     if !player_footstep.is_playing() {
+                        player_footstep.set_volume(sounds_volume);
                         player_footstep.play();
                     }
                 }
@@ -2176,6 +2328,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if political_button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &ui_button_pressed_texture,
@@ -2216,6 +2372,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if religion_button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &ui_button_pressed_texture,
@@ -2257,6 +2417,10 @@ fn main_loop() -> Result<(), String> {
                         ratio_y,
                     );
                 } else if normal_button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
                     graphics_utils::render(
                         &mut canvas,
                         &ui_button_pressed_texture,
@@ -2344,6 +2508,10 @@ fn main_loop() -> Result<(), String> {
             }
         }
         if normal_button.status == graphics_utils::ButtonStatus::Pressed {
+            if !button_click.is_playing() {
+                button_click.set_volume(sounds_volume);
+                button_click.play();
+            }
             map_state = graphics_utils::MapState::Normal;
         } else if political_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Political;

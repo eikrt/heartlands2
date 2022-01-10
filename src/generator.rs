@@ -9,6 +9,12 @@ use simdnoise::*;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+const DRONE_MIN: i32 = 1;
+const DRONE_MAX: i32 = 2;
+const SOLDIER_MIN: i32 = 1;
+const SOLDIER_MAX: i32 = 2;
+const WORKER_MIN: i32 = 1;
+const WORKER_MAX: i32 = 2;
 pub fn generate(
     seed: i32,
     width: usize,
@@ -389,7 +395,7 @@ pub fn generate(
                                 {
                                     point.tile_type = TileType::MudHiveFloor;
 
-                                    for _l in 0..rng.gen_range(2..4) {
+                                    for _l in 0..rng.gen_range(WORKER_MIN..WORKER_MAX) {
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
@@ -420,7 +426,7 @@ pub fn generate(
                                             },
                                         );
                                     }
-                                    for l in 0..rng.gen_range(2..4) {
+                                    for l in 0..rng.gen_range(SOLDIER_MIN..SOLDIER_MAX) {
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
@@ -451,7 +457,7 @@ pub fn generate(
                                             },
                                         );
                                     }
-                                    for _l in 0..rng.gen_range(2..4) {
+                                    for _l in 0..rng.gen_range(DRONE_MIN..DRONE_MAX) {
                                         let id = rng.gen_range(0..999999);
                                         chunk_entities.insert(
                                             id,
