@@ -4,8 +4,8 @@ extern crate websocket;
 use crate::client_structs::ClientPacket;
 use crate::graphics_utils::Camera;
 use crate::world_structs::{
-    ActionType, Biome, CategoryType, Chunk, Entity, EntityType, ItemType, Point, ReligionType,
-    TaskType, TileType, World, WorldData,
+    ActionType, Biome, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType,
+    Point, ReligionType, TaskType, TileType, World, WorldData,
 };
 use serde_json;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -174,6 +174,18 @@ fn process_message(
                 e.y = packet.camera.y
             });
         let player = packet.player;
+        if player.shoot_data.shooting {
+            (*world).write().unwrap().colliders.push(Collider {
+                x: player.shoot_data.mx as f32,
+                y: player.shoot_data.my as f32 - 222.0,
+                life_y: player.shoot_data.my as f32,
+                speed: 16.0,
+                dir: 3.14 / 2.0,
+                collider_type: ColliderType::Meteoroid,
+                hp: 1,
+                lethal: false,
+            });
+        }
         let mut player_in = false;
         for p in &(*world).write().unwrap().players {
             if p.id == player.id {

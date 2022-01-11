@@ -16,6 +16,12 @@ const REPRODUCE_CHANCE: usize = 256;
 const BACKPACKSIZE: u8 = 64;
 const INTERACTION_COOLDOWN: u128 = 10;
 pub const HATCH_TIME: u128 = 10000;
+pub const LETHAL_RANGE: f32 = 16.0;
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(tag = "ColliderType")]
+pub enum ColliderType {
+    Meteoroid,
+}
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "ReligionType")]
 pub enum ReligionType {
@@ -285,6 +291,42 @@ impl Chunk {
     }
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Collider {
+    pub x: f32,
+    pub y: f32,
+    pub hp: i32,
+    pub life_y: f32,
+    pub speed: f32,
+    pub dir: f32,
+    pub collider_type: ColliderType,
+    pub lethal: bool,
+}
+impl Collider {
+    pub fn mov(&mut self) {
+        self.x += self.dir.cos() * self.speed;
+        self.y += self.dir.sin() * self.speed;
+    }
+    pub fn tick(&mut self) {
+        if self.y > self.life_y {
+            self.hp = -1;
+        }
+        if self.y > self.life_y - LETHAL_RANGE {
+            self.lethal = true;
+        }
+    }
+    pub fn collide(&mut self, entity: &mut Entity) {
+        let size = 16.0;
+        if self.lethal
+            && self.x > entity.x
+            && self.x < entity.x + size
+            && self.y > entity.y
+            && self.y < entity.y + size
+        {
+            entity.hp = -1;
+        }
+    }
+}
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct WorldData {
     pub name: String,
     pub sea_level: f32,
@@ -307,11 +349,13 @@ impl Default for WorldData {
         }
     }
 }
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct World {
     pub chunks: Vec<Vec<Chunk>>,
     pub world_data: WorldData,
     pub players: Vec<Player>,
+    pub colliders: Vec<Collider>,
     pub v_x: i32, // slice dimensions for formatting
     pub v_y: i32,
     pub v_w: i32,
@@ -368,10 +412,11 @@ impl World {
             }
         }
         format!(
-            "{{\"chunks\": {}, \"world_data\": {}, \"players\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
+            "{{\"chunks\": {}, \"world_data\": {}, \"players\": {}, \"colliders\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
             serde_json::to_string(&selected_chunks2).unwrap(),
             serde_json::to_string(&self.world_data).unwrap(),
             serde_json::to_string(&self.players).unwrap(),
+            serde_json::to_string(&self.colliders).unwrap(),
             serde_json::to_string(&view_x).unwrap(),
             serde_json::to_string(&view_y).unwrap(),
             serde_json::to_string(&view_width).unwrap(),
@@ -454,6 +499,18 @@ impl World {
         }
     }
     pub fn update_entities(&mut self) {
+        for collider in self.colliders.iter_mut() {
+            collider.mov();
+            collider.tick();
+            for row in self.chunks.iter_mut() {
+                for chunk in row.iter_mut() {
+                    for (key, val) in chunk.entities.iter_mut() {
+                        collider.collide(val);
+                    }
+                }
+            }
+        }
+        self.colliders.retain(|x| x.hp > 0);
         let mut add_entities = HashMap::new();
         for i in 0..self.world_data.width {
             for j in 0..self.world_data.height {

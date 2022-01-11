@@ -860,6 +860,7 @@ pub fn generate(
         },
 
         players: Vec::new(),
+        colliders: Vec::new(),
         v_x: 0,
         v_y: 0,
         v_w: 3,

@@ -2,7 +2,14 @@ use crate::graphics_utils::{Camera, MoveDirection};
 use crate::world_structs::{
     ActionType, CategoryType, EntityType, ItemType, ReligionType, TaskType,
 };
+const METEOROID_TIME: u128 = 200;
 use serde::{Deserialize, Serialize};
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ShootData {
+    pub shooting: bool,
+    pub mx: i32,
+    pub my: i32,
+}
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Player {
     pub x: f32,
@@ -19,6 +26,8 @@ pub struct Player {
     pub faction_id: i32,
     pub backpack_amount: u8,
     pub time: u128,
+    pub shoot_change_1: u128,
+    pub shoot_data: ShootData,
 }
 impl Player {
     pub fn mov(&mut self, dir: MoveDirection, delta: u128) {
@@ -41,12 +50,19 @@ impl Player {
     }
     pub fn tick(&mut self, delta: u128) {
         self.time += 10;
+        self.shoot_change_1 += delta;
     }
     pub fn get_relative_x(&self, camera: &Camera) -> f32 {
         return self.x - camera.x;
     }
     pub fn get_relative_y(&self, camera: &Camera) -> f32 {
         return self.y - camera.y;
+    }
+    pub fn shoot_meteoroid(&mut self, x: i32, y: i32) {
+        if self.shoot_change_1 > METEOROID_TIME {
+            self.shoot_data.shooting = true;
+            self.shoot_change_1 = 0;
+        }
     }
 }
 #[derive(Serialize, Deserialize, Clone)]

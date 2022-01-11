@@ -6,11 +6,11 @@ use bincode;
 extern crate ears;
 use crate::client::ears::AudioTags;
 use crate::client_structs;
-use crate::client_structs::{ClientPacket, Player};
+use crate::client_structs::{ClientPacket, Player, ShootData};
 use crate::graphics_utils::{Button, ButtonStatus, Camera, MoveDirection};
 use crate::world_structs::{
-    ActionType, CategoryType, Chunk, Entity, EntityType, ItemType, ReligionType, TaskType,
-    TileType, World, WorldData, HATCH_TIME,
+    ActionType, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType,
+    ReligionType, TaskType, TileType, World, WorldData, HATCH_TIME,
 };
 use ears::{AudioController, Music, Sound};
 use lerp::Lerp;
@@ -90,6 +90,8 @@ fn main_loop() -> Result<(), String> {
     let footstep_path = "sound/footstep.flac";
     let start_fanfare_path = "sound/start_fanfare.flac";
     let button_click_path = "sound/button_click.flac";
+    let meteoroid_spawn_path = "sound/meteoroid_spawn.flac";
+    let meteoroid_explode_path = "sound/meteoroid_explode.flac";
     let menu_next_path = "sound/menu_next.flac";
     let mut songs = vec![
         Music::new(music_path_1).unwrap(),
@@ -101,6 +103,8 @@ fn main_loop() -> Result<(), String> {
     button_click.set_volume(sounds_volume);
     let mut start_fanfare = Sound::new(start_fanfare_path).unwrap();
     let mut menu_next = Sound::new(menu_next_path).unwrap();
+    let mut meteoroid_spawn = Sound::new(meteoroid_spawn_path).unwrap();
+    let mut meteoroid_explode = Sound::new(meteoroid_explode_path).unwrap();
     let mut player_footstep = Sound::new(footstep_path).unwrap();
     player_footstep.set_volume(sounds_volume);
     let songs_len = songs.len();
@@ -199,8 +203,11 @@ fn main_loop() -> Result<(), String> {
     let mut chunk_fetch_x = -1;
     let mut chunk_fetch_y = -1;
     let mut chunks: Vec<Vec<Chunk>> = Vec::new();
+    let mut green_flashing = false;
+    let green_flashing_time = 2000;
+    let mut green_flashing_change = 0;
     let mut entities: HashMap<i32, Entity> = HashMap::new();
-
+    let mut colliders: Vec<Collider> = Vec::new();
     let mut settings_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
@@ -318,7 +325,9 @@ fn main_loop() -> Result<(), String> {
         width: 32.0,
         height: 32.0,
     };
+    // collider textures
 
+    let meteoroid_texture = texture_creator.load_texture("res/meteoroid.png")?;
     // entity textures
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
@@ -395,6 +404,8 @@ fn main_loop() -> Result<(), String> {
     let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png")?;
     // other texture stuff
     let mut banner_texture = texture_creator.load_texture("res/banner.png")?;
+    // effects
+    let mut green_flash_texture = texture_creator.load_texture("res/green_flash.png")?;
     // description stuff
     let descriptions_for_entities = graphics_utils::get_descriptions_for_entities();
     let descriptions_for_tiles = graphics_utils::get_descriptions_for_tiles();
@@ -452,6 +463,12 @@ fn main_loop() -> Result<(), String> {
         faction_id: 0,
         backpack_amount: 0,
         time: 0,
+        shoot_change_1: 0,
+        shoot_data: ShootData {
+            mx: 0,
+            my: 0,
+            shooting: false,
+        },
     };
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
@@ -639,6 +656,9 @@ fn main_loop() -> Result<(), String> {
                 Event::MouseMotion { .. } => {
                     mouse_not_moved_for = 0;
                 }
+                Event::MouseButtonDown { x, y, .. } => {
+                    player.shoot_meteoroid(x, y);
+                }
                 // WASD
                 Event::KeyUp {
                     keycode: Some(Keycode::W),
@@ -717,6 +737,8 @@ fn main_loop() -> Result<(), String> {
             - margin_x as f32) as f32;
         let mouse_y = (((mouse_state.y() as f32 + camera.y) / camera.zoom * ratio_y)
             - margin_y as f32) as f32;
+        let mouse_x_unscaled = (camera.x / ratio_x + mouse_state.x() as f32) * ratio_x;
+        let mouse_y_unscaled = (camera.y / ratio_y + mouse_state.y() as f32) * ratio_y;
         let mx = mouse_state.x() as f32 * ratio_x;
         let my = mouse_state.y() as f32 * ratio_y;
         if banner_on {
@@ -1482,10 +1504,19 @@ fn main_loop() -> Result<(), String> {
             // tick
             player.tick(delta_as_millis);
             // get entities and chunks from server
+
+            if player.shoot_data.shooting {
+                player.shoot_data.mx = mouse_x_unscaled as i32;
+                player.shoot_data.my = mouse_y_unscaled as i32;
+            }
             let packet = ClientPacket {
                 player: player.clone(),
                 camera: camera.clone(),
             };
+            if player.shoot_data.shooting {
+                meteoroid_spawn.play();
+                player.shoot_data.shooting = false;
+            }
             let encoded: Vec<u8> = bincode::serialize(&packet).unwrap();
             //let decoded: ClientPacket = bincode::deserialize(&encoded).unwrap();
 
@@ -1501,6 +1532,7 @@ fn main_loop() -> Result<(), String> {
                     let world_from: World = serde_json::from_str(cut_string).unwrap();
                     chunks = world_from.chunks;
                     world_data = world_from.world_data;
+                    colliders = world_from.colliders;
                 }
                 Err(e) => (),
             }
@@ -1588,7 +1620,31 @@ fn main_loop() -> Result<(), String> {
                         }
                     }
                 }
-
+                if green_flashing {
+                    green_flashing_change += delta_as_millis;
+                    graphics_utils::render(
+                        &mut canvas,
+                        &green_flash_texture,
+                        Point::new(0, 0),
+                        sprite_426x240,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    if green_flashing_change > green_flashing_time {
+                        green_flashing = false;
+                        green_flashing_change = 0;
+                    }
+                }
+                // remove entities and colliders
+                for collider in colliders.iter() {
+                    if collider.lethal {
+                        green_flashing = true;
+                        if !meteoroid_explode.is_playing() {
+                            meteoroid_explode.play();
+                        }
+                    }
+                }
                 //render entities
                 for i in 0..chunks.len() {
                     for j in 0..chunks[i].len() {
@@ -1954,7 +2010,26 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
-
+                for collider in colliders.iter() {
+                    if collider.hp < 0 {
+                        continue;
+                    }
+                    let tx_c = (collider.x) * camera.zoom - camera.x;
+                    let ty_c = (collider.y) * camera.zoom - camera.y;
+                    if collider.collider_type == ColliderType::Meteoroid {
+                        let position = Point::new(tx_c as i32, ty_c as i32);
+                        let mut tex = &meteoroid_texture;
+                        graphics_utils::render(
+                            &mut canvas,
+                            &tex,
+                            position,
+                            sprite_8,
+                            camera.zoom,
+                            ratio_x,
+                            ratio_y,
+                        );
+                    }
+                }
                 // render hover
                 let mut hovered_tiletype = TileType::Grass;
                 let mut hovered_tile: std::option::Option<crate::world_structs::Point> = None;
@@ -1974,8 +2049,6 @@ fn main_loop() -> Result<(), String> {
                             }
                         }
                     }
-                    let mouse_x_unscaled = (camera.x / ratio_x + mouse_state.x() as f32) * ratio_x;
-                    let mouse_y_unscaled = (camera.y / ratio_y + mouse_state.y() as f32) * ratio_y;
                     let tile_x = (((mouse_x_unscaled) / TILE_SIZE) as f32).floor();
                     let tile_y = (((mouse_y_unscaled) / TILE_SIZE) as f32).floor();
                     for i in 0..chunks.len() {
