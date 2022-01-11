@@ -656,8 +656,13 @@ fn main_loop() -> Result<(), String> {
                 Event::MouseMotion { .. } => {
                     mouse_not_moved_for = 0;
                 }
-                Event::MouseButtonDown { x, y, .. } => {
-                    player.shoot_meteoroid(x, y);
+                Event::MouseButtonDown {
+                    x, y, mouse_btn, ..
+                } => {
+                    if mouse_btn == sdl2::mouse::MouseButton::Middle {
+                        player.shoot_meteoroid(x, y);
+                    } else if mouse_btn == sdl2::mouse::MouseButton::Right {
+                    }
                 }
                 // WASD
                 Event::KeyUp {
