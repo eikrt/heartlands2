@@ -174,7 +174,15 @@ fn process_message(
                 e.y = packet.camera.y
             });
         let player = packet.player;
-        (*world).write().unwrap().players.push(player);
+        let mut player_in = false;
+        for p in &(*world).write().unwrap().players {
+            if p.id == player.id {
+                player_in = true;
+            }
+        }
+        if player_in {
+            (*world).write().unwrap().players.push(player);
+        }
         // client_states.write().unwrap().entry(id.unwrap().y = camera.y;
     }
     /*if let OwnedMessage::Text(ref txt) = *msg {

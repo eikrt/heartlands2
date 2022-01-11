@@ -49,6 +49,7 @@ use websocket::{Message, OwnedMessage};
 const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
 const HUD_LOC: u32 = 336;
+const MAP_UI_LOC: u32 = 336;
 
 const TILE_SIZE: f32 = 16.0;
 const WORKER_ANIMATION_SPEED: u128 = 25;
@@ -56,7 +57,7 @@ const DRONE_ANIMATION_SPEED: u128 = 25;
 const QUEEN_ANIMATION_SPEED: u128 = 25;
 const SOLDIER_ANIMATION_SPEED: u128 = 25;
 const MECHANT_ANIMATION_SPEED: u128 = 25;
-const PLAYER_ANIMATION_SPEED: u128 = 200;
+const PLAYER_ANIMATION_SPEED: u128 = 100;
 const WATER_ANIMATION_SPEED: u128 = 800;
 const ANIMATION_RANDOM: u128 = 50;
 const CAMERA_BUFFER_TOP: f32 = 64.0;
@@ -100,7 +101,18 @@ fn main_loop() -> Result<(), String> {
     player_footstep.set_volume(sounds_volume);
     let songs_len = songs.len();
     let mut current_song = &mut songs[0];
-    let wiki_text_paths = ["text/terrant.md", "text/ants.md"];
+    let wiki_text_paths = [
+        "text/terrant.md",
+        "text/desert.md",
+        "text/forest.md",
+        "text/grasslands.md",
+        "text/mediterraean.md",
+        "text/red_desert.md",
+        "text/savannah.md",
+        "text/taiga.md",
+        "text/tundra.md",
+        "text/ants.md",
+    ];
     let mut wiki_index = 0;
     let mut wiki_texts = vec![];
     let mut wiki_text_contents: Vec<Vec<String>> = vec![];
@@ -118,7 +130,6 @@ fn main_loop() -> Result<(), String> {
             wiki_texts.push(wiki_text_lines.clone());
         }
     }
-    println!("{:?}", wiki_text_contents);
     //canvas.window_mut().set_fullscreen(FullscreenType::True);
 
     // canvas.window_mut().set_size(500, 500);
@@ -169,6 +180,7 @@ fn main_loop() -> Result<(), String> {
     let mut zoom_button_minus = false;
     let mut event_pump = sdl_context.event_pump()?;
     let mut compare_time = SystemTime::now();
+    let mut client_time: u128 = 0;
     let mut update_data = true;
     let mut world_data: WorldData = WorldData {
         ..Default::default()
@@ -281,15 +293,15 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: 4 as f32,
-        y: (SCREEN_HEIGHT - 32 - 8) as f32,
+        y: (SCREEN_HEIGHT - 22 - 8 - 128) as f32,
         width: 32.0,
         height: 32.0,
     };
     let mut political_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: 4.0 + 32.0 + 4.0,
-        y: (SCREEN_HEIGHT - 32 - 8) as f32,
+        x: 4.0,
+        y: (SCREEN_HEIGHT - 22 - 8 - 92) as f32,
         width: 32.0,
         height: 32.0,
     };
@@ -297,8 +309,8 @@ fn main_loop() -> Result<(), String> {
     let mut religion_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
-        x: 4.0 + 64.0 + 8.0,
-        y: (SCREEN_HEIGHT - 32 - 8) as f32,
+        x: 4.0,
+        y: (SCREEN_HEIGHT - 22 - 64) as f32,
         width: 32.0,
         height: 32.0,
     };
@@ -375,6 +387,7 @@ fn main_loop() -> Result<(), String> {
 
     // hud textures
     let mut hud_texture = texture_creator.load_texture("res/hud.png")?;
+    let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png")?;
     // other texture stuff
 
     // description stuff
@@ -390,6 +403,7 @@ fn main_loop() -> Result<(), String> {
         (10.0 * camera.zoom) as u32,
     );
     let sprite_426x48 = Rect::new(0, 0, (426.0) as u32, (48.0) as u32);
+    let sprite_64x112 = Rect::new(0, 0, (48.0) as u32, (112.0) as u32);
     let sprite_158x212 = Rect::new(0, 0, (158.0) as u32, (212.0) as u32);
     let sprite_2x5 = Rect::new(0, 0, (2.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
     let sprite_8 = Rect::new(0, 0, (8.0 * camera.zoom) as u32, (8.0 * camera.zoom) as u32);
@@ -517,8 +531,10 @@ fn main_loop() -> Result<(), String> {
 
         let delta_as_millis = delta.as_millis();
         if delta.as_millis() / 10 != 0 {
-            //   println!("FPS: {}", 100 / (delta.as_millis()/10));
+            //println!("FPS: {}", 100 / (delta.as_millis() / 10));
+            //println!("{}", delta_as_millis);
         }
+        client_time += delta_as_millis;
         mouse_not_moved_for += delta_as_millis;
         canvas.set_draw_color(bg_color);
         canvas.clear();
@@ -753,7 +769,7 @@ fn main_loop() -> Result<(), String> {
                 &texture_creator,
             )
             .unwrap();
-            let position = Point::new((SCREEN_WIDTH / 2 - 185) as i32, 16 as i32);
+            let position = Point::new((SCREEN_WIDTH / 2 - 175) as i32, 16 as i32);
             let text_margin = 4;
             graphics_utils::render_text(
                 &mut canvas,
@@ -1452,7 +1468,7 @@ fn main_loop() -> Result<(), String> {
                     break;
                 }
             }
-            match rx_w.try_recv() {
+            match rx_w.recv() {
                 Ok(w) => {
                     let cut_string = &w.as_str()[6..w.len() - 2].replace("\\", "");
                     let world_from: World = serde_json::from_str(cut_string).unwrap();
@@ -1877,7 +1893,7 @@ fn main_loop() -> Result<(), String> {
                     }
                 }
                 let mut tex = &plasmant_texture_side_1;
-                if !player.stopped && (player.time / PLAYER_ANIMATION_SPEED) % 2 == 0 {
+                if !player.stopped && (client_time / PLAYER_ANIMATION_SPEED) % 2 == 0 {
                     tex = &plasmant_texture_side_2;
                 }
 
@@ -2220,6 +2236,16 @@ fn main_loop() -> Result<(), String> {
                 }
                 // render ui
 
+                /*let position = Point::new(0 as i32, 112 as i32);
+                graphics_utils::render(
+                    &mut canvas,
+                    &map_ui_texture,
+                    position,
+                    sprite_64x112,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );*/
                 let position = Point::new(0 as i32, 192 as i32);
                 graphics_utils::render(
                     &mut canvas,
@@ -2519,7 +2545,7 @@ fn main_loop() -> Result<(), String> {
             map_state = graphics_utils::MapState::Religion;
         }
         canvas.present();
-        thread::sleep(time::Duration::from_millis(10));
+        thread::sleep(time::Duration::from_millis(1));
     }
 
     println!("Socket connection ended.");

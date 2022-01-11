@@ -1,0 +1,3 @@
+# Mediterraean
+  
+smoke weed everyday

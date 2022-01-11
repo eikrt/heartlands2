@@ -167,7 +167,7 @@ pub fn generate(
     let village_threshold = 0.8;
     let city_threshold = 0.7;
 
-    let village_building_threshold = 0.1;
+    let village_building_threshold = 0.5;
     let _city_building_threshold = 0.1;
     let river_threshhold = 0.5;
     let apply_seas = true;
