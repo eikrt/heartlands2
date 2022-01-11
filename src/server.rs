@@ -181,6 +181,15 @@ fn process_message(
             }
         }
         if player_in {
+            let index = (*world)
+                .write()
+                .unwrap()
+                .players
+                .iter()
+                .position(|r| r.id == player.id)
+                .unwrap();
+            (*world).write().unwrap().players[index] = player;
+        } else {
             (*world).write().unwrap().players.push(player);
         }
         // client_states.write().unwrap().entry(id.unwrap().y = camera.y;

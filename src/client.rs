@@ -70,7 +70,7 @@ fn main_loop() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let mut window = video_subsystem
-        .window("Mechants", SCREEN_WIDTH, SCREEN_HEIGHT)
+        .window("Tales of Terrant", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
         .resizable()
         .build()
@@ -88,7 +88,9 @@ fn main_loop() -> Result<(), String> {
     let music_path_1 = "music/tribal_hero.flac";
     let music_path_2 = "music/sundown_of_terrant.flac";
     let footstep_path = "sound/footstep.flac";
+    let start_fanfare_path = "sound/start_fanfare.flac";
     let button_click_path = "sound/button_click.flac";
+    let menu_next_path = "sound/menu_next.flac";
     let mut songs = vec![
         Music::new(music_path_1).unwrap(),
         Music::new(music_path_2).unwrap(),
@@ -97,6 +99,8 @@ fn main_loop() -> Result<(), String> {
     let mut song_volume = 0.0;
     let mut button_click = Sound::new(button_click_path).unwrap();
     button_click.set_volume(sounds_volume);
+    let mut start_fanfare = Sound::new(start_fanfare_path).unwrap();
+    let mut menu_next = Sound::new(menu_next_path).unwrap();
     let mut player_footstep = Sound::new(footstep_path).unwrap();
     player_footstep.set_volume(sounds_volume);
     let songs_len = songs.len();
@@ -314,6 +318,7 @@ fn main_loop() -> Result<(), String> {
         width: 32.0,
         height: 32.0,
     };
+
     // entity textures
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
@@ -389,7 +394,7 @@ fn main_loop() -> Result<(), String> {
     let mut hud_texture = texture_creator.load_texture("res/hud.png")?;
     let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png")?;
     // other texture stuff
-
+    let mut banner_texture = texture_creator.load_texture("res/banner.png")?;
     // description stuff
     let descriptions_for_entities = graphics_utils::get_descriptions_for_entities();
     let descriptions_for_tiles = graphics_utils::get_descriptions_for_tiles();
@@ -427,6 +432,7 @@ fn main_loop() -> Result<(), String> {
     );
     let sprite_698x212 = Rect::new(0, 0, (392) as u32, 212 as u32);
     let sprite_720x480 = Rect::new(0, 0, 720.0 as u32, 480.0 as u32);
+    let sprite_426x240 = Rect::new(0, 0, 426.0 as u32, 240.0 as u32);
 
     // gameplay stuff
 
@@ -449,6 +455,7 @@ fn main_loop() -> Result<(), String> {
     };
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
+    let mut banner_on = true;
     let mut settings_menu_on = false;
     let mut manual_menu_on = false;
     let mut chunk_graphics_data: HashMap<String, Color> = HashMap::new();
@@ -516,6 +523,7 @@ fn main_loop() -> Result<(), String> {
         });
     };
     connect(url, rx, tx_1);
+    start_fanfare.play();
     while running {
         if current_song.get_state() == ears::State::Stopped {
             current_song = &mut songs[rng.gen_range(0..songs_len)];
@@ -543,13 +551,16 @@ fn main_loop() -> Result<(), String> {
         //
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
+                Event::Quit { .. } => {
+                    running = false;
+                }
+                Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => {
-                    running = false;
+                    main_menu_on = true;
                 }
+
                 // WASD
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
@@ -611,7 +622,13 @@ fn main_loop() -> Result<(), String> {
                 } => {
                     zoom_button_minus = true;
                 }
-
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => {
+                    menu_next.play();
+                    banner_on = false;
+                }
                 Event::MouseWheel { x, y, .. } => {
                     if y > 0 {
                         zoom_button_minus = true;
@@ -702,7 +719,17 @@ fn main_loop() -> Result<(), String> {
             - margin_y as f32) as f32;
         let mx = mouse_state.x() as f32 * ratio_x;
         let my = mouse_state.y() as f32 * ratio_y;
-        if main_menu_on {
+        if banner_on {
+            graphics_utils::render(
+                &mut canvas,
+                &banner_texture,
+                Point::new(0, 0),
+                sprite_426x240,
+                1.0,
+                ratio_x,
+                ratio_y,
+            );
+        } else if main_menu_on {
             //render menu background
             graphics_utils::render(
                 &mut canvas,
@@ -1468,7 +1495,7 @@ fn main_loop() -> Result<(), String> {
                     break;
                 }
             }
-            match rx_w.recv() {
+            match rx_w.try_recv() {
                 Ok(w) => {
                     let cut_string = &w.as_str()[6..w.len() - 2].replace("\\", "");
                     let world_from: World = serde_json::from_str(cut_string).unwrap();
