@@ -2082,12 +2082,59 @@ fn main_loop() -> Result<(), String> {
 
                 // collide props
                 for prop in props.iter() {
-                    if player.x > prop.x
-                        && player.x < prop.x + 16.0
-                        && player.y + player.speed * delta_as_millis as f32 / 100.0 > prop.y
-                        && player.y < prop.y + 16.0
+                    let p = &prop;
+                    let player_x_left = player.x;
+                    let player_x_right = player.x + ENTITY_SIZE;
+                    let player_y_up = player.y;
+                    let player_y_down = player.y + ENTITY_SIZE;
+
+                    if player.x + ENTITY_SIZE / 2.0 > p.x
+                        && player.x + ENTITY_SIZE / 2.0 < p.x + TILE_SIZE
+                        && player_y_up - player.speed * delta_as_millis as f32 / 100.0 > p.y
+                        && player_y_up - player.speed * delta_as_millis as f32 / 100.0
+                            < p.y + TILE_SIZE
                     {
-                        // up_collision = true;
+                        if p.prop_type == PropType::Raft {
+                            up_collision = false;
+                        } else {
+                            up_collision = true;
+                        }
+                    }
+                    if player.x + ENTITY_SIZE / 2.0 > p.x
+                        && player.x + ENTITY_SIZE / 2.0 < p.x + TILE_SIZE
+                        && player_y_down + player.speed * delta_as_millis as f32 / 100.0 > p.y
+                        && player_y_down + player.speed * delta_as_millis as f32 / 100.0
+                            < p.y + TILE_SIZE
+                    {
+                        if p.prop_type == PropType::Raft {
+                            down_collision = false;
+                        } else {
+                            down_collision = true;
+                        }
+                    }
+                    if player_x_left - player.speed * delta_as_millis as f32 / 100.0 > p.x
+                        && player_x_left - player.speed * delta_as_millis as f32 / 100.0
+                            < p.x + TILE_SIZE
+                        && player.y + ENTITY_SIZE / 2.0 > p.y
+                        && player.y + ENTITY_SIZE / 2.0 < p.y + TILE_SIZE
+                    {
+                        if p.prop_type == PropType::Raft {
+                            left_collision = false;
+                        } else {
+                            left_collision = true;
+                        }
+                    }
+                    if player_x_right + player.speed * delta_as_millis as f32 / 100.0 > p.x
+                        && player_x_right + player.speed * delta_as_millis as f32 / 100.0
+                            < p.x + TILE_SIZE
+                        && player.y + ENTITY_SIZE / 2.0 > p.y
+                        && player.y + ENTITY_SIZE / 2.0 < p.y + TILE_SIZE
+                    {
+                        if p.prop_type == PropType::Raft {
+                            right_collision = false;
+                        } else {
+                            right_collision = true;
+                        }
                     }
                 }
                 // render player
