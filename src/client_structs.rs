@@ -3,6 +3,9 @@ use crate::world_structs::{
     ActionType, CategoryType, EntityType, ItemType, ReligionType, TaskType,
 };
 const METEOROID_TIME: u128 = 200;
+const METEOROID_COST: i32 = 20;
+const RAFT_COST: i32 = 50;
+const SIPHON_COST: i32 = 0;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ShootData {
@@ -60,15 +63,24 @@ impl Player {
         return self.y - camera.y;
     }
     pub fn shoot_meteoroid(&mut self, x: i32, y: i32) {
-        if self.shoot_change_1 > METEOROID_TIME {
+        if self.energy - METEOROID_COST >= 0 && self.shoot_change_1 > METEOROID_TIME {
             self.shoot_data.shooting = true;
             self.shoot_change_1 = 0;
+            self.energy -= METEOROID_COST;
         }
     }
     pub fn build_raft(&mut self, x: i32, y: i32) {
-        if self.shoot_change_1 > METEOROID_TIME {
+        if self.energy - RAFT_COST >= 0 && self.shoot_change_1 > METEOROID_TIME {
             self.shoot_data.shooting = true;
             self.shoot_change_1 = 0;
+            self.energy -= RAFT_COST;
+        }
+    }
+    pub fn build_soul_trap(&mut self, x: i32, y: i32) {
+        if self.energy - SIPHON_COST >= 0 && self.shoot_change_1 > METEOROID_TIME {
+            self.shoot_data.shooting = true;
+            self.shoot_change_1 = 0;
+            self.energy -= SIPHON_COST;
         }
     }
 }
@@ -81,5 +93,6 @@ pub struct ClientPacket {
 pub enum PlayerAction {
     Meteoroid,
     Raft,
+    Siphon,
     Nothing,
 }

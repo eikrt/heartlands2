@@ -300,6 +300,14 @@ fn main_loop() -> Result<(), String> {
     ];
     let mut action_icon_buttons: Vec<Button> = vec![
         Button {
+            status: graphics_utils::ButtonStatus::Hovered, //
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 4.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
             x: 4.0,
@@ -310,7 +318,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
-            x: 4.0,
+            x: 20.0,
             y: SCREEN_HEIGHT as f32 - 44.0,
             width: 11.0,
             height: 11.0,
@@ -348,6 +356,7 @@ fn main_loop() -> Result<(), String> {
     // collider textures
 
     let meteoroid_texture = texture_creator.load_texture("res/meteoroid.png")?;
+    let soul_trap_texture = texture_creator.load_texture("res/soul_trap.png")?;
     // prop textures
     let raft_texture = texture_creator.load_texture("res/raft.png")?;
     // entity textures
@@ -429,6 +438,7 @@ fn main_loop() -> Result<(), String> {
         texture_creator.load_texture("res/action_icon_button_pressed.png")?;
     let mut raft_icon_texture = texture_creator.load_texture("res/raft_icon.png")?;
     let mut meteoroid_icon_texture = texture_creator.load_texture("res/meteoroid_icon.png")?;
+    let mut siphon_icon_texture = texture_creator.load_texture("res/siphon_icon.png")?;
 
     // hud textures
     let mut hud_texture = texture_creator.load_texture("res/hud.png")?;
@@ -708,6 +718,9 @@ fn main_loop() -> Result<(), String> {
                         } else if player_action.clone() == PlayerAction::Raft {
                             // player.build_bridge
                             player.build_raft(x, y);
+                        } else if player_action.clone() == PlayerAction::Siphon {
+                            // player.build_bridge
+                            player.build_soul_trap(x, y);
                         }
                     } else if mouse_btn == sdl2::mouse::MouseButton::Right {
                     }
@@ -2059,6 +2072,19 @@ fn main_loop() -> Result<(), String> {
                             ratio_y,
                         );
                     }
+                    if collider.collider_type == ColliderType::SoulTrap {
+                        let position = Point::new(tx_c as i32, ty_c as i32);
+                        let mut tex = &soul_trap_texture;
+                        graphics_utils::render(
+                            &mut canvas,
+                            &tex,
+                            position,
+                            sprite_8,
+                            camera.zoom,
+                            ratio_x,
+                            ratio_y,
+                        );
+                    }
                 }
 
                 // render props
@@ -2572,7 +2598,7 @@ fn main_loop() -> Result<(), String> {
                 let render_rect = Rect::new(
                     (position.x as f32) as i32,
                     (position.y as f32) as i32,
-                    ((1.0.lerp(64.0, player.hp as f32 / 100.0)) / ratio_x) as u32,
+                    ((1.0.lerp(64.0, player.energy as f32 / 100.0)) / ratio_x) as u32,
                     (8.0 / ratio_y) as u32,
                 );
 
@@ -2629,9 +2655,11 @@ fn main_loop() -> Result<(), String> {
                         );
                     }
                 }
-                if action_icon_buttons[1].status == ButtonStatus::Released {
+                if action_icon_buttons[0].status == ButtonStatus::Released {
+                    player_action = PlayerAction::Siphon;
+                } else if action_icon_buttons[2].status == ButtonStatus::Released {
                     player_action = PlayerAction::Meteoroid;
-                } else if action_icon_buttons[0].status == ButtonStatus::Released {
+                } else if action_icon_buttons[1].status == ButtonStatus::Released {
                     player_action = PlayerAction::Raft;
                 }
                 // raft icon
@@ -2642,7 +2670,20 @@ fn main_loop() -> Result<(), String> {
                 // meteoroid icon
                 graphics_utils::render(
                     &mut canvas,
-                    &raft_icon_texture,
+                    &siphon_icon_texture,
+                    position,
+                    sprite_8,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );
+                let position = Point::new(
+                    action_icon_buttons[2].x as i32 + 2,
+                    action_icon_buttons[2].y as i32 + 2,
+                );
+                graphics_utils::render(
+                    &mut canvas,
+                    &meteoroid_icon_texture,
                     position,
                     sprite_8,
                     1.0,
@@ -2655,7 +2696,7 @@ fn main_loop() -> Result<(), String> {
                 );
                 graphics_utils::render(
                     &mut canvas,
-                    &meteoroid_icon_texture,
+                    &raft_icon_texture,
                     position,
                     sprite_8,
                     1.0,

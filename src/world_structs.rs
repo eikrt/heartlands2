@@ -27,6 +27,7 @@ pub enum PropType {
 #[serde(tag = "ColliderType")]
 pub enum ColliderType {
     Meteoroid,
+    SoulTrap,
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "ReligionType")]
@@ -313,6 +314,7 @@ pub struct Collider {
     pub dir: f32,
     pub collider_type: ColliderType,
     pub lethal: bool,
+    pub owner_id: i32,
 }
 impl Collider {
     pub fn mov(&mut self) {
@@ -327,16 +329,26 @@ impl Collider {
             self.lethal = true;
         }
     }
-    pub fn collide(&mut self, entity: &mut Entity) {
+    pub fn collide(&mut self, entity: &mut Entity) -> String {
         let size = 16.0;
-        if self.lethal
-            && self.x > entity.x
+        if self.x > entity.x
             && self.x < entity.x + size
             && self.y > entity.y
             && self.y < entity.y + size
         {
-            entity.hp = -1;
+            if self.lethal {
+                if self.collider_type == ColliderType::Meteoroid {
+                    entity.hp = -1;
+                    return "killed".to_string();
+                }
+            }
+            if self.collider_type == ColliderType::SoulTrap {
+                entity.hp = -1;
+                self.hp = -1;
+                return "soul gathered".to_string();
+            }
         }
+        return "success".to_string();
     }
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]

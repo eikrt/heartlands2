@@ -183,6 +183,7 @@ fn process_message(
                     speed: 16.0,
                     dir: 3.14 / 2.0,
                     collider_type: ColliderType::Meteoroid,
+                    owner_id: player.id,
                     hp: 1,
                     lethal: false,
                 });
@@ -192,6 +193,18 @@ fn process_message(
                 x: (player.shoot_data.mx as f32 / 16.0).floor() * 16.0,
                 y: (player.shoot_data.my as f32 / 16.0).floor() * 16.0,
                 prop_type: PropType::Raft,
+            });
+        } else if player.shoot_data.action_type == PlayerAction::Siphon {
+            (*world).write().unwrap().colliders.push(Collider {
+                x: player.shoot_data.mx as f32,
+                y: player.shoot_data.my as f32,
+                life_y: player.shoot_data.my as f32 + 50.0,
+                speed: 0.0,
+                dir: 3.14 / 2.0,
+                collider_type: ColliderType::SoulTrap,
+                owner_id: player.id,
+                hp: 1,
+                lethal: false,
             });
         }
         let mut player_in = false;
