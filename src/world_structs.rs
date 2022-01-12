@@ -9,6 +9,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::fmt;
 const TARGET_SIZE: f32 = 8.0;
+const PROP_SIZE: i32 = 16;
 const VICINITY_SIZE: f32 = 96.0;
 const INTERACTION_SIZE: f32 = 8.0;
 const CHUNKRANGE: usize = 2;
@@ -17,6 +18,11 @@ const BACKPACKSIZE: u8 = 64;
 const INTERACTION_COOLDOWN: u128 = 10;
 pub const HATCH_TIME: u128 = 10000;
 pub const LETHAL_RANGE: f32 = 16.0;
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[serde(tag = "PropType")]
+pub enum PropType {
+    Raft,
+}
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "ColliderType")]
 pub enum ColliderType {
@@ -290,6 +296,13 @@ impl Chunk {
         self.name = s.clone();
     }
 }
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Prop {
+    pub x: f32,
+    pub y: f32,
+    pub prop_type: PropType,
+}
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Collider {
     pub x: f32,
@@ -356,6 +369,7 @@ pub struct World {
     pub world_data: WorldData,
     pub players: Vec<Player>,
     pub colliders: Vec<Collider>,
+    pub props: Vec<Prop>,
     pub v_x: i32, // slice dimensions for formatting
     pub v_y: i32,
     pub v_w: i32,
@@ -412,11 +426,12 @@ impl World {
             }
         }
         format!(
-            "{{\"chunks\": {}, \"world_data\": {}, \"players\": {}, \"colliders\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
+            "{{\"chunks\": {}, \"world_data\": {}, \"players\": {}, \"colliders\": {}, \"props\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
             serde_json::to_string(&selected_chunks2).unwrap(),
             serde_json::to_string(&self.world_data).unwrap(),
             serde_json::to_string(&self.players).unwrap(),
             serde_json::to_string(&self.colliders).unwrap(),
+            serde_json::to_string(&self.props).unwrap(),
             serde_json::to_string(&view_x).unwrap(),
             serde_json::to_string(&view_y).unwrap(),
             serde_json::to_string(&view_width).unwrap(),

@@ -9,6 +9,7 @@ pub struct ShootData {
     pub shooting: bool,
     pub mx: i32,
     pub my: i32,
+    pub action_type: PlayerAction,
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Player {
@@ -64,9 +65,21 @@ impl Player {
             self.shoot_change_1 = 0;
         }
     }
+    pub fn build_raft(&mut self, x: i32, y: i32) {
+        if self.shoot_change_1 > METEOROID_TIME {
+            self.shoot_data.shooting = true;
+            self.shoot_change_1 = 0;
+        }
+    }
 }
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ClientPacket {
     pub camera: Camera,
     pub player: Player,
+}
+#[derive(PartialEq, Serialize, Deserialize, Clone, Debug)]
+pub enum PlayerAction {
+    Meteoroid,
+    Raft,
+    Nothing,
 }

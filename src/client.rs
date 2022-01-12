@@ -6,11 +6,11 @@ use bincode;
 extern crate ears;
 use crate::client::ears::AudioTags;
 use crate::client_structs;
-use crate::client_structs::{ClientPacket, Player, ShootData};
+use crate::client_structs::{ClientPacket, Player, PlayerAction, ShootData};
 use crate::graphics_utils::{Button, ButtonStatus, Camera, MoveDirection};
 use crate::world_structs::{
-    ActionType, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType,
-    ReligionType, TaskType, TileType, World, WorldData, HATCH_TIME,
+    ActionType, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType, Prop,
+    PropType, ReligionType, TaskType, TileType, World, WorldData, HATCH_TIME,
 };
 use ears::{AudioController, Music, Sound};
 use lerp::Lerp;
@@ -208,6 +208,7 @@ fn main_loop() -> Result<(), String> {
     let mut green_flashing_change = 0;
     let mut entities: HashMap<i32, Entity> = HashMap::new();
     let mut colliders: Vec<Collider> = Vec::new();
+    let mut props: Vec<Prop> = Vec::new();
     let mut settings_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
@@ -260,6 +261,7 @@ fn main_loop() -> Result<(), String> {
             height: 32.0,
         },
     ];
+
     let mut menu_buttons: Vec<Button> = vec![
         // menu buttons
         Button {
@@ -295,7 +297,24 @@ fn main_loop() -> Result<(), String> {
             height: 32.0,
         },
     ];
-
+    let mut action_icon_buttons: Vec<Button> = vec![
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 4.0,
+            y: SCREEN_HEIGHT as f32 - 28.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 4.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+    ];
     // universal menu buttons
     // settings menu buttons
     // manual menu buttons
@@ -328,6 +347,8 @@ fn main_loop() -> Result<(), String> {
     // collider textures
 
     let meteoroid_texture = texture_creator.load_texture("res/meteoroid.png")?;
+    // prop textures
+    let raft_texture = texture_creator.load_texture("res/raft.png")?;
     // entity textures
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
@@ -399,6 +420,15 @@ fn main_loop() -> Result<(), String> {
     let mut ui_button_pressed_texture =
         texture_creator.load_texture("res/ui_button_pressed.png")?;
 
+    let mut action_icon_button_texture =
+        texture_creator.load_texture("res/action_icon_button.png")?;
+    let mut action_icon_button_hovered_texture =
+        texture_creator.load_texture("res/action_icon_button_hovered.png")?;
+    let mut action_icon_button_pressed_texture =
+        texture_creator.load_texture("res/action_icon_button_pressed.png")?;
+    let mut raft_icon_texture = texture_creator.load_texture("res/raft_icon.png")?;
+    let mut meteoroid_icon_texture = texture_creator.load_texture("res/meteoroid_icon.png")?;
+
     // hud textures
     let mut hud_texture = texture_creator.load_texture("res/hud.png")?;
     let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png")?;
@@ -423,6 +453,12 @@ fn main_loop() -> Result<(), String> {
     let sprite_158x212 = Rect::new(0, 0, (158.0) as u32, (212.0) as u32);
     let sprite_2x5 = Rect::new(0, 0, (2.0 * camera.zoom) as u32, (5.0 * camera.zoom) as u32);
     let sprite_8 = Rect::new(0, 0, (8.0 * camera.zoom) as u32, (8.0 * camera.zoom) as u32);
+    let sprite_12 = Rect::new(
+        0,
+        0,
+        (12.0 * camera.zoom) as u32,
+        (12.0 * camera.zoom) as u32,
+    );
     let sprite_16 = Rect::new(
         0,
         0,
@@ -468,8 +504,10 @@ fn main_loop() -> Result<(), String> {
             mx: 0,
             my: 0,
             shooting: false,
+            action_type: PlayerAction::Meteoroid,
         },
     };
+    let mut player_action = PlayerAction::Nothing;
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
     let mut banner_on = true;
@@ -631,13 +669,13 @@ fn main_loop() -> Result<(), String> {
                     keycode: Some(Keycode::Plus),
                     ..
                 } => {
-                    zoom_button_plus = true;
+                    //zoom_button_plus = true;
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Minus),
                     ..
                 } => {
-                    zoom_button_minus = true;
+                    //zoom_button_minus = true;
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Space),
@@ -648,9 +686,9 @@ fn main_loop() -> Result<(), String> {
                 }
                 Event::MouseWheel { x, y, .. } => {
                     if y > 0 {
-                        zoom_button_minus = true;
+                        //   zoom_button_minus = true;
                     } else if y < 0 {
-                        zoom_button_plus = true;
+                        //   zoom_button_plus = true;
                     }
                 }
                 Event::MouseMotion { .. } => {
@@ -660,7 +698,12 @@ fn main_loop() -> Result<(), String> {
                     x, y, mouse_btn, ..
                 } => {
                     if mouse_btn == sdl2::mouse::MouseButton::Middle {
-                        player.shoot_meteoroid(x, y);
+                        if player_action.clone() == PlayerAction::Meteoroid {
+                            player.shoot_meteoroid(x, y);
+                        } else if player_action.clone() == PlayerAction::Raft {
+                            // player.build_bridge
+                            player.build_raft(x, y);
+                        }
                     } else if mouse_btn == sdl2::mouse::MouseButton::Right {
                     }
                 }
@@ -1513,6 +1556,7 @@ fn main_loop() -> Result<(), String> {
             if player.shoot_data.shooting {
                 player.shoot_data.mx = mouse_x_unscaled as i32;
                 player.shoot_data.my = mouse_y_unscaled as i32;
+                player.shoot_data.action_type = player_action.clone();
             }
             let packet = ClientPacket {
                 player: player.clone(),
@@ -1538,6 +1582,7 @@ fn main_loop() -> Result<(), String> {
                     chunks = world_from.chunks;
                     world_data = world_from.world_data;
                     colliders = world_from.colliders;
+                    props = world_from.props;
                 }
                 Err(e) => (),
             }
@@ -1973,6 +2018,43 @@ fn main_loop() -> Result<(), String> {
                     }
                 }
 
+                for collider in colliders.iter() {
+                    if collider.hp < 0 {
+                        continue;
+                    }
+                    let tx_c = (collider.x) * camera.zoom - camera.x;
+                    let ty_c = (collider.y) * camera.zoom - camera.y;
+                    if collider.collider_type == ColliderType::Meteoroid {
+                        let position = Point::new(tx_c as i32, ty_c as i32);
+                        let mut tex = &meteoroid_texture;
+                        graphics_utils::render(
+                            &mut canvas,
+                            &tex,
+                            position,
+                            sprite_8,
+                            camera.zoom,
+                            ratio_x,
+                            ratio_y,
+                        );
+                    }
+                }
+                for prop in props.iter() {
+                    let tx_c = (prop.x) * camera.zoom - camera.x;
+                    let ty_c = (prop.y) * camera.zoom - camera.y;
+                    if prop.prop_type == PropType::Raft {
+                        let position = Point::new(tx_c as i32, ty_c as i32);
+                        let mut tex = &raft_texture;
+                        graphics_utils::render(
+                            &mut canvas,
+                            &tex,
+                            position,
+                            sprite_16,
+                            camera.zoom,
+                            ratio_x,
+                            ratio_y,
+                        );
+                    }
+                }
                 // render player
                 if !player.stopped && player.time % 100 == 0 {
                     if !player_footstep.is_playing() {
@@ -2015,26 +2097,6 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
-                for collider in colliders.iter() {
-                    if collider.hp < 0 {
-                        continue;
-                    }
-                    let tx_c = (collider.x) * camera.zoom - camera.x;
-                    let ty_c = (collider.y) * camera.zoom - camera.y;
-                    if collider.collider_type == ColliderType::Meteoroid {
-                        let position = Point::new(tx_c as i32, ty_c as i32);
-                        let mut tex = &meteoroid_texture;
-                        graphics_utils::render(
-                            &mut canvas,
-                            &tex,
-                            position,
-                            sprite_8,
-                            camera.zoom,
-                            ratio_x,
-                            ratio_y,
-                        );
-                    }
-                }
                 // render hover
                 let mut hovered_tiletype = TileType::Grass;
                 let mut hovered_tile: std::option::Option<crate::world_structs::Point> = None;
@@ -2438,6 +2500,85 @@ fn main_loop() -> Result<(), String> {
                     render_rect,
                     Color::RGBA(0, 255, 100, 55),
                     1.0,
+                );
+                // icon buttons
+                for button in action_icon_buttons.iter_mut() {
+                    let position = Point::new(button.x as i32, button.y as i32);
+                    button.check_if_hovered(
+                        mouse_state.x() as f32 * ratio_x,
+                        mouse_state.y() as f32 * ratio_y,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
+                    if button.status == graphics_utils::ButtonStatus::Hovered {
+                        graphics_utils::render(
+                            &mut canvas,
+                            &action_icon_button_hovered_texture,
+                            position,
+                            sprite_12,
+                            1.0,
+                            ratio_x,
+                            ratio_y,
+                        );
+                    } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                        if !button_click.is_playing() {
+                            button_click.set_volume(sounds_volume);
+                            button_click.play();
+                        }
+                        graphics_utils::render(
+                            &mut canvas,
+                            &action_icon_button_pressed_texture,
+                            position,
+                            sprite_12,
+                            1.0,
+                            ratio_x,
+                            ratio_y,
+                        );
+                    } else {
+                        graphics_utils::render(
+                            &mut canvas,
+                            &action_icon_button_texture,
+                            position,
+                            sprite_12,
+                            1.0,
+                            ratio_x,
+                            ratio_y,
+                        );
+                    }
+                }
+                if action_icon_buttons[1].status == ButtonStatus::Released {
+                    player_action = PlayerAction::Meteoroid;
+                } else if action_icon_buttons[0].status == ButtonStatus::Released {
+                    player_action = PlayerAction::Raft;
+                }
+                // raft icon
+                let position = Point::new(
+                    action_icon_buttons[0].x as i32 + 2,
+                    action_icon_buttons[0].y as i32 + 2,
+                );
+                // meteoroid icon
+                graphics_utils::render(
+                    &mut canvas,
+                    &raft_icon_texture,
+                    position,
+                    sprite_8,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );
+                let position = Point::new(
+                    action_icon_buttons[1].x as i32 + 2,
+                    action_icon_buttons[1].y as i32 + 2,
+                );
+                graphics_utils::render(
+                    &mut canvas,
+                    &meteoroid_icon_texture,
+                    position,
+                    sprite_8,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
                 );
                 // political map button
                 let position = Point::new(political_button.x as i32, political_button.y as i32);

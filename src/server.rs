@@ -1,11 +1,11 @@
 extern crate futures;
 extern crate tokio;
 extern crate websocket;
-use crate::client_structs::ClientPacket;
+use crate::client_structs::{ClientPacket, PlayerAction};
 use crate::graphics_utils::Camera;
 use crate::world_structs::{
     ActionType, Biome, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType,
-    Point, ReligionType, TaskType, TileType, World, WorldData,
+    Point, Prop, PropType, ReligionType, TaskType, TileType, World, WorldData,
 };
 use serde_json;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -175,15 +175,23 @@ fn process_message(
             });
         let player = packet.player;
         if player.shoot_data.shooting {
-            (*world).write().unwrap().colliders.push(Collider {
-                x: player.shoot_data.mx as f32,
-                y: player.shoot_data.my as f32 - 222.0,
-                life_y: player.shoot_data.my as f32,
-                speed: 16.0,
-                dir: 3.14 / 2.0,
-                collider_type: ColliderType::Meteoroid,
-                hp: 1,
-                lethal: false,
+            if player.shoot_data.action_type == PlayerAction::Meteoroid {
+                (*world).write().unwrap().colliders.push(Collider {
+                    x: player.shoot_data.mx as f32,
+                    y: player.shoot_data.my as f32 - 222.0,
+                    life_y: player.shoot_data.my as f32,
+                    speed: 16.0,
+                    dir: 3.14 / 2.0,
+                    collider_type: ColliderType::Meteoroid,
+                    hp: 1,
+                    lethal: false,
+                });
+            }
+        } else if player.shoot_data.action_type == PlayerAction::Raft {
+            (*world).write().unwrap().props.push(Prop {
+                x: (player.shoot_data.mx as f32 / 16.0).floor() * 16.0,
+                y: (player.shoot_data.my as f32 / 16.0).floor() * 16.0,
+                prop_type: PropType::Raft,
             });
         }
         let mut player_in = false;
