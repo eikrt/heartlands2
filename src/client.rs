@@ -46,6 +46,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{thread, time};
 use websocket::client::ClientBuilder;
 use websocket::{Message, OwnedMessage};
+const ENTITY_SIZE: f32 = 8.0;
 const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
 const HUD_LOC: u32 = 336;
@@ -507,6 +508,10 @@ fn main_loop() -> Result<(), String> {
             action_type: PlayerAction::Meteoroid,
         },
     };
+    let mut up_collision = false;
+    let mut down_collision = false;
+    let mut left_collision = false;
+    let mut right_collision = false;
     let mut player_action = PlayerAction::Nothing;
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
@@ -1500,47 +1505,6 @@ fn main_loop() -> Result<(), String> {
             if right {
                 camera.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
             }*/
-            player.mov(graphics_utils::MoveDirection::Nothing, delta_as_millis);
-            if w {
-                player.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
-                if player.get_relative_y(&camera) <= CAMERA_BUFFER_TOP {
-                    camera.mov(
-                        graphics_utils::MoveDirection::Up,
-                        player.speed,
-                        delta_as_millis,
-                    );
-                }
-            }
-            if a {
-                player.mov(graphics_utils::MoveDirection::Left, delta_as_millis);
-                if player.get_relative_x(&camera) <= CAMERA_BUFFER_LEFT {
-                    camera.mov(
-                        graphics_utils::MoveDirection::Left,
-                        player.speed,
-                        delta_as_millis,
-                    );
-                }
-            }
-            if s {
-                player.mov(graphics_utils::MoveDirection::Down, delta_as_millis);
-                if player.get_relative_y(&camera) >= SCREEN_HEIGHT as f32 - CAMERA_BUFFER_BOTTOM {
-                    camera.mov(
-                        graphics_utils::MoveDirection::Down,
-                        player.speed,
-                        delta_as_millis,
-                    );
-                }
-            }
-            if d {
-                player.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
-                if player.get_relative_x(&camera) >= SCREEN_WIDTH as f32 - CAMERA_BUFFER_RIGHT {
-                    camera.mov(
-                        graphics_utils::MoveDirection::Right,
-                        player.speed,
-                        delta_as_millis,
-                    );
-                }
-            }
             if zoom_button_plus {
                 camera.zoom(graphics_utils::MoveDirection::Zoomin, delta_as_millis);
                 zoom_button_plus = false;
@@ -1667,6 +1631,64 @@ fn main_loop() -> Result<(), String> {
                                 ratio_x,
                                 ratio_y,
                             );
+                            // tile collision
+                            let player_x_left = player.x;
+                            let player_x_right = player.x + ENTITY_SIZE;
+                            let player_y_up = player.y;
+                            let player_y_down = player.y + ENTITY_SIZE;
+
+                            if player.x + ENTITY_SIZE / 2.0 > p.x * TILE_SIZE
+                                && player.x + ENTITY_SIZE / 2.0 < p.x * TILE_SIZE + TILE_SIZE
+                                && player_y_up - player.speed * delta_as_millis as f32 / 100.0
+                                    > p.y * TILE_SIZE
+                                && player_y_up - player.speed * delta_as_millis as f32 / 100.0
+                                    < p.y * TILE_SIZE + TILE_SIZE
+                            {
+                                if p.tile_type == TileType::Water {
+                                    up_collision = true;
+                                } else {
+                                    up_collision = false;
+                                }
+                            }
+                            if player.x + ENTITY_SIZE / 2.0 > p.x * TILE_SIZE
+                                && player.x + ENTITY_SIZE / 2.0 < p.x * TILE_SIZE + TILE_SIZE
+                                && player_y_down + player.speed * delta_as_millis as f32 / 100.0
+                                    > p.y * TILE_SIZE
+                                && player_y_down + player.speed * delta_as_millis as f32 / 100.0
+                                    < p.y * TILE_SIZE + TILE_SIZE
+                            {
+                                if p.tile_type == TileType::Water {
+                                    down_collision = true;
+                                } else {
+                                    down_collision = false;
+                                }
+                            }
+                            if player_x_left - player.speed * delta_as_millis as f32 / 100.0
+                                > p.x * TILE_SIZE
+                                && player_x_left - player.speed * delta_as_millis as f32 / 100.0
+                                    < p.x * TILE_SIZE + TILE_SIZE
+                                && player.y + ENTITY_SIZE / 2.0 > p.y * TILE_SIZE
+                                && player.y + ENTITY_SIZE / 2.0 < p.y * TILE_SIZE + TILE_SIZE
+                            {
+                                if p.tile_type == TileType::Water {
+                                    left_collision = true;
+                                } else {
+                                    left_collision = false;
+                                }
+                            }
+                            if player_x_right + player.speed * delta_as_millis as f32 / 100.0
+                                > p.x * TILE_SIZE
+                                && player_x_right + player.speed * delta_as_millis as f32 / 100.0
+                                    < p.x * TILE_SIZE + TILE_SIZE
+                                && player.y + ENTITY_SIZE / 2.0 > p.y * TILE_SIZE
+                                && player.y + ENTITY_SIZE / 2.0 < p.y * TILE_SIZE + TILE_SIZE
+                            {
+                                if p.tile_type == TileType::Water {
+                                    right_collision = true;
+                                } else {
+                                    right_collision = false;
+                                }
+                            }
                         }
                     }
                 }
@@ -2038,6 +2060,8 @@ fn main_loop() -> Result<(), String> {
                         );
                     }
                 }
+
+                // render props
                 for prop in props.iter() {
                     let tx_c = (prop.x) * camera.zoom - camera.x;
                     let ty_c = (prop.y) * camera.zoom - camera.y;
@@ -2053,6 +2077,17 @@ fn main_loop() -> Result<(), String> {
                             ratio_x,
                             ratio_y,
                         );
+                    }
+                }
+
+                // collide props
+                for prop in props.iter() {
+                    if player.x > prop.x
+                        && player.x < prop.x + 16.0
+                        && player.y + player.speed * delta_as_millis as f32 / 100.0 > prop.y
+                        && player.y < prop.y + 16.0
+                    {
+                        // up_collision = true;
                     }
                 }
                 // render player
@@ -2777,6 +2812,48 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
+            }
+            // player movement
+            player.mov(graphics_utils::MoveDirection::Nothing, delta_as_millis);
+            if w && !up_collision {
+                player.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
+                if player.get_relative_y(&camera) <= CAMERA_BUFFER_TOP {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Up,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
+            }
+            if a && !left_collision {
+                player.mov(graphics_utils::MoveDirection::Left, delta_as_millis);
+                if player.get_relative_x(&camera) <= CAMERA_BUFFER_LEFT {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Left,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
+            }
+            if s && !down_collision {
+                player.mov(graphics_utils::MoveDirection::Down, delta_as_millis);
+                if player.get_relative_y(&camera) >= SCREEN_HEIGHT as f32 - CAMERA_BUFFER_BOTTOM {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Down,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
+            }
+            if d && !right_collision {
+                player.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
+                if player.get_relative_x(&camera) >= SCREEN_WIDTH as f32 - CAMERA_BUFFER_RIGHT {
+                    camera.mov(
+                        graphics_utils::MoveDirection::Right,
+                        player.speed,
+                        delta_as_millis,
+                    );
+                }
             }
         }
         if normal_button.status == graphics_utils::ButtonStatus::Pressed {
