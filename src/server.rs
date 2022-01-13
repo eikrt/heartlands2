@@ -7,6 +7,7 @@ use crate::world_structs::{
     ActionType, Biome, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType,
     Point, Prop, PropType, ReligionType, TaskType, TileType, World, WorldData,
 };
+use rand::Rng;
 use serde_json;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
@@ -154,6 +155,7 @@ fn process_message(
     client_states: Arc<RwLock<HashMap<i32, ClientState>>>,
     world: &Arc<RwLock<World>>,
 ) {
+    let mut rng = rand::thread_rng();
     if !client_states.write().unwrap().contains_key(&(id as i32)) {
         client_states
             .write()
@@ -174,14 +176,18 @@ fn process_message(
                 e.y = packet.camera.y
             });
         let player = packet.player;
+        let id = rng.gen_range(0..999999);
         if player.shoot_data.shooting {
             if player.shoot_data.action_type == PlayerAction::Meteoroid {
                 (*world).write().unwrap().colliders.push(Collider {
                     x: player.shoot_data.mx as f32,
                     y: player.shoot_data.my as f32 - 222.0,
+                    id: id,
                     life_y: player.shoot_data.my as f32,
-                    speed: 16.0,
+                    speed: 32.0,
                     dir: 3.14 / 2.0,
+                    time: 0,
+                    lifetime: 1000,
                     collider_type: ColliderType::Meteoroid,
                     owner_id: player.id,
                     hp: 1,
@@ -198,11 +204,14 @@ fn process_message(
             (*world).write().unwrap().colliders.push(Collider {
                 x: player.shoot_data.mx as f32,
                 y: player.shoot_data.my as f32,
+                id: id,
                 life_y: player.shoot_data.my as f32 + 50.0,
                 speed: 0.0,
                 dir: 3.14 / 2.0,
                 collider_type: ColliderType::SoulTrap,
                 owner_id: player.id,
+                time: 0,
+                lifetime: 100,
                 hp: 1,
                 lethal: false,
             });
@@ -221,7 +230,9 @@ fn process_message(
                 .iter()
                 .position(|r| r.id == player.id)
                 .unwrap();
-            (*world).write().unwrap().players[index] = player;
+            (*world).write().unwrap().players[index].x = player.x;
+            (*world).write().unwrap().players[index].y = player.y;
+            (*world).write().unwrap().players[index].energy = player.energy;
         } else {
             (*world).write().unwrap().players.push(player);
         }

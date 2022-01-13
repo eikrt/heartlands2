@@ -93,6 +93,9 @@ fn main_loop() -> Result<(), String> {
     let button_click_path = "sound/button_click.flac";
     let meteoroid_spawn_path = "sound/meteoroid_spawn.flac";
     let meteoroid_explode_path = "sound/meteoroid_explode.flac";
+    let soul_trapped_path = "sound/soul_trapped.flac";
+    let soul_trap_build_path = "sound/soul_trap_build.flac";
+    let raft_build_path = "sound/raft_build.flac";
     let menu_next_path = "sound/menu_next.flac";
     let mut songs = vec![
         Music::new(music_path_1).unwrap(),
@@ -106,6 +109,9 @@ fn main_loop() -> Result<(), String> {
     let mut menu_next = Sound::new(menu_next_path).unwrap();
     let mut meteoroid_spawn = Sound::new(meteoroid_spawn_path).unwrap();
     let mut meteoroid_explode = Sound::new(meteoroid_explode_path).unwrap();
+    let mut soul_trapped = Sound::new(soul_trapped_path).unwrap();
+    let mut soul_trap_build = Sound::new(soul_trap_build_path).unwrap();
+    let mut raft_build = Sound::new(raft_build_path).unwrap();
     let mut player_footstep = Sound::new(footstep_path).unwrap();
     player_footstep.set_volume(sounds_volume);
     let songs_len = songs.len();
@@ -139,6 +145,7 @@ fn main_loop() -> Result<(), String> {
             wiki_texts.push(wiki_text_lines.clone());
         }
     }
+    let mut already_collided_to_entity = HashMap::new();
     //canvas.window_mut().set_fullscreen(FullscreenType::True);
 
     // canvas.window_mut().set_size(500, 500);
@@ -210,6 +217,7 @@ fn main_loop() -> Result<(), String> {
     let mut entities: HashMap<i32, Entity> = HashMap::new();
     let mut colliders: Vec<Collider> = Vec::new();
     let mut props: Vec<Prop> = Vec::new();
+    let mut players: Vec<Player> = Vec::new();
     let mut settings_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
@@ -1540,12 +1548,17 @@ fn main_loop() -> Result<(), String> {
                 camera: camera.clone(),
             };
             if player.shoot_data.shooting {
-                meteoroid_spawn.play();
+                if player_action == PlayerAction::Meteoroid {
+                    meteoroid_spawn.play();
+                } else if player_action == PlayerAction::Siphon {
+                    soul_trap_build.play();
+                } else if player_action == PlayerAction::Raft {
+                    raft_build.play();
+                }
                 player.shoot_data.shooting = false;
             }
             let encoded: Vec<u8> = bincode::serialize(&packet).unwrap();
             //let decoded: ClientPacket = bincode::deserialize(&encoded).unwrap();
-
             match tx.send(OwnedMessage::Binary(encoded)) {
                 Ok(()) => (),
                 Err(e) => {
@@ -1560,6 +1573,12 @@ fn main_loop() -> Result<(), String> {
                     world_data = world_from.world_data;
                     colliders = world_from.colliders;
                     props = world_from.props;
+                    players = world_from.players;
+                    for p in players.iter() {
+                        if p.id == player.id && p.energy == player.energy {
+                            player.energy = p.energy;
+                        }
+                    }
                 }
                 Err(e) => (),
             }
@@ -1731,6 +1750,7 @@ fn main_loop() -> Result<(), String> {
                     }
                 }
                 //render entities
+                let mut colliders_clone = colliders.clone();
                 for i in 0..chunks.len() {
                     for j in 0..chunks[i].len() {
                         let mut entities_vals: Vec<Entity> =
@@ -1738,15 +1758,36 @@ fn main_loop() -> Result<(), String> {
 
                         entities_vals.sort_by(|a, b| a.id.cmp(&b.id));
                         for entity in entities_vals.iter() {
+                            if entity.hp < 0 {
+                                continue;
+                            }
+                            'collide_loop: for collider in &colliders {
+                                let id = already_collided_to_entity.get(&collider.id);
+                                match id {
+                                    Some(_) => continue 'collide_loop,
+                                    None => (),
+                                }
+                                if collider.collider_type == ColliderType::SoulTrap {
+                                    if collider.x > entity.x
+                                        && collider.x < entity.x + 8.0
+                                        && collider.y > entity.y
+                                        && collider.y < entity.y + 8.0
+                                    {
+                                        if player.energy + 10 <= 100 {
+                                            soul_trapped.play();
+                                            player.energy += 10;
+                                        }
+                                        let id = collider.id;
+                                        already_collided_to_entity.insert(collider.id, entity.id);
+                                    }
+                                }
+                            }
                             let tx = (entity.x) * camera.zoom - camera.x;
                             let ty = (entity.y) * camera.zoom - camera.y;
                             let tx_ant = (entity.x) * camera.zoom - camera.x;
                             let ty_ant = (entity.y) * camera.zoom - camera.y;
                             let tx_tree = (entity.x + TILE_SIZE / 2.0) * camera.zoom - camera.x;
                             let ty_tree = (entity.y - TILE_SIZE / 4.0) * camera.zoom - camera.y;
-                            if entity.hp < 0 {
-                                continue;
-                            }
 
                             canvas.set_draw_color(Color::RGB(0, 0, 0));
 
@@ -2955,6 +2996,7 @@ fn main_loop() -> Result<(), String> {
         } else if religion_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Religion;
         }
+
         canvas.present();
         thread::sleep(time::Duration::from_millis(1));
     }

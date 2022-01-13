@@ -19,6 +19,12 @@ const INTERACTION_COOLDOWN: u128 = 10;
 pub const HATCH_TIME: u128 = 10000;
 pub const LETHAL_RANGE: f32 = 16.0;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum CollideReturnType {
+    Normal,
+    Kill,
+    CollectSoul,
+}
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "PropType")]
 pub enum PropType {
     Raft,
@@ -309,12 +315,15 @@ pub struct Collider {
     pub x: f32,
     pub y: f32,
     pub hp: i32,
+    pub id: u32,
     pub life_y: f32,
     pub speed: f32,
     pub dir: f32,
     pub collider_type: ColliderType,
     pub lethal: bool,
     pub owner_id: i32,
+    pub time: u32,
+    pub lifetime: u32,
 }
 impl Collider {
     pub fn mov(&mut self) {
@@ -322,6 +331,10 @@ impl Collider {
         self.y += self.dir.sin() * self.speed;
     }
     pub fn tick(&mut self) {
+        self.time += 10;
+        if self.time > self.lifetime {
+            self.hp = -1;
+        }
         if self.y > self.life_y {
             self.hp = -1;
         }
@@ -329,7 +342,7 @@ impl Collider {
             self.lethal = true;
         }
     }
-    pub fn collide(&mut self, entity: &mut Entity) -> String {
+    pub fn collide(&mut self, entity: &mut Entity) -> CollideReturnType {
         let size = 16.0;
         if self.x > entity.x
             && self.x < entity.x + size
@@ -339,16 +352,16 @@ impl Collider {
             if self.lethal {
                 if self.collider_type == ColliderType::Meteoroid {
                     entity.hp = -1;
-                    return "killed".to_string();
+                    return CollideReturnType::Kill;
                 }
             }
             if self.collider_type == ColliderType::SoulTrap {
                 entity.hp = -1;
                 self.hp = -1;
-                return "soul gathered".to_string();
+                return CollideReturnType::CollectSoul;
             }
         }
-        return "success".to_string();
+        return CollideReturnType::Normal;
     }
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -532,7 +545,16 @@ impl World {
             for row in self.chunks.iter_mut() {
                 for chunk in row.iter_mut() {
                     for (key, val) in chunk.entities.iter_mut() {
-                        collider.collide(val);
+                        if collider.collide(val) == CollideReturnType::CollectSoul {
+                            let index = self
+                                .players
+                                .iter()
+                                .position(|r| r.id == collider.owner_id)
+                                .unwrap();
+                            if self.players[index].energy + 10 < 100 {
+                                self.players[index].energy += 10;
+                            }
+                        }
                     }
                 }
             }
