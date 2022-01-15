@@ -17,7 +17,7 @@ const REPRODUCE_CHANCE: usize = 256;
 const BACKPACKSIZE: u8 = 64;
 const INTERACTION_COOLDOWN: u128 = 10;
 pub const HATCH_TIME: u128 = 10000;
-pub const LETHAL_RANGE: f32 = 16.0;
+pub const LETHAL_RANGE: f32 = 32.0;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CollideReturnType {
     Normal,
@@ -73,6 +73,7 @@ pub enum TaskType {
     Hunt,
     Trade,
     Defend,
+    TotalWar,
     Terrorize,
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -108,6 +109,7 @@ pub enum ActionType {
     Defend,
     Conquer,
     Explore,
+    Attack,
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(tag = "TileType")]
@@ -195,6 +197,7 @@ pub struct Entity {
     pub target_y: f32,
     pub stopped: bool,
     pub id: i32,
+    pub target_id: i32,
     pub entity_type: EntityType,
     pub religion_type: ReligionType,
     pub category_type: CategoryType,
@@ -263,6 +266,7 @@ impl Default for Entity {
             y: 0.0,
             hp: 1,
             id: 0,
+            target_id: 0,
             speed: 0.0,
             dir: 0.0,
             target_x: 0.0,
@@ -344,9 +348,9 @@ impl Collider {
     }
     pub fn collide(&mut self, entity: &mut Entity) -> CollideReturnType {
         let size = 16.0;
-        if self.x > entity.x
+        if self.x > entity.x - size
             && self.x < entity.x + size
-            && self.y > entity.y
+            && self.y > entity.y - size
             && self.y < entity.y + size
         {
             if self.lethal {
@@ -639,10 +643,23 @@ impl World {
                         }
                     }
                 }
+
                 for (key, e) in self.chunks[i][j].entities.iter_mut() {
                     e.tick();
                     if e.hp < 0 {
                         continue;
+                    }
+                    if e.entity_type == EntityType::SoldierAnt {
+                        if e.task_type == TaskType::TotalWar {
+                            if e.current_action == ActionType::Attack {
+                                for p in &self.players {
+                                    if p.id == e.target_id {
+                                        e.target_x = p.x;
+                                        e.target_y = p.y;
+                                    }
+                                }
+                            }
+                        }
                     }
                     if e.entity_type == EntityType::AntEgg && e.time > HATCH_TIME {
                         let id = rng.gen_range(0..999999);
@@ -651,6 +668,7 @@ impl World {
                             chunk_clone.id,
                             Entity {
                                 id: id,
+                                target_id: 0,
                                 hp: 100,
                                 x: e.x as f32,
                                 y: e.y as f32,
@@ -830,6 +848,7 @@ impl World {
                                                 chunk_clone.id,
                                                 Entity {
                                                     id: id,
+                                                    target_id: 0,
                                                     hp: 1,
                                                     x: e.x + rng.gen_range(-32.0..32.0),
                                                     y: e.y + rng.gen_range(-32.0..32.0),
@@ -857,6 +876,10 @@ impl World {
                                 }
                             }
                         }
+                    }
+                    if e.target_id != 0 {
+                        e.task_type = TaskType::TotalWar;
+                        e.current_action = ActionType::Attack;
                     }
                 }
             }

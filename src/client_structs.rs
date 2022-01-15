@@ -2,10 +2,11 @@ use crate::graphics_utils::{Camera, MoveDirection};
 use crate::world_structs::{
     ActionType, CategoryType, EntityType, ItemType, ReligionType, TaskType,
 };
+use std::collections::HashMap;
 const METEOROID_TIME: u128 = 200;
 const METEOROID_COST: i32 = 20;
 const RAFT_COST: i32 = 50;
-const SIPHON_COST: i32 = 0;
+const SIPHON_COST: i32 = 10;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ShootData {
@@ -77,10 +78,10 @@ impl Player {
         }
     }
     pub fn build_soul_trap(&mut self, x: i32, y: i32) {
-        if self.energy - SIPHON_COST >= 0 && self.shoot_change_1 > METEOROID_TIME {
+        if self.shoot_change_1 > METEOROID_TIME {
             self.shoot_data.shooting = true;
             self.shoot_change_1 = 0;
-            self.energy -= SIPHON_COST;
+            self.hp -= SIPHON_COST;
         }
     }
 }
@@ -88,6 +89,7 @@ impl Player {
 pub struct ClientPacket {
     pub camera: Camera,
     pub player: Player,
+    pub faction_relations: HashMap<String, i32>,
 }
 #[derive(PartialEq, Serialize, Deserialize, Clone, Debug)]
 pub enum PlayerAction {

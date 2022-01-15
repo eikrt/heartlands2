@@ -9,8 +9,8 @@ use simdnoise::*;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-const DRONE_MIN: i32 = 1;
-const DRONE_MAX: i32 = 2;
+const DRONE_MIN: i32 = 2;
+const DRONE_MAX: i32 = 3;
 const SOLDIER_MIN: i32 = 1;
 const SOLDIER_MAX: i32 = 2;
 const WORKER_MIN: i32 = 1;
@@ -133,11 +133,11 @@ pub fn generate(
         .with_lacunarity(5.0)
         .generate_scaled(0.0, 0.9);
     let village_noise = NoiseBuilder::fbm_2d(chunk_size * width, chunk_size * height)
-        .with_freq(0.01)
-        .with_octaves(6)
+        .with_freq(1.0)
+        .with_octaves(8)
         .with_gain(1.0)
         .with_seed(seed * 8)
-        .with_lacunarity(2.5)
+        .with_lacunarity(5.0)
         .generate_scaled(0.0, 1.0);
 
     let city_noise = NoiseBuilder::fbm_2d(chunk_size * width, chunk_size * height)
@@ -401,6 +401,7 @@ pub fn generate(
                                             id,
                                             Entity {
                                                 id: id,
+                                                target_id: 0,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
@@ -432,6 +433,7 @@ pub fn generate(
                                             id,
                                             Entity {
                                                 id: id,
+                                                target_id: 0,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
@@ -463,6 +465,7 @@ pub fn generate(
                                             id,
                                             Entity {
                                                 id: id,
+                                                target_id: 0,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
                                                 y: (_ry + rng.gen_range(1.0..4.0))
@@ -533,6 +536,7 @@ pub fn generate(
                                             id,
                                             Entity {
                                                 id: id,
+                                                target_id: 0,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(4.0..8.0))
                                                     * tile_size as f32,
@@ -562,6 +566,7 @@ pub fn generate(
                                             id,
                                             Entity {
                                                 id: id,
+                                                target_id: 0,
                                                 hp: 100,
                                                 x: (_rx + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
@@ -743,6 +748,7 @@ pub fn generate(
                                     id,
                                     Entity {
                                         id: id,
+                                        target_id: 0,
                                         x: _rx * tile_size as f32,
                                         y: _ry * tile_size as f32,
                                         hp: 100,
@@ -811,6 +817,7 @@ pub fn generate(
                                     id,
                                     Entity {
                                         id: id,
+                                        target_id: 0,
                                         x: _rx * tile_size as f32,
                                         y: _ry * tile_size as f32,
                                         hp: 100,

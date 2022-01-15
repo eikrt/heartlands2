@@ -216,6 +216,19 @@ fn process_message(
                 lethal: false,
             });
         }
+        for row in (*world).write().unwrap().chunks.iter_mut() {
+            for chunk in row.iter_mut() {
+                for (key, val) in &mut chunk.entities {
+                    for (k, v) in packet.faction_relations.iter() {
+                        if &val.faction == k {
+                            if v < &0 {
+                                val.target_id = player.id;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         let mut player_in = false;
         for p in &(*world).write().unwrap().players {
             if p.id == player.id {

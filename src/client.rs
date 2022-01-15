@@ -60,6 +60,7 @@ const SOLDIER_ANIMATION_SPEED: u128 = 25;
 const MECHANT_ANIMATION_SPEED: u128 = 25;
 const PLAYER_ANIMATION_SPEED: u128 = 100;
 const WATER_ANIMATION_SPEED: u128 = 800;
+const SOUL_TRAP_ANIMATION_SPEED: u128 = 300;
 const ANIMATION_RANDOM: u128 = 50;
 const CAMERA_BUFFER_TOP: f32 = 64.0;
 const CAMERA_BUFFER_LEFT: f32 = 96.0;
@@ -88,6 +89,7 @@ fn main_loop() -> Result<(), String> {
     // audio
     let music_path_1 = "music/tribal_hero.flac";
     let music_path_2 = "music/sundown_of_terrant.flac";
+    let music_path_3 = "music/echoes_of_icebergs.flac";
     let footstep_path = "sound/footstep.flac";
     let start_fanfare_path = "sound/start_fanfare.flac";
     let button_click_path = "sound/button_click.flac";
@@ -100,6 +102,7 @@ fn main_loop() -> Result<(), String> {
     let mut songs = vec![
         Music::new(music_path_1).unwrap(),
         Music::new(music_path_2).unwrap(),
+        Music::new(music_path_3).unwrap(),
     ];
     let mut sounds_volume = 0.7;
     let mut song_volume = 0.0;
@@ -151,12 +154,17 @@ fn main_loop() -> Result<(), String> {
     // canvas.window_mut().set_size(500, 500);
     // canvas.window_mut().set_resizable(true);
     // texture stuff
+    let mut hurt_change = 0;
+    let hurt_time = 500;
     let texture_creator = canvas.texture_creator();
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
     // font stuff
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
     let desc_font_size = 20;
     let main_title_font_size = 17;
+    let action_icon_font_size = 12;
+    let mut action_icon_font =
+        ttf_context.load_font("fonts/PixelOperator.ttf", action_icon_font_size)?;
     let mut main_title_font =
         ttf_context.load_font("fonts/PixelOperator.ttf", main_title_font_size)?;
     let mut font = ttf_context.load_font("fonts/PixelOperator.ttf", desc_font_size)?;
@@ -194,6 +202,8 @@ fn main_loop() -> Result<(), String> {
     let mut right = false;
     let mut zoom_button_plus = false;
     let mut zoom_button_minus = false;
+    let mut plus = false;
+    let mut minus = false;
     let mut event_pump = sdl_context.event_pump()?;
     let mut compare_time = SystemTime::now();
     let mut client_time: u128 = 0;
@@ -201,6 +211,8 @@ fn main_loop() -> Result<(), String> {
     let mut world_data: WorldData = WorldData {
         ..Default::default()
     };
+    let mut factions_text_scroll: f32 = 0.0;
+    let mut wiki_text_scroll: f32 = 0.0;
     // mouse
     let mut mouse_not_moved_for = 0;
     let mut mouse_state = MouseState::new(&event_pump);
@@ -216,6 +228,7 @@ fn main_loop() -> Result<(), String> {
     let mut green_flashing_change = 0;
     let mut entities: HashMap<i32, Entity> = HashMap::new();
     let mut colliders: Vec<Collider> = Vec::new();
+    let mut faction_relations: HashMap<String, i32> = HashMap::new();
     let mut props: Vec<Prop> = Vec::new();
     let mut players: Vec<Player> = Vec::new();
     let mut settings_buttons = vec![Button {
@@ -271,6 +284,63 @@ fn main_loop() -> Result<(), String> {
         },
     ];
 
+    let mut factions_menu_buttons: Vec<Button> = vec![
+        // menu buttons
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
+            y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
+            width: 128.0,
+            height: 32.0,
+        },
+    ];
+    let mut game_over_buttons: Vec<Button> = vec![
+        // menu buttons
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
+            y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
+            width: 128.0,
+            height: 32.0,
+        },
+    ];
+    let mut status_menu_buttons: Vec<Button> = vec![
+        // menu buttons
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // play button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 24.0,
+            y: 62.0,
+            width: 128.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // settings button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 24.0,
+            y: 62.0 + 32.0 + 8.0,
+            width: 128.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, //  manual button
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 24.0,
+            y: 62.0 + 64.0 + 16.0,
+            width: 128.0,
+            height: 32.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, // exit
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 24.0,
+            y: 62.0 + 96.0 + 24.0,
+            width: 128.0,
+            height: 32.0,
+        },
+    ];
     let mut menu_buttons: Vec<Button> = vec![
         // menu buttons
         Button {
@@ -311,6 +381,14 @@ fn main_loop() -> Result<(), String> {
             status: graphics_utils::ButtonStatus::Hovered, //
             previous_status: graphics_utils::ButtonStatus::Hovered,
             x: 4.0,
+            y: SCREEN_HEIGHT as f32 - 16.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered, //
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            x: 4.0,
             y: SCREEN_HEIGHT as f32 - 44.0,
             width: 11.0,
             height: 11.0,
@@ -319,7 +397,7 @@ fn main_loop() -> Result<(), String> {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
             x: 4.0,
-            y: SCREEN_HEIGHT as f32 - 28.0,
+            y: SCREEN_HEIGHT as f32 - 30.0,
             width: 11.0,
             height: 11.0,
         },
@@ -340,34 +418,36 @@ fn main_loop() -> Result<(), String> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: 4 as f32,
-        y: (SCREEN_HEIGHT - 22 - 8 - 128) as f32,
-        width: 32.0,
-        height: 32.0,
+        y: (SCREEN_HEIGHT - 93) as f32,
+        width: 12.0,
+        height: 12.0,
     };
     let mut political_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: 4.0,
-        y: (SCREEN_HEIGHT - 22 - 8 - 92) as f32,
-        width: 32.0,
-        height: 32.0,
+        y: (SCREEN_HEIGHT - 78) as f32,
+        width: 12.0,
+        height: 12.0,
     };
 
     let mut religion_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         x: 4.0,
-        y: (SCREEN_HEIGHT - 22 - 64) as f32,
-        width: 32.0,
-        height: 32.0,
+        y: (SCREEN_HEIGHT - 64) as f32,
+        width: 12.0,
+        height: 12.0,
     };
     // collider textures
 
     let meteoroid_texture = texture_creator.load_texture("res/meteoroid.png")?;
-    let soul_trap_texture = texture_creator.load_texture("res/soul_trap.png")?;
+    let soul_trap_texture_1 = texture_creator.load_texture("res/soul_trap.png")?;
+    let soul_trap_texture_2 = texture_creator.load_texture("res/soul_trap_3.png")?;
     // prop textures
     let raft_texture = texture_creator.load_texture("res/raft.png")?;
     // entity textures
+    let holy_monument_texture = texture_creator.load_texture("res/holy_monument.png")?;
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
     let appletree_texture = texture_creator.load_texture("res/appletree.png")?;
@@ -447,6 +527,7 @@ fn main_loop() -> Result<(), String> {
     let mut raft_icon_texture = texture_creator.load_texture("res/raft_icon.png")?;
     let mut meteoroid_icon_texture = texture_creator.load_texture("res/meteoroid_icon.png")?;
     let mut siphon_icon_texture = texture_creator.load_texture("res/siphon_icon.png")?;
+    let mut status_icon_texture = texture_creator.load_texture("res/status_icon.png")?;
 
     // hud textures
     let mut hud_texture = texture_creator.load_texture("res/hud.png")?;
@@ -489,6 +570,12 @@ fn main_loop() -> Result<(), String> {
         0,
         (32.0 * camera.zoom) as u32,
         (32.0 * camera.zoom) as u32,
+    );
+    let sprite_64 = Rect::new(
+        0,
+        0,
+        (64.0 * camera.zoom) as u32,
+        (64.0 * camera.zoom) as u32,
     );
     let sprite_128x32 = Rect::new(
         0,
@@ -533,6 +620,9 @@ fn main_loop() -> Result<(), String> {
     let mut player_action = PlayerAction::Nothing;
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
+    let mut game_over = false;
+    let mut factions_menu_on = false;
+    let mut status_menu_on = false;
     let mut banner_on = true;
     let mut settings_menu_on = false;
     let mut manual_menu_on = false;
@@ -620,6 +710,7 @@ fn main_loop() -> Result<(), String> {
             //println!("FPS: {}", 100 / (delta.as_millis() / 10));
             //println!("{}", delta_as_millis);
         }
+        hurt_change += delta_as_millis;
         client_time += delta_as_millis;
         mouse_not_moved_for += delta_as_millis;
         canvas.set_draw_color(bg_color);
@@ -692,13 +783,13 @@ fn main_loop() -> Result<(), String> {
                     keycode: Some(Keycode::Plus),
                     ..
                 } => {
-                    //zoom_button_plus = true;
+                    plus = true;
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Minus),
                     ..
                 } => {
-                    //zoom_button_minus = true;
+                    minus = true;
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Space),
@@ -787,13 +878,13 @@ fn main_loop() -> Result<(), String> {
                     keycode: Some(Keycode::Plus),
                     ..
                 } => {
-                    zoom_button_plus = false;
+                    plus = false;
                 }
                 Event::KeyUp {
                     keycode: Some(Keycode::Minus),
                     ..
                 } => {
-                    zoom_button_minus = false;
+                    minus = false;
                 }
 
                 _ => {}
@@ -815,6 +906,7 @@ fn main_loop() -> Result<(), String> {
         let mouse_y_unscaled = (camera.y / ratio_y + mouse_state.y() as f32) * ratio_y;
         let mx = mouse_state.x() as f32 * ratio_x;
         let my = mouse_state.y() as f32 * ratio_y;
+
         if banner_on {
             graphics_utils::render(
                 &mut canvas,
@@ -825,6 +917,108 @@ fn main_loop() -> Result<(), String> {
                 ratio_x,
                 ratio_y,
             );
+        } else if game_over {
+            graphics_utils::render(
+                &mut canvas,
+                &menu_background,
+                Point::new(0, 0),
+                sprite_720x480,
+                1.0,
+                ratio_x,
+                ratio_y,
+            );
+
+            // render buttons
+            for button in game_over_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+
+            // play button
+            for button in game_over_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+            let position = Point::new(game_over_buttons[0].x as i32, game_over_buttons[0].y as i32);
+            // render text
+            let title_text = graphics_utils::get_text(
+                "Your soul exits the reach of the mighty Plasma...".to_string(),
+                Color::RGBA(255, 0, 0, 255),
+                main_title_font_size,
+                &main_title_font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new((SCREEN_WIDTH / 2 - 175) as i32, 16 as i32);
+            let text_margin = 4;
+            graphics_utils::render_text(
+                &mut canvas,
+                &title_text.text_texture,
+                position,
+                title_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+
+            let settings_text = graphics_utils::get_text(
+                "Exit".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(
+                game_over_buttons[0].x as i32 + text_margin,
+                game_over_buttons[0].y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &settings_text.text_texture,
+                position,
+                settings_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+
+            if game_over_buttons[0].status == ButtonStatus::Released {
+                running = false;
+            }
         } else if main_menu_on {
             //render menu background
             graphics_utils::render(
@@ -1330,8 +1524,10 @@ fn main_loop() -> Result<(), String> {
                         &texture_creator,
                     );
                 }
-                let position =
-                    Point::new(32 as i32 - header_factor * 8, 8 as i32 + line_number * 14);
+                let position = Point::new(
+                    32 as i32 - header_factor * 8,
+                    8 as i32 + line_number * 14 - wiki_text_scroll as i32,
+                );
                 let w_text = wiki_text.unwrap();
                 graphics_utils::render_text(
                     &mut canvas,
@@ -1512,7 +1708,338 @@ fn main_loop() -> Result<(), String> {
                 }
             }
 
+            if up {
+                wiki_text_scroll -= delta_as_millis as f32 / 10.0;
+            }
+            if down {
+                wiki_text_scroll += delta_as_millis as f32 / 10.0;
+            }
             // main loop no menus
+        } else if status_menu_on {
+            graphics_utils::render(
+                &mut canvas,
+                &menu_background,
+                Point::new(0, 0),
+                sprite_720x480,
+                1.0,
+                ratio_x,
+                ratio_y,
+            );
+            // render buttons
+            for button in status_menu_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+
+            // play button
+            for button in status_menu_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+            let position = Point::new(
+                status_menu_buttons[0].x as i32,
+                status_menu_buttons[0].y as i32,
+            );
+            // render text
+            let title_text = graphics_utils::get_text(
+                "Status Menu".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                main_title_font_size,
+                &main_title_font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new((SCREEN_WIDTH / 2 - 175) as i32, 16 as i32);
+            let text_margin = 4;
+            graphics_utils::render_text(
+                &mut canvas,
+                &title_text.text_texture,
+                position,
+                title_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+
+            let settings_text = graphics_utils::get_text(
+                "Status".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(
+                status_menu_buttons[1].x as i32 + text_margin,
+                menu_buttons[1].y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &settings_text.text_texture,
+                position,
+                settings_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let position = Point::new((SCREEN_WIDTH / 2 - 120) as i32, 16 as i32);
+            let play_text = graphics_utils::get_text(
+                "Stats".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(
+                status_menu_buttons[0].x as i32 + text_margin,
+                status_menu_buttons[0].y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &play_text.text_texture,
+                position,
+                play_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let position = Point::new(
+                status_menu_buttons[1].x as i32 + text_margin,
+                status_menu_buttons[1].y as i32 + text_margin,
+            );
+            let manual_text = graphics_utils::get_text(
+                "Factions".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(
+                status_menu_buttons[2].x as i32 + text_margin,
+                status_menu_buttons[2].y as i32 + text_margin,
+            );
+            let text_margin = 4;
+            graphics_utils::render_text(
+                &mut canvas,
+                &manual_text.text_texture,
+                position,
+                manual_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+
+            let exit_text = graphics_utils::get_text(
+                "Back".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new(
+                status_menu_buttons[3].x as i32 + text_margin,
+                status_menu_buttons[3].y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &exit_text.text_texture,
+                position,
+                exit_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let position = Point::new(
+                status_menu_buttons[3].x as i32 + text_margin,
+                status_menu_buttons[3].y as i32 + text_margin,
+            );
+            graphics_utils::render_text(
+                &mut canvas,
+                &exit_text.text_texture,
+                position,
+                exit_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+
+            if status_menu_buttons[0].status == ButtonStatus::Released {
+            } else if status_menu_buttons[1].status == ButtonStatus::Released {
+            } else if status_menu_buttons[2].status == ButtonStatus::Released {
+                factions_menu_on = true;
+                status_menu_on = false;
+            } else if status_menu_buttons[3].status == ButtonStatus::Released {
+                status_menu_on = false;
+            }
+        } else if factions_menu_on {
+            graphics_utils::render(
+                &mut canvas,
+                &menu_background,
+                Point::new(0, 0),
+                sprite_720x480,
+                1.0,
+                ratio_x,
+                ratio_y,
+            );
+            // render buttons
+            for button in factions_menu_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                button.check_if_hovered(mx, my, ratio_x, ratio_y);
+                button.check_if_pressed(mx, my, mouse_state.left());
+            }
+
+            // play button
+            for button in factions_menu_buttons.iter_mut() {
+                let position = Point::new(button.x as i32, button.y as i32);
+                if button.status == graphics_utils::ButtonStatus::Hovered {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_hovered_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                    if !button_click.is_playing() {
+                        button_click.set_volume(sounds_volume);
+                        button_click.play();
+                    }
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_pressed_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                } else {
+                    graphics_utils::render(
+                        &mut canvas,
+                        &menu_button_texture,
+                        position,
+                        sprite_128x32,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                }
+            }
+            let position = Point::new(
+                factions_menu_buttons[0].x as i32,
+                factions_menu_buttons[0].y as i32,
+            );
+            // render text
+            let title_text = graphics_utils::get_text(
+                "Factions Menu".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                main_title_font_size,
+                &main_title_font,
+                &texture_creator,
+            )
+            .unwrap();
+            let position = Point::new((SCREEN_WIDTH / 2 - 175) as i32, 16 as i32);
+            let text_margin = 4;
+            graphics_utils::render_text(
+                &mut canvas,
+                &title_text.text_texture,
+                position,
+                title_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+
+            let text_margin = 4;
+            let position = Point::new(
+                factions_menu_buttons[0].x as i32 + text_margin,
+                factions_menu_buttons[0].y as i32 + text_margin,
+            );
+            let back_text = graphics_utils::get_text(
+                "Back".to_string(),
+                Color::RGBA(255, 255, 255, 255),
+                desc_font_size,
+                &font,
+                &texture_creator,
+            )
+            .unwrap();
+            graphics_utils::render_text(
+                &mut canvas,
+                &back_text.text_texture,
+                position,
+                back_text.text_sprite,
+                ratio_x,
+                ratio_y,
+            );
+            let mut index = 0;
+            for (key, val) in faction_relations.iter() {
+                index += 1;
+                let mut print_string = key.to_string();
+                print_string.push_str(format!(" - {}", val).as_str());
+                let position = Point::new(
+                    32 as i32,
+                    32 as i32 + index * 18 - factions_text_scroll as i32,
+                );
+                let text = graphics_utils::get_text(
+                    print_string,
+                    Color::RGBA(255, 255, 255, 255),
+                    desc_font_size,
+                    &font,
+                    &texture_creator,
+                )
+                .unwrap();
+                graphics_utils::render_text(
+                    &mut canvas,
+                    &text.text_texture,
+                    position,
+                    text.text_sprite,
+                    ratio_x,
+                    ratio_y,
+                );
+            }
+            if factions_menu_buttons[0].status == ButtonStatus::Released {
+                factions_menu_on = false;
+                status_menu_on = true;
+            }
+            if up {
+                factions_text_scroll -= delta_as_millis as f32 / 10.0;
+            }
+            if down {
+                factions_text_scroll += delta_as_millis as f32 / 10.0;
+            }
         } else {
             /*if up {
                 camera.mov(graphics_utils::MoveDirection::Up, delta_as_millis);
@@ -1526,6 +2053,7 @@ fn main_loop() -> Result<(), String> {
             if right {
                 camera.mov(graphics_utils::MoveDirection::Right, delta_as_millis);
             }*/
+
             if zoom_button_plus {
                 camera.zoom(graphics_utils::MoveDirection::Zoomin, delta_as_millis);
                 zoom_button_plus = false;
@@ -1546,6 +2074,7 @@ fn main_loop() -> Result<(), String> {
             let packet = ClientPacket {
                 player: player.clone(),
                 camera: camera.clone(),
+                faction_relations: faction_relations.clone(),
             };
             if player.shoot_data.shooting {
                 if player_action == PlayerAction::Meteoroid {
@@ -1577,6 +2106,14 @@ fn main_loop() -> Result<(), String> {
                     for p in players.iter() {
                         if p.id == player.id && p.energy == player.energy {
                             player.energy = p.energy;
+                        }
+                    }
+                    for row in chunks.iter() {
+                        for chunk in row.iter() {
+                            if !faction_relations.contains_key(&chunk.name) {
+                                faction_relations.insert(chunk.name.clone(), 100);
+                            } else {
+                            }
                         }
                     }
                 }
@@ -1768,17 +2305,50 @@ fn main_loop() -> Result<(), String> {
                                     None => (),
                                 }
                                 if collider.collider_type == ColliderType::SoulTrap {
-                                    if collider.x > entity.x
+                                    if collider.x > entity.x - 8.0
                                         && collider.x < entity.x + 8.0
-                                        && collider.y > entity.y
+                                        && collider.y > entity.y - 8.0
                                         && collider.y < entity.y + 8.0
                                     {
                                         if player.energy + 10 <= 100 {
                                             soul_trapped.play();
                                             player.energy += 10;
                                         }
+                                        if let Some(x) = faction_relations.get_mut(&entity.faction)
+                                        {
+                                            *x -= 125;
+                                        }
                                         let id = collider.id;
                                         already_collided_to_entity.insert(collider.id, entity.id);
+                                    }
+                                }
+                                if collider.collider_type == ColliderType::Meteoroid {
+                                    if collider.x > entity.x - 8.0
+                                        && collider.x < entity.x + 8.0
+                                        && collider.y > entity.y - 8.0
+                                        && collider.y < entity.y + 8.0
+                                    {
+                                        if player.energy + 10 <= 100 {
+                                            if let Some(x) =
+                                                faction_relations.get_mut(&entity.faction)
+                                            {
+                                                *x -= 125;
+                                            }
+                                        }
+                                        let id = collider.id;
+                                        already_collided_to_entity.insert(collider.id, entity.id);
+                                    }
+                                }
+                            }
+                            if player.x + 8.0 > entity.x
+                                && player.x + 8.0 < entity.x + ENTITY_SIZE
+                                && player.y + 8.0 > entity.y
+                                && player.y + 8.0 < entity.y + ENTITY_SIZE
+                            {
+                                if entity.entity_type == EntityType::SoldierAnt {
+                                    if hurt_change > hurt_time {
+                                        player.hp -= 10;
+                                        hurt_change = 0;
                                     }
                                 }
                             }
@@ -2115,7 +2685,10 @@ fn main_loop() -> Result<(), String> {
                     }
                     if collider.collider_type == ColliderType::SoulTrap {
                         let position = Point::new(tx_c as i32, ty_c as i32);
-                        let mut tex = &soul_trap_texture;
+                        let mut tex = &soul_trap_texture_1;
+                        if (client_time / SOUL_TRAP_ANIMATION_SPEED) % 2 == 0 {
+                            tex = &soul_trap_texture_2;
+                        }
                         graphics_utils::render(
                             &mut canvas,
                             &tex,
@@ -2697,16 +3270,32 @@ fn main_loop() -> Result<(), String> {
                     }
                 }
                 if action_icon_buttons[0].status == ButtonStatus::Released {
-                    player_action = PlayerAction::Siphon;
-                } else if action_icon_buttons[2].status == ButtonStatus::Released {
-                    player_action = PlayerAction::Meteoroid;
+                    status_menu_on = true;
                 } else if action_icon_buttons[1].status == ButtonStatus::Released {
+                    player_action = PlayerAction::Siphon;
+                } else if action_icon_buttons[3].status == ButtonStatus::Released {
+                    player_action = PlayerAction::Meteoroid;
+                } else if action_icon_buttons[2].status == ButtonStatus::Released {
                     player_action = PlayerAction::Raft;
                 }
-                // raft icon
                 let position = Point::new(
                     action_icon_buttons[0].x as i32 + 2,
                     action_icon_buttons[0].y as i32 + 2,
+                );
+                // status icon
+                graphics_utils::render(
+                    &mut canvas,
+                    &status_icon_texture,
+                    position,
+                    sprite_8,
+                    1.0,
+                    ratio_x,
+                    ratio_y,
+                );
+                // raft icon
+                let position = Point::new(
+                    action_icon_buttons[1].x as i32 + 2,
+                    action_icon_buttons[1].y as i32 + 2,
                 );
                 // meteoroid icon
                 graphics_utils::render(
@@ -2719,8 +3308,8 @@ fn main_loop() -> Result<(), String> {
                     ratio_y,
                 );
                 let position = Point::new(
-                    action_icon_buttons[2].x as i32 + 2,
-                    action_icon_buttons[2].y as i32 + 2,
+                    action_icon_buttons[3].x as i32 + 2,
+                    action_icon_buttons[3].y as i32 + 2,
                 );
                 graphics_utils::render(
                     &mut canvas,
@@ -2732,8 +3321,8 @@ fn main_loop() -> Result<(), String> {
                     ratio_y,
                 );
                 let position = Point::new(
-                    action_icon_buttons[1].x as i32 + 2,
-                    action_icon_buttons[1].y as i32 + 2,
+                    action_icon_buttons[2].x as i32 + 2,
+                    action_icon_buttons[2].y as i32 + 2,
                 );
                 graphics_utils::render(
                     &mut canvas,
@@ -2756,9 +3345,9 @@ fn main_loop() -> Result<(), String> {
                 if political_button.status == graphics_utils::ButtonStatus::Hovered {
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_hovered_texture,
+                        &action_icon_button_hovered_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2770,9 +3359,9 @@ fn main_loop() -> Result<(), String> {
                     }
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_pressed_texture,
+                        &action_icon_button_pressed_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2780,9 +3369,9 @@ fn main_loop() -> Result<(), String> {
                 } else {
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_texture,
+                        &action_icon_button_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2800,9 +3389,9 @@ fn main_loop() -> Result<(), String> {
                 if religion_button.status == graphics_utils::ButtonStatus::Hovered {
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_hovered_texture,
+                        &action_icon_button_hovered_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2814,9 +3403,9 @@ fn main_loop() -> Result<(), String> {
                     }
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_pressed_texture,
+                        &action_icon_button_pressed_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2824,9 +3413,9 @@ fn main_loop() -> Result<(), String> {
                 } else {
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_texture,
+                        &action_icon_button_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2845,9 +3434,9 @@ fn main_loop() -> Result<(), String> {
                 if normal_button.status == graphics_utils::ButtonStatus::Hovered {
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_hovered_texture,
+                        &action_icon_button_hovered_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2859,9 +3448,9 @@ fn main_loop() -> Result<(), String> {
                     }
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_pressed_texture,
+                        &action_icon_button_pressed_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
@@ -2869,26 +3458,26 @@ fn main_loop() -> Result<(), String> {
                 } else {
                     graphics_utils::render(
                         &mut canvas,
-                        &ui_button_texture,
+                        &action_icon_button_texture,
                         position,
-                        sprite_32,
+                        sprite_12,
                         1.0,
                         ratio_x,
                         ratio_y,
                     );
                 }
-                let normal_text_margin = 4;
+                let normal_text_margin = 0;
                 let normal_text = graphics_utils::get_text(
                     "N".to_string(),
                     Color::RGBA(255, 255, 255, 255),
-                    desc_font_size,
-                    &font,
+                    action_icon_font_size,
+                    &action_icon_font,
                     &texture_creator,
                 )
                 .unwrap();
                 let position = Point::new(
-                    normal_button.x as i32 + 8 + normal_text_margin,
-                    normal_button.y as i32 + normal_text_margin,
+                    normal_button.x as i32 + 2 + normal_text_margin,
+                    normal_button.y as i32 - 1 + normal_text_margin,
                 );
                 graphics_utils::render_text(
                     &mut canvas,
@@ -2898,18 +3487,18 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
-                let political_text_margin = 4;
+                let political_text_margin = 0;
                 let political_text = graphics_utils::get_text(
                     "P".to_string(),
                     Color::RGBA(255, 255, 255, 255),
-                    desc_font_size,
-                    &font,
+                    action_icon_font_size,
+                    &action_icon_font,
                     &texture_creator,
                 )
                 .unwrap();
                 let position = Point::new(
-                    political_button.x as i32 + 8 + political_text_margin,
-                    political_button.y as i32 + political_text_margin,
+                    political_button.x as i32 + 2 + political_text_margin,
+                    political_button.y as i32 - 1 + political_text_margin,
                 );
                 graphics_utils::render_text(
                     &mut canvas,
@@ -2920,18 +3509,18 @@ fn main_loop() -> Result<(), String> {
                     ratio_y,
                 );
 
-                let religion_text_margin = 4;
+                let religion_text_margin = 0;
                 let religion_text = graphics_utils::get_text(
                     "R".to_string(),
                     Color::RGBA(255, 255, 255, 255),
-                    desc_font_size,
-                    &font,
+                    action_icon_font_size,
+                    &action_icon_font,
                     &texture_creator,
                 )
                 .unwrap();
                 let position = Point::new(
-                    religion_button.x as i32 + 8 + religion_text_margin,
-                    religion_button.y as i32 + religion_text_margin,
+                    religion_button.x as i32 + 2 + religion_text_margin,
+                    religion_button.y as i32 - 1 + religion_text_margin,
                 );
                 graphics_utils::render_text(
                     &mut canvas,
@@ -2996,7 +3585,9 @@ fn main_loop() -> Result<(), String> {
         } else if religion_button.status == graphics_utils::ButtonStatus::Pressed {
             map_state = graphics_utils::MapState::Religion;
         }
-
+        if player.hp < 0 {
+            game_over = true;
+        }
         canvas.present();
         thread::sleep(time::Duration::from_millis(1));
     }
