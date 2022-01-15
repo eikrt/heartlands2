@@ -180,6 +180,7 @@ pub fn generate(
     let apply_cities = false;
     let apply_trees = true;
     let apply_vegetation = true;
+    let apply_objectives = true;
     // biomes and adding tiles
     for i in 0..width {
         world_chunks.push(vec![]);
@@ -440,7 +441,7 @@ pub fn generate(
                                                 y: (_ry + rng.gen_range(1.0..4.0))
                                                     * tile_size as f32,
                                                 stopped: false,
-                                                speed: 0.5,
+                                                speed: 4.5,
                                                 dir: 0.0,
                                                 target_x: 0.0,
                                                 target_y: 0.0,
@@ -851,9 +852,77 @@ pub fn generate(
             }
         }
     }
-
-    // SETTLEMENTS
-
+    if apply_objectives {
+        let random_x = rng.gen_range(0..world_chunks.len());
+        let random_y = rng.gen_range(0..world_chunks[0].len());
+        let chunk = &mut world_chunks[random_x][random_y];
+        let random_coord_x = rng.gen_range(0..chunk.points.len()) as f32;
+        let random_coord_y = rng.gen_range(0..chunk.points[0].len()) as f32;
+        let id = rng.gen_range(0..999999);
+        chunk.entities.insert(
+            id,
+            Entity {
+                id: id,
+                target_id: 0,
+                x: random_coord_x * tile_size as f32,
+                y: random_coord_y * tile_size as f32,
+                hp: 100,
+                speed: 0.0,
+                dir: 0.0,
+                target_x: 0.0,
+                target_y: 0.0,
+                stopped: true,
+                entity_type: EntityType::HolyMonument,
+                category_type: CategoryType::Tree,
+                religion_type: ReligionType::Nothing,
+                faction: chunk.name.clone().to_string(),
+                faction_id: chunk.id,
+                current_action: ActionType::Idle,
+                task_type: TaskType::Nothing,
+                backpack_item: ItemType::Nothing,
+                wearable_item: ItemType::Nothing,
+                wielding_item: ItemType::Nothing,
+                backpack_amount: 0,
+                time: 0,
+            },
+        );
+        for i in 0..3 {
+            let random_x = rng.gen_range(0..world_chunks.len());
+            let random_y = rng.gen_range(0..world_chunks[0].len());
+            let chunk = &mut world_chunks[random_x][random_y];
+            let random_coord_x = rng.gen_range(0..chunk.points.len()) as f32;
+            let random_coord_y = rng.gen_range(0..chunk.points[0].len()) as f32;
+            let id = rng.gen_range(0..999999);
+            chunk.entities.insert(
+                id,
+                Entity {
+                    id: id,
+                    target_id: 0,
+                    x: random_coord_x * tile_size as f32,
+                    y: random_coord_y * tile_size as f32,
+                    hp: 100,
+                    speed: 0.0,
+                    dir: 0.0,
+                    target_x: 0.0,
+                    target_y: 0.0,
+                    stopped: true,
+                    entity_type: EntityType::HolyObject,
+                    category_type: CategoryType::Tree,
+                    religion_type: ReligionType::Nothing,
+                    faction: chunk.name.clone().to_string(),
+                    faction_id: chunk.id,
+                    current_action: ActionType::Idle,
+                    task_type: TaskType::Nothing,
+                    backpack_item: ItemType::Nothing,
+                    wearable_item: ItemType::Nothing,
+                    wielding_item: ItemType::Nothing,
+                    backpack_amount: 0,
+                    time: 0,
+                },
+            );
+        }
+    }
+    // relations
     return World {
         chunks: world_chunks,
         world_data: WorldData {

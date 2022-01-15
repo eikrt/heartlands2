@@ -448,6 +448,7 @@ fn main_loop() -> Result<(), String> {
     let raft_texture = texture_creator.load_texture("res/raft.png")?;
     // entity textures
     let holy_monument_texture = texture_creator.load_texture("res/holy_monument.png")?;
+    let holy_object_texture = texture_creator.load_texture("res/holy_object.png")?;
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
     let appletree_texture = texture_creator.load_texture("res/appletree.png")?;
@@ -2006,9 +2007,24 @@ fn main_loop() -> Result<(), String> {
             );
             let mut index = 0;
             for (key, val) in faction_relations.iter() {
+                if key == "Neutral" {
+                    continue;
+                }
                 index += 1;
                 let mut print_string = key.to_string();
-                print_string.push_str(format!(" - {}", val).as_str());
+                let mut title = " - Neutral".to_string();
+                if val < &0 {
+                    title = " - Hostile".to_string();
+                } else if val > &0 && val < &25 {
+                    title = " - Loathed".to_string();
+                } else if val > &25 && val < &50 {
+                    title = " - Neutral".to_string();
+                } else if val > &50 && val < &75 {
+                    title = " - Liked".to_string();
+                } else if val > &75 && val <= &100 {
+                    title = " - Revered".to_string();
+                }
+                print_string.push_str(&title);
                 let position = Point::new(
                     32 as i32,
                     32 as i32 + index * 18 - factions_text_scroll as i32,
@@ -2111,7 +2127,7 @@ fn main_loop() -> Result<(), String> {
                     for row in chunks.iter() {
                         for chunk in row.iter() {
                             if !faction_relations.contains_key(&chunk.name) {
-                                faction_relations.insert(chunk.name.clone(), 100);
+                                faction_relations.insert(chunk.name.clone(), 50);
                             } else {
                             }
                         }
@@ -2340,10 +2356,10 @@ fn main_loop() -> Result<(), String> {
                                     }
                                 }
                             }
-                            if player.x + 8.0 > entity.x
-                                && player.x + 8.0 < entity.x + ENTITY_SIZE
-                                && player.y + 8.0 > entity.y
-                                && player.y + 8.0 < entity.y + ENTITY_SIZE
+                            if player.x + 8.0 > entity.x - ENTITY_SIZE * 2.0
+                                && player.x + 8.0 < entity.x + ENTITY_SIZE * 2.0
+                                && player.y + 8.0 > entity.y - ENTITY_SIZE * 2.0
+                                && player.y + 8.0 < entity.y + ENTITY_SIZE * 2.0
                             {
                                 if entity.entity_type == EntityType::SoldierAnt {
                                     if hurt_change > hurt_time {
@@ -2368,9 +2384,38 @@ fn main_loop() -> Result<(), String> {
                             if tx > SCREEN_WIDTH as f32 || ty > SCREEN_HEIGHT as f32 {
                                 continue;
                             }
-
+                            // objectives
+                            if entity.entity_type == EntityType::HolyMonument {
+                                let position = Point::new(
+                                    tx_tree as i32 - sprite_64.width() as i32 / 2,
+                                    ty_tree as i32 - sprite_64.height() as i32 / 2,
+                                );
+                                graphics_utils::render(
+                                    &mut canvas,
+                                    &holy_monument_texture,
+                                    position,
+                                    sprite_64,
+                                    camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
+                                );
+                            } else if entity.entity_type == EntityType::HolyObject {
+                                let position = Point::new(
+                                    tx_tree as i32 - sprite_8.width() as i32 / 2,
+                                    ty_tree as i32 - sprite_8.height() as i32 / 2,
+                                );
+                                graphics_utils::render(
+                                    &mut canvas,
+                                    &holy_object_texture,
+                                    position,
+                                    sprite_64,
+                                    camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
+                                );
+                            }
                             // trees
-                            if entity.entity_type == EntityType::Oak {
+                            else if entity.entity_type == EntityType::Oak {
                                 let position = Point::new(
                                     tx_tree as i32 - sprite_32.width() as i32 / 2,
                                     ty_tree as i32 - sprite_32.height() as i32 / 2,

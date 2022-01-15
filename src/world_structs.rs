@@ -13,7 +13,7 @@ const PROP_SIZE: i32 = 16;
 const VICINITY_SIZE: f32 = 96.0;
 const INTERACTION_SIZE: f32 = 8.0;
 const CHUNKRANGE: usize = 2;
-const REPRODUCE_CHANCE: usize = 256;
+const REPRODUCE_CHANCE: usize = 1024;
 const BACKPACKSIZE: u8 = 64;
 const INTERACTION_COOLDOWN: u128 = 10;
 pub const HATCH_TIME: u128 = 10000;
@@ -147,6 +147,8 @@ pub enum EntityType {
     Snail,
     FoodStorage,
     AntEgg,
+    HolyMonument,
+    HolyObject,
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(tag = "RequestType")]
@@ -472,6 +474,10 @@ impl World {
     }
 
     pub fn update_political_and_religion_situation(&mut self) {
+        // also relations
+
+        // relations
+
         // political
         let mut biggest_value_data = (0, 0, "Neutral".to_string());
         let ant_number_to_change_ownership = 1;
