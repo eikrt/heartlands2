@@ -8,6 +8,7 @@ use crate::world_structs::{
     Point, Prop, PropType, ReligionType, TaskType, TileType, World, WorldData,
 };
 use rand::Rng;
+use rayon::prelude::*;
 use serde_json;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;

@@ -1,5 +1,6 @@
 use crate::world_structs::{EntityType, ReligionType, TileType};
 use bincode;
+use rand::Rng;
 use sdl2::image::{InitFlag, LoadTexture};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -384,4 +385,23 @@ pub fn get_descriptions_for_religions() -> HashMap<ReligionType, String> {
         (ReligionType::Nothing, "No religion".to_string()),
     ]);
     return religion_descriptions;
+}
+pub fn get_dialogue_for_criteria(relation: i32, chunk_relations: HashMap<String, i32>) -> String {
+    let mut rng = rand::thread_rng();
+    let dialogue_select = rng.gen_range(0..1);
+    if dialogue_select == 0 {
+        if relation < 0 {
+            return "Prepare to be dissected!".to_string();
+        } else if relation > 0 && relation <= 25 {
+            return "Get out of my sight, lunatic...".to_string();
+        } else if relation > 25 && relation <= 50 {
+            return "It's a good day in Terrant...".to_string();
+        } else if relation > 50 && relation <= 75 {
+            return "I'm always happy to help you!".to_string();
+        } else if relation > 75 && relation <= 100 {
+            return "We should erect a monument for you!".to_string();
+        }
+    } else if dialogue_select == 1 {
+    }
+    "Klack klack...".to_string()
 }

@@ -4,6 +4,7 @@ use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -549,7 +550,7 @@ impl World {
         }
     }
     pub fn update_entities(&mut self) {
-        for collider in self.colliders.iter_mut() {
+        for collider in self.colliders.par_iter_mut() {
             collider.mov();
             collider.tick();
             for row in self.chunks.iter_mut() {

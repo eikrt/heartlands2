@@ -7,7 +7,9 @@ extern crate ears;
 use crate::client::ears::AudioTags;
 use crate::client_structs;
 use crate::client_structs::{ClientPacket, Player, PlayerAction, ShootData};
-use crate::graphics_utils::{Button, ButtonStatus, Camera, MoveDirection};
+use crate::graphics_utils::{
+    get_dialogue_for_criteria, Button, ButtonStatus, Camera, MoveDirection,
+};
 use crate::world_structs::{
     ActionType, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType, Prop,
     PropType, ReligionType, TaskType, TileType, World, WorldData, HATCH_TIME,
@@ -119,6 +121,8 @@ fn main_loop() -> Result<(), String> {
     player_footstep.set_volume(sounds_volume);
     let songs_len = songs.len();
     let mut current_song = &mut songs[0];
+
+    let plasma_texts = vec![""];
     let wiki_text_paths = [
         "text/terrant.md",
         "text/desert.md",
@@ -186,6 +190,7 @@ fn main_loop() -> Result<(), String> {
         zoom_speed: 0.05,
         move_speed: 20.0,
     };
+    let mut hovered_entity: std::option::Option<Entity> = None;
 
     let bg_color = Color::RGB(0, 0, 0);
     //let mut stream = TcpStream::connect("localhost:5000").unwrap();
@@ -621,6 +626,8 @@ fn main_loop() -> Result<(), String> {
     let mut player_action = PlayerAction::Nothing;
     let mut map_state = graphics_utils::MapState::Normal;
     let mut main_menu_on = true;
+    let mut dialogue_box_on = false;
+    let mut main_hud_on = true;
     let mut game_over = false;
     let mut factions_menu_on = false;
     let mut status_menu_on = false;
@@ -823,6 +830,14 @@ fn main_loop() -> Result<(), String> {
                             player.build_soul_trap(x, y);
                         }
                     } else if mouse_btn == sdl2::mouse::MouseButton::Right {
+                        if let Some(ref x) = hovered_entity {
+                            dialogue_box_on = true;
+                            main_hud_on = false;
+                        }
+                        if mouse_not_moved_for < 100 {
+                            dialogue_box_on = false;
+                            main_hud_on = true;
+                        }
                     }
                 }
                 // WASD
@@ -2867,7 +2882,6 @@ fn main_loop() -> Result<(), String> {
                 // render hover
                 let mut hovered_tiletype = TileType::Grass;
                 let mut hovered_tile: std::option::Option<crate::world_structs::Point> = None;
-                let mut hovered_entity: std::option::Option<Entity> = None;
                 let mut hovering_entity = false;
                 if mouse_not_moved_for > hover_time {
                     let e_x = (camera.x / ratio_x + mouse_state.x() as f32) * ratio_x;
@@ -2899,7 +2913,7 @@ fn main_loop() -> Result<(), String> {
                 }
                 if (!hovering_entity) {
                     match hovered_tile {
-                        Some(ht) => {
+                        Some(ref ht) => {
                             let text = graphics_utils::get_text(
                                 descriptions_for_tiles
                                     .get(&ht.tile_type)
@@ -2932,11 +2946,11 @@ fn main_loop() -> Result<(), String> {
                     }
                 } else {
                     match hovered_entity {
-                        Some(he) => {
+                        Some(ref he) => {
                             let mut name = descriptions_for_entities.get(&he.entity_type).unwrap();
                             let mut title = "".to_string();
                             if he.category_type == CategoryType::Ant {
-                                title = he.faction;
+                                title = he.faction.clone();
                                 title.push_str("ese ");
                             }
 
@@ -3190,194 +3204,256 @@ fn main_loop() -> Result<(), String> {
                     ratio_x,
                     ratio_y,
                 );
-
-                let hp_text = graphics_utils::get_text(
-                    "LIFE: ".to_string(),
-                    Color::RGBA(255, 255, 255, 255),
-                    hp_font_size,
-                    &hp_font,
-                    &texture_creator,
-                )
-                .unwrap();
-                let position = Point::new(
-                    (SCREEN_WIDTH as f32 - 116.0) as i32,
-                    (SCREEN_HEIGHT as f32 - 46.0) as i32,
-                );
-                graphics_utils::render_text(
-                    &mut canvas,
-                    &hp_text.text_texture,
-                    position,
-                    hp_text.text_sprite,
-                    ratio_x,
-                    ratio_y,
-                );
-                let magic_text = graphics_utils::get_text(
-                    "ENERGY: ".to_string(),
-                    Color::RGBA(255, 255, 255, 255),
-                    hp_font_size,
-                    &hp_font,
-                    &texture_creator,
-                )
-                .unwrap();
-                let position = Point::new(
-                    (SCREEN_WIDTH - 116).try_into().unwrap(),
-                    (SCREEN_HEIGHT - 36).try_into().unwrap(),
-                );
-                graphics_utils::render_text(
-                    &mut canvas,
-                    &magic_text.text_texture,
-                    position,
-                    magic_text.text_sprite,
-                    ratio_x,
-                    ratio_y,
-                );
-
-                let position = Point::new(
-                    ((SCREEN_WIDTH - 78) as f32 / ratio_x) as i32,
-                    ((SCREEN_HEIGHT - 44) as f32 / ratio_y) as i32,
-                );
-                let render_rect = Rect::new(
-                    (position.x as f32) as i32,
-                    (position.y as f32) as i32,
-                    ((1.0.lerp(64.0, player.hp as f32 / 100.0)) / ratio_x) as u32,
-                    (8.0 / ratio_y) as u32,
-                );
-
-                graphics_utils::render_rect(
-                    &mut canvas,
-                    position,
-                    render_rect,
-                    Color::RGBA(255, 0, 0, 55),
-                    1.0,
-                );
-                let position = Point::new(
-                    ((SCREEN_WIDTH - 78) as f32 / ratio_x) as i32,
-                    ((SCREEN_HEIGHT - 34) as f32 / ratio_y) as i32,
-                );
-                let render_rect = Rect::new(
-                    (position.x as f32) as i32,
-                    (position.y as f32) as i32,
-                    ((1.0.lerp(64.0, player.energy as f32 / 100.0)) / ratio_x) as u32,
-                    (8.0 / ratio_y) as u32,
-                );
-
-                graphics_utils::render_rect(
-                    &mut canvas,
-                    position,
-                    render_rect,
-                    Color::RGBA(0, 255, 100, 55),
-                    1.0,
-                );
-                // icon buttons
-                for button in action_icon_buttons.iter_mut() {
-                    let position = Point::new(button.x as i32, button.y as i32);
-                    button.check_if_hovered(
-                        mouse_state.x() as f32 * ratio_x,
-                        mouse_state.y() as f32 * ratio_y,
+                if main_hud_on {
+                    let hp_text = graphics_utils::get_text(
+                        "LIFE: ".to_string(),
+                        Color::RGBA(255, 255, 255, 255),
+                        hp_font_size,
+                        &hp_font,
+                        &texture_creator,
+                    )
+                    .unwrap();
+                    let position = Point::new(
+                        (SCREEN_WIDTH as f32 - 116.0) as i32,
+                        (SCREEN_HEIGHT as f32 - 46.0) as i32,
+                    );
+                    graphics_utils::render_text(
+                        &mut canvas,
+                        &hp_text.text_texture,
+                        position,
+                        hp_text.text_sprite,
                         ratio_x,
                         ratio_y,
                     );
-                    button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
-                    if button.status == graphics_utils::ButtonStatus::Hovered {
-                        graphics_utils::render(
-                            &mut canvas,
-                            &action_icon_button_hovered_texture,
-                            position,
-                            sprite_12,
-                            1.0,
+                    let magic_text = graphics_utils::get_text(
+                        "ENERGY: ".to_string(),
+                        Color::RGBA(255, 255, 255, 255),
+                        hp_font_size,
+                        &hp_font,
+                        &texture_creator,
+                    )
+                    .unwrap();
+                    let position = Point::new(
+                        (SCREEN_WIDTH - 116).try_into().unwrap(),
+                        (SCREEN_HEIGHT - 36).try_into().unwrap(),
+                    );
+                    graphics_utils::render_text(
+                        &mut canvas,
+                        &magic_text.text_texture,
+                        position,
+                        magic_text.text_sprite,
+                        ratio_x,
+                        ratio_y,
+                    );
+
+                    let position = Point::new(
+                        ((SCREEN_WIDTH - 78) as f32 / ratio_x) as i32,
+                        ((SCREEN_HEIGHT - 44) as f32 / ratio_y) as i32,
+                    );
+                    let render_rect = Rect::new(
+                        (position.x as f32) as i32,
+                        (position.y as f32) as i32,
+                        ((1.0.lerp(64.0, player.hp as f32 / 100.0)) / ratio_x) as u32,
+                        (8.0 / ratio_y) as u32,
+                    );
+
+                    graphics_utils::render_rect(
+                        &mut canvas,
+                        position,
+                        render_rect,
+                        Color::RGBA(255, 0, 0, 55),
+                        1.0,
+                    );
+                    let position = Point::new(
+                        ((SCREEN_WIDTH - 78) as f32 / ratio_x) as i32,
+                        ((SCREEN_HEIGHT - 34) as f32 / ratio_y) as i32,
+                    );
+                    let render_rect = Rect::new(
+                        (position.x as f32) as i32,
+                        (position.y as f32) as i32,
+                        ((1.0.lerp(64.0, player.energy as f32 / 100.0)) / ratio_x) as u32,
+                        (8.0 / ratio_y) as u32,
+                    );
+
+                    graphics_utils::render_rect(
+                        &mut canvas,
+                        position,
+                        render_rect,
+                        Color::RGBA(0, 255, 100, 55),
+                        1.0,
+                    );
+                    // icon buttons
+                    for button in action_icon_buttons.iter_mut() {
+                        let position = Point::new(button.x as i32, button.y as i32);
+                        button.check_if_hovered(
+                            mouse_state.x() as f32 * ratio_x,
+                            mouse_state.y() as f32 * ratio_y,
                             ratio_x,
                             ratio_y,
                         );
-                    } else if button.status == graphics_utils::ButtonStatus::Pressed {
-                        if !button_click.is_playing() {
-                            button_click.set_volume(sounds_volume);
-                            button_click.play();
+                        button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
+                        if button.status == graphics_utils::ButtonStatus::Hovered {
+                            graphics_utils::render(
+                                &mut canvas,
+                                &action_icon_button_hovered_texture,
+                                position,
+                                sprite_12,
+                                1.0,
+                                ratio_x,
+                                ratio_y,
+                            );
+                        } else if button.status == graphics_utils::ButtonStatus::Pressed {
+                            if !button_click.is_playing() {
+                                button_click.set_volume(sounds_volume);
+                                button_click.play();
+                            }
+                            graphics_utils::render(
+                                &mut canvas,
+                                &action_icon_button_pressed_texture,
+                                position,
+                                sprite_12,
+                                1.0,
+                                ratio_x,
+                                ratio_y,
+                            );
+                        } else {
+                            graphics_utils::render(
+                                &mut canvas,
+                                &action_icon_button_texture,
+                                position,
+                                sprite_12,
+                                1.0,
+                                ratio_x,
+                                ratio_y,
+                            );
                         }
-                        graphics_utils::render(
-                            &mut canvas,
-                            &action_icon_button_pressed_texture,
-                            position,
-                            sprite_12,
-                            1.0,
-                            ratio_x,
-                            ratio_y,
-                        );
-                    } else {
-                        graphics_utils::render(
-                            &mut canvas,
-                            &action_icon_button_texture,
-                            position,
-                            sprite_12,
-                            1.0,
-                            ratio_x,
-                            ratio_y,
-                        );
                     }
+                    if action_icon_buttons[0].status == ButtonStatus::Released {
+                        status_menu_on = true;
+                    } else if action_icon_buttons[1].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Siphon;
+                    } else if action_icon_buttons[3].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Meteoroid;
+                    } else if action_icon_buttons[2].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Raft;
+                    }
+                    let position = Point::new(
+                        action_icon_buttons[0].x as i32 + 2,
+                        action_icon_buttons[0].y as i32 + 2,
+                    );
+                    // status icon
+                    graphics_utils::render(
+                        &mut canvas,
+                        &status_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    // raft icon
+                    let position = Point::new(
+                        action_icon_buttons[1].x as i32 + 2,
+                        action_icon_buttons[1].y as i32 + 2,
+                    );
+                    // meteoroid icon
+                    graphics_utils::render(
+                        &mut canvas,
+                        &siphon_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[3].x as i32 + 2,
+                        action_icon_buttons[3].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &meteoroid_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[2].x as i32 + 2,
+                        action_icon_buttons[2].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &raft_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
                 }
-                if action_icon_buttons[0].status == ButtonStatus::Released {
-                    status_menu_on = true;
-                } else if action_icon_buttons[1].status == ButtonStatus::Released {
-                    player_action = PlayerAction::Siphon;
-                } else if action_icon_buttons[3].status == ButtonStatus::Released {
-                    player_action = PlayerAction::Meteoroid;
-                } else if action_icon_buttons[2].status == ButtonStatus::Released {
-                    player_action = PlayerAction::Raft;
+                if dialogue_box_on {
+                    let mut entity_name = "".to_string();
+                    match hovered_entity {
+                        Some(ref e) => match descriptions_for_entities.get(&e.entity_type) {
+                            Some(ref d) => {
+                                entity_name = format!("{}", d);
+                            }
+                            None => entity_name = "Unknown lifeform".to_string(),
+                        },
+                        None => entity_name = "Unknown lifeform".to_string(),
+                    }
+                    let entity_name_text = graphics_utils::get_text(
+                        entity_name,
+                        Color::RGBA(255, 255, 255, 255),
+                        hp_font_size,
+                        &hp_font,
+                        &texture_creator,
+                    )
+                    .unwrap();
+                    let position = Point::new(
+                        (12).try_into().unwrap(),
+                        (SCREEN_HEIGHT - 44).try_into().unwrap(),
+                    );
+                    graphics_utils::render_text(
+                        &mut canvas,
+                        &entity_name_text.text_texture,
+                        position,
+                        entity_name_text.text_sprite,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let mut relation_criteria = 25;
+                    match hovered_entity {
+                        Some(ref h) => {
+                            if let Some(x) = faction_relations.get(&h.faction) {
+                                relation_criteria = *x;
+                            }
+                        }
+                        None => relation_criteria = 25,
+                    }
+                    let dialogue_text = graphics_utils::get_text(
+                        get_dialogue_for_criteria(relation_criteria, HashMap::new()),
+                        Color::RGBA(255, 255, 255, 255),
+                        hp_font_size,
+                        &hp_font,
+                        &texture_creator,
+                    )
+                    .unwrap();
+                    let position = Point::new(
+                        (12).try_into().unwrap(),
+                        (SCREEN_HEIGHT - 24).try_into().unwrap(),
+                    );
+                    graphics_utils::render_text(
+                        &mut canvas,
+                        &dialogue_text.text_texture,
+                        position,
+                        dialogue_text.text_sprite,
+                        ratio_x,
+                        ratio_y,
+                    );
                 }
-                let position = Point::new(
-                    action_icon_buttons[0].x as i32 + 2,
-                    action_icon_buttons[0].y as i32 + 2,
-                );
-                // status icon
-                graphics_utils::render(
-                    &mut canvas,
-                    &status_icon_texture,
-                    position,
-                    sprite_8,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-                // raft icon
-                let position = Point::new(
-                    action_icon_buttons[1].x as i32 + 2,
-                    action_icon_buttons[1].y as i32 + 2,
-                );
-                // meteoroid icon
-                graphics_utils::render(
-                    &mut canvas,
-                    &siphon_icon_texture,
-                    position,
-                    sprite_8,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-                let position = Point::new(
-                    action_icon_buttons[3].x as i32 + 2,
-                    action_icon_buttons[3].y as i32 + 2,
-                );
-                graphics_utils::render(
-                    &mut canvas,
-                    &meteoroid_icon_texture,
-                    position,
-                    sprite_8,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
-                let position = Point::new(
-                    action_icon_buttons[2].x as i32 + 2,
-                    action_icon_buttons[2].y as i32 + 2,
-                );
-                graphics_utils::render(
-                    &mut canvas,
-                    &raft_icon_texture,
-                    position,
-                    sprite_8,
-                    1.0,
-                    ratio_x,
-                    ratio_y,
-                );
                 // political map button
                 let position = Point::new(political_button.x as i32, political_button.y as i32);
                 political_button.check_if_hovered(
