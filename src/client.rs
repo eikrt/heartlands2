@@ -454,6 +454,7 @@ fn main_loop() -> Result<(), String> {
     // entity textures
     let holy_monument_texture = texture_creator.load_texture("res/holy_monument.png")?;
     let holy_object_texture = texture_creator.load_texture("res/holy_object.png")?;
+    let ant_head_texture = texture_creator.load_texture("res/ant_head.png")?;
     let oak_texture = texture_creator.load_texture("res/oak.png")?;
     let birch_texture = texture_creator.load_texture("res/birch.png")?;
     let appletree_texture = texture_creator.load_texture("res/appletree.png")?;
@@ -831,8 +832,10 @@ fn main_loop() -> Result<(), String> {
                         }
                     } else if mouse_btn == sdl2::mouse::MouseButton::Right {
                         if let Some(ref x) = hovered_entity {
-                            dialogue_box_on = true;
-                            main_hud_on = false;
+                            if x.category_type == CategoryType::Ant {
+                                dialogue_box_on = true;
+                                main_hud_on = false;
+                            }
                         }
                         if mouse_not_moved_for < 100 {
                             dialogue_box_on = false;
@@ -2326,7 +2329,17 @@ fn main_loop() -> Result<(), String> {
 
                         entities_vals.sort_by(|a, b| a.id.cmp(&b.id));
                         for entity in entities_vals.iter() {
+                            let tx = (entity.x) * camera.zoom - camera.x;
+                            let ty = (entity.y) * camera.zoom - camera.y;
                             if entity.hp < 0 {
+                                continue;
+                            }
+
+                            if tx < -64.0 || ty < -64.0 {
+                                continue;
+                            }
+
+                            if tx > SCREEN_WIDTH as f32 || ty > SCREEN_HEIGHT as f32 {
                                 continue;
                             }
                             'collide_loop: for collider in &colliders {
@@ -2377,7 +2390,7 @@ fn main_loop() -> Result<(), String> {
                                 && player.y + 8.0 < entity.y + ENTITY_SIZE * 2.0
                             {
                                 if entity.entity_type == EntityType::SoldierAnt {
-                                    if hurt_change > hurt_time {
+                                    if hurt_change > hurt_time && entity.target_id != 0 {
                                         player.hp -= 10;
                                         hurt_change = 0;
                                     }
@@ -2883,7 +2896,7 @@ fn main_loop() -> Result<(), String> {
                 let mut hovered_tiletype = TileType::Grass;
                 let mut hovered_tile: std::option::Option<crate::world_structs::Point> = None;
                 let mut hovering_entity = false;
-                if mouse_not_moved_for > hover_time {
+                if mouse_state.right() {
                     let e_x = (camera.x / ratio_x + mouse_state.x() as f32) * ratio_x;
                     let e_y = (camera.y / ratio_y + mouse_state.y() as f32) * ratio_y;
                     for i in 0..chunks.len() {
@@ -2897,6 +2910,8 @@ fn main_loop() -> Result<(), String> {
                             }
                         }
                     }
+                }
+                if mouse_not_moved_for > hover_time {
                     let tile_x = (((mouse_x_unscaled) / TILE_SIZE) as f32).floor();
                     let tile_y = (((mouse_y_unscaled) / TILE_SIZE) as f32).floor();
                     for i in 0..chunks.len() {
@@ -2933,14 +2948,14 @@ fn main_loop() -> Result<(), String> {
                                     - (text.text_sprite.height()) as f32)
                                     as i32),
                             );
-                            graphics_utils::render_text(
+                            /*  graphics_utils::render_text(
                                 &mut canvas,
                                 &text.text_texture,
                                 position,
                                 text.text_sprite,
                                 ratio_x,
                                 ratio_y,
-                            );
+                            );*/
                         }
                         None => (),
                     }
@@ -2972,14 +2987,14 @@ fn main_loop() -> Result<(), String> {
                                     - (text.text_sprite.height()) as f32)
                                     as i32),
                             );
-                            graphics_utils::render_text(
+                            /*            graphics_utils::render_text(
                                 &mut canvas,
                                 &text.text_texture,
                                 position,
                                 text.text_sprite,
                                 ratio_x,
                                 ratio_y,
-                            );
+                            );*/
                         }
 
                         None => (),
@@ -3414,7 +3429,7 @@ fn main_loop() -> Result<(), String> {
                     .unwrap();
                     let position = Point::new(
                         (12).try_into().unwrap(),
-                        (SCREEN_HEIGHT - 44).try_into().unwrap(),
+                        (SCREEN_HEIGHT - 16).try_into().unwrap(),
                     );
                     graphics_utils::render_text(
                         &mut canvas,
@@ -3442,14 +3457,28 @@ fn main_loop() -> Result<(), String> {
                     )
                     .unwrap();
                     let position = Point::new(
-                        (12).try_into().unwrap(),
-                        (SCREEN_HEIGHT - 24).try_into().unwrap(),
+                        (82).try_into().unwrap(),
+                        (SCREEN_HEIGHT - 44).try_into().unwrap(),
                     );
                     graphics_utils::render_text(
                         &mut canvas,
                         &dialogue_text.text_texture,
                         position,
                         dialogue_text.text_sprite,
+                        ratio_x,
+                        ratio_y,
+                    );
+
+                    let position = Point::new(
+                        (4).try_into().unwrap(),
+                        (SCREEN_HEIGHT - 44).try_into().unwrap(),
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &ant_head_texture,
+                        position,
+                        sprite_32,
+                        1.0,
                         ratio_x,
                         ratio_y,
                     );

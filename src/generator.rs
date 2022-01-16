@@ -923,6 +923,14 @@ pub fn generate(
         }
     }
     // relations
+    let factions = HashMap::new();
+    for row in world_chunks.iter() {
+        for chunk in row.iter() {
+            if factions.contains_key(&chunk.name) {
+                factions.insert(chunk.name)
+            }
+        }
+    }
     return World {
         chunks: world_chunks,
         world_data: WorldData {

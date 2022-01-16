@@ -4,7 +4,6 @@ use rand::{
     distributions::{Distribution, Standard},
     Rng,
 };
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
@@ -156,6 +155,12 @@ pub enum EntityType {
 pub enum RequestType {
     Chunk,
     Data,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct Faction {
+    pub name: String,
+    pub relations: HashMap<Faction, i32>,
 }
 
 pub fn get_descriptions_for_tiles() -> HashMap<TileType, String> {
@@ -401,6 +406,7 @@ pub struct World {
     pub world_data: WorldData,
     pub players: Vec<Player>,
     pub colliders: Vec<Collider>,
+    pub Factions: HashMap<String, Faction>,
     pub props: Vec<Prop>,
     pub v_x: i32, // slice dimensions for formatting
     pub v_y: i32,
@@ -475,10 +481,6 @@ impl World {
     }
 
     pub fn update_political_and_religion_situation(&mut self) {
-        // also relations
-
-        // relations
-
         // political
         let mut biggest_value_data = (0, 0, "Neutral".to_string());
         let ant_number_to_change_ownership = 1;
@@ -550,7 +552,7 @@ impl World {
         }
     }
     pub fn update_entities(&mut self) {
-        for collider in self.colliders.par_iter_mut() {
+        for collider in self.colliders.iter_mut() {
             collider.mov();
             collider.tick();
             for row in self.chunks.iter_mut() {
