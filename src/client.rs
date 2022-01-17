@@ -18,6 +18,8 @@ use ears::{AudioController, Music, Sound};
 use lerp::Lerp;
 use rand::Rng;
 
+use colorgrad::Color as GradColor;
+use palette::{Pixel, Srgb};
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, LoadSurface, LoadTexture};
 use sdl2::keyboard::Keycode;
@@ -48,7 +50,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{thread, time};
 use websocket::client::ClientBuilder;
 use websocket::{Message, OwnedMessage};
-const ENTITY_SIZE: f32 = 8.0;
+const ENTITY_SIZE: f32 = 16.0;
 const SCREEN_WIDTH: u32 = 426;
 const SCREEN_HEIGHT: u32 = 240;
 const HUD_LOC: u32 = 336;
@@ -92,6 +94,7 @@ fn main_loop() -> Result<(), String> {
     let music_path_1 = "music/tribal_hero.flac";
     let music_path_2 = "music/sundown_of_terrant.flac";
     let music_path_3 = "music/echoes_of_icebergs.flac";
+    let music_path_4 = "music/call_of_plasma.flac";
     let footstep_path = "sound/footstep.flac";
     let start_fanfare_path = "sound/start_fanfare.flac";
     let button_click_path = "sound/button_click.flac";
@@ -105,6 +108,7 @@ fn main_loop() -> Result<(), String> {
         Music::new(music_path_1).unwrap(),
         Music::new(music_path_2).unwrap(),
         Music::new(music_path_3).unwrap(),
+        Music::new(music_path_4).unwrap(),
     ];
     let mut sounds_volume = 0.7;
     let mut song_volume = 0.0;
@@ -120,7 +124,7 @@ fn main_loop() -> Result<(), String> {
     let mut player_footstep = Sound::new(footstep_path).unwrap();
     player_footstep.set_volume(sounds_volume);
     let songs_len = songs.len();
-    let mut current_song = &mut songs[0];
+    let mut current_song = &mut songs[rng.gen_range(0..2)];
 
     let plasma_texts = vec![""];
     let wiki_text_paths = [
@@ -158,6 +162,20 @@ fn main_loop() -> Result<(), String> {
     // canvas.window_mut().set_size(500, 500);
     // canvas.window_mut().set_resizable(true);
     // texture stuff
+    let cycle_gradient = colorgrad::CustomGradient::new()
+        .colors(&[
+            GradColor::from_rgba_u8(30, 55, 90, 40),
+            GradColor::from_rgba_u8(240, 230, 135, 10),
+            GradColor::from_rgba_u8(255, 255, 255, 10),
+            GradColor::from_rgba_u8(240, 190, 140, 10),
+            GradColor::from_rgba_u8(30, 55, 90, 40),
+            GradColor::from_rgba_u8(30, 55, 90, 40),
+            GradColor::from_rgba_u8(30, 55, 90, 40),
+            GradColor::from_rgba_u8(30, 55, 90, 40),
+        ])
+        .domain(&[0.0, 1.0])
+        .build()
+        .unwrap();
     let mut hurt_change = 0;
     let hurt_time = 500;
     let texture_creator = canvas.texture_creator();
@@ -211,6 +229,8 @@ fn main_loop() -> Result<(), String> {
     let mut minus = false;
     let mut event_pump = sdl_context.event_pump()?;
     let mut compare_time = SystemTime::now();
+    let mut day_night_cycle_time = 0;
+    let mut day_night_cycle_length = 600000;
     let mut client_time: u128 = 0;
     let mut update_data = true;
     let mut world_data: WorldData = WorldData {
@@ -236,6 +256,12 @@ fn main_loop() -> Result<(), String> {
     let mut faction_relations: HashMap<String, i32> = HashMap::new();
     let mut props: Vec<Prop> = Vec::new();
     let mut players: Vec<Player> = Vec::new();
+    let mut cycle_colors = HashMap::from([
+        (0, Color::RGBA(240, 230, 135, 45)),
+        (1, Color::RGBA(255, 255, 255, 45)),
+        (2, Color::RGBA(240, 190, 140, 50)),
+        (3, Color::RGBA(30, 55, 90, 60)),
+    ]);
     let mut settings_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
@@ -444,8 +470,13 @@ fn main_loop() -> Result<(), String> {
         width: 12.0,
         height: 12.0,
     };
-    // collider textures
 
+    // misc textures
+
+    let mut ant_shadow_texture = texture_creator.load_texture("res/ant_shadow.png")?;
+    ant_shadow_texture.set_alpha_mod(125);
+    ant_shadow_texture.set_blend_mode(BlendMode::Blend);
+    // collider textures
     let meteoroid_texture = texture_creator.load_texture("res/meteoroid.png")?;
     let soul_trap_texture_1 = texture_creator.load_texture("res/soul_trap.png")?;
     let soul_trap_texture_2 = texture_creator.load_texture("res/soul_trap_3.png")?;
@@ -495,6 +526,7 @@ fn main_loop() -> Result<(), String> {
     let cultist_ant_texture_2 = texture_creator.load_texture("res/plasmant_2.png")?;
     let ant_queen_texture_1 = texture_creator.load_texture("res/ant_queen.png")?;
     let ant_queen_texture_2 = texture_creator.load_texture("res/ant_queen.png")?;
+    let fungus_monster_texture = texture_creator.load_texture("res/fungus_monster.png")?;
     let snail_texture = texture_creator.load_texture("res/snail.png")?;
     let food_storage_texture = texture_creator.load_texture("res/food_storage.png")?;
 
@@ -566,6 +598,13 @@ fn main_loop() -> Result<(), String> {
         (12.0 * camera.zoom) as u32,
         (12.0 * camera.zoom) as u32,
     );
+    let sprite_12x4 = Rect::new(
+        0,
+        0,
+        (12.0 * camera.zoom) as u32,
+        (4.0 * camera.zoom) as u32,
+    );
+    let sprite_8x4 = Rect::new(0, 0, (8.0 * camera.zoom) as u32, (4.0 * camera.zoom) as u32);
     let sprite_16 = Rect::new(
         0,
         0,
@@ -718,6 +757,10 @@ fn main_loop() -> Result<(), String> {
         if delta.as_millis() / 10 != 0 {
             //println!("FPS: {}", 100 / (delta.as_millis() / 10));
             //println!("{}", delta_as_millis);
+        }
+        day_night_cycle_time += delta_as_millis;
+        if day_night_cycle_time > day_night_cycle_length {
+            day_night_cycle_time = 0;
         }
         hurt_change += delta_as_millis;
         client_time += delta_as_millis;
@@ -2384,14 +2427,19 @@ fn main_loop() -> Result<(), String> {
                                     }
                                 }
                             }
-                            if player.x + 8.0 > entity.x - ENTITY_SIZE * 2.0
-                                && player.x + 8.0 < entity.x + ENTITY_SIZE * 2.0
-                                && player.y + 8.0 > entity.y - ENTITY_SIZE * 2.0
-                                && player.y + 8.0 < entity.y + ENTITY_SIZE * 2.0
+                            if player.x > entity.x - ENTITY_SIZE * 1.0
+                                && player.x < entity.x + ENTITY_SIZE * 1.0
+                                && player.y > entity.y - ENTITY_SIZE * 1.0
+                                && player.y < entity.y + ENTITY_SIZE * 1.0
                             {
                                 if entity.entity_type == EntityType::SoldierAnt {
                                     if hurt_change > hurt_time && entity.target_id != 0 {
                                         player.hp -= 10;
+                                        hurt_change = 0;
+                                    }
+                                } else if entity.entity_type == EntityType::FungusMonster {
+                                    if hurt_change > hurt_time {
+                                        player.hp -= 40;
                                         hurt_change = 0;
                                     }
                                 }
@@ -2411,6 +2459,22 @@ fn main_loop() -> Result<(), String> {
 
                             if tx > SCREEN_WIDTH as f32 || ty > SCREEN_HEIGHT as f32 {
                                 continue;
+                            }
+                            let shadow_position = Point::new(
+                                tx_ant as i32 - sprite_8x4.width() as i32 / 2,
+                                ty_ant as i32 - sprite_8x4.height() as i32 / 2 + 8,
+                            );
+
+                            if entity.category_type == CategoryType::Ant {
+                                /*graphics_utils::render(
+                                    &mut canvas,
+                                    &ant_shadow_texture,
+                                    shadow_position,
+                                    sprite_12x4,
+                                    camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
+                                );*/
                             }
                             // objectives
                             if entity.entity_type == EntityType::HolyMonument {
@@ -2686,6 +2750,26 @@ fn main_loop() -> Result<(), String> {
                                     ratio_x,
                                     ratio_y,
                                 );
+                            } else if entity.entity_type == EntityType::FungusMonster {
+                                let position = Point::new(
+                                    tx_ant as i32 - sprite_32.width() as i32 / 2,
+                                    ty_ant as i32 - sprite_32.height() as i32 / 2,
+                                );
+                                let mut tex = &fungus_monster_texture;
+                                if entity.current_action != ActionType::Idle
+                                    && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
+                                {
+                                    tex = &fungus_monster_texture;
+                                }
+                                graphics_utils::render(
+                                    &mut canvas,
+                                    &tex,
+                                    position,
+                                    sprite_32,
+                                    camera.zoom,
+                                    ratio_x,
+                                    ratio_y,
+                                );
                             }
 
                             if entity.backpack_item == ItemType::Fruit {
@@ -2851,6 +2935,24 @@ fn main_loop() -> Result<(), String> {
                     }
                 }
                 // render player
+                let player_position = Point::new(
+                    (player.x * camera.zoom - camera.x) as i32,
+                    (player.y * camera.zoom - camera.y) as i32,
+                );
+                let shadow_position = Point::new(
+                    player_position.x as i32 - sprite_8x4.width() as i32 / 2 + 6,
+                    player_position.y as i32 - sprite_8x4.height() as i32 / 2 + 16,
+                );
+
+                /*graphics_utils::render(
+                    &mut canvas,
+                    &ant_shadow_texture,
+                    shadow_position,
+                    sprite_12x4,
+                    camera.zoom,
+                    ratio_x,
+                    ratio_y,
+                );*/
                 if !player.stopped && player.time % 100 == 0 {
                     if !player_footstep.is_playing() {
                         player_footstep.set_volume(sounds_volume);
@@ -2879,10 +2981,6 @@ fn main_loop() -> Result<(), String> {
                         tex = &plasmant_texture_side_mirror_1;
                     }
                 }
-                let player_position = Point::new(
-                    (player.x * camera.zoom - camera.x) as i32,
-                    (player.y * camera.zoom - camera.y) as i32,
-                );
                 graphics_utils::render(
                     &mut canvas,
                     &tex,
@@ -2891,6 +2989,55 @@ fn main_loop() -> Result<(), String> {
                     camera.zoom,
                     ratio_x,
                     ratio_y,
+                );
+
+                //render day/night
+                let position = Point::new(0, 0);
+                let render_rect = Rect::new(
+                    (position.x as f32) as i32,
+                    (position.y as f32) as i32,
+                    (SCREEN_WIDTH as f32 / ratio_x) as u32,
+                    (SCREEN_HEIGHT as f32 / ratio_y) as u32,
+                );
+                let cycle_scale = ((day_night_cycle_time as f32) / day_night_cycle_length as f32);
+                let color_from_gradient = cycle_gradient.at(cycle_scale as f64).rgba_u8();
+                let cycle_r = color_from_gradient.0;
+                let cycle_g = color_from_gradient.1;
+                let cycle_b = color_from_gradient.2;
+                let cycle_a = color_from_gradient.3;
+                /*let cycle_r =
+                     ((start_color.r as u32 + end_color.r as u32) as f32 * cycle_scale) as u8;
+                 let cycle_g =
+                     ((start_color.g as u32 + end_color.g as u32) as f32 * cycle_scale) as u8;
+                 let cycle_b =
+                     ((start_color.b as u32 + end_color.b as u32) as f32 * cycle_scale) as u8;
+                 let cycle_a =
+                     ((start_color.a as u32 + end_color.a as u32) as f32 * cycle_scale) as u8;
+                */
+                /*let srgb1 = Srgb::new(
+                                    (start_color.r as f32) / 255.0,
+                                    (start_color.g as f32) / 255.0,
+                                    (start_color.b as f32) / 255.0,
+                                )
+                                .into_linear();
+                                let srgb2 = Srgb::new(
+                                    end_color.r as f32 / 255.0,
+                                    end_color.g as f32 / 255.0,
+                                    end_color.b as f32 / 255.0,
+                                )
+                                .into_linear();
+                                let result_srgb = srgb1 + srgb2;
+                                let cycle_r = (result_srgb.red * 255.0) as u8;
+                                let cycle_b = (result_srgb.green * 255.0) as u8;
+                                let cycle_g = (result_srgb.blue * 255.0) as u8;
+                                let cycle_a = 60 as u8;
+                */
+                graphics_utils::render_rect(
+                    &mut canvas,
+                    position,
+                    render_rect,
+                    Color::RGBA(cycle_r, cycle_g, cycle_b, cycle_a),
+                    camera.zoom,
                 );
                 // render hover
                 let mut hovered_tiletype = TileType::Grass;

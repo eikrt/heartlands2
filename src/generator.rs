@@ -1,7 +1,7 @@
 use crate::client_structs::Player;
 use crate::world_structs::{
-    ActionType, Biome, CategoryType, Chunk, Entity, EntityType, ItemType, Point, ReligionType,
-    TaskType, TileType, World, WorldData,
+    ActionType, Biome, CategoryType, Chunk, Entity, EntityType, Faction, ItemType, Point,
+    ReligionType, TaskType, TileType, World, WorldData,
 };
 use rand::seq::IteratorRandom;
 use rand::Rng;
@@ -775,6 +775,7 @@ pub fn generate(
                             }
                         }
                     }
+                    world_chunks[i][j].entities.extend(chunk_entities);
                 }
             }
         }
@@ -864,8 +865,8 @@ pub fn generate(
             Entity {
                 id: id,
                 target_id: 0,
-                x: random_coord_x * tile_size as f32,
-                y: random_coord_y * tile_size as f32,
+                x: (chunk.points[0][0].x + random_coord_x) * tile_size as f32,
+                y: (chunk.points[0][0].y + random_coord_y) * tile_size as f32,
                 hp: 100,
                 speed: 0.0,
                 dir: 0.0,
@@ -898,8 +899,8 @@ pub fn generate(
                 Entity {
                     id: id,
                     target_id: 0,
-                    x: random_coord_x * tile_size as f32,
-                    y: random_coord_y * tile_size as f32,
+                    x: (chunk.points[0][0].x + random_coord_x) * tile_size as f32,
+                    y: (chunk.points[0][0].y + random_coord_y) * tile_size as f32,
                     hp: 100,
                     speed: 0.0,
                     dir: 0.0,
@@ -921,13 +922,55 @@ pub fn generate(
                 },
             );
         }
+        for i in 0..16 {
+            let random_x = rng.gen_range(0..world_chunks.len());
+            let random_y = rng.gen_range(0..world_chunks[0].len());
+            let mut chunk = &mut world_chunks[random_x][random_y];
+            let random_coord_x = rng.gen_range(0..chunk.points.len()) as f32;
+            let random_coord_y = rng.gen_range(0..chunk.points[0].len()) as f32;
+            let id = rng.gen_range(0..999999);
+            chunk.entities.insert(
+                id,
+                Entity {
+                    id: id,
+                    target_id: 0,
+                    x: (chunk.points[0][0].x + random_coord_x) * tile_size as f32,
+                    y: (chunk.points[0][0].y + random_coord_y) * tile_size as f32,
+                    hp: 100,
+                    speed: 1.0,
+                    dir: 0.0,
+                    target_x: 0.0,
+                    target_y: 0.0,
+                    stopped: false,
+                    entity_type: EntityType::FungusMonster,
+                    category_type: CategoryType::Monster,
+                    religion_type: ReligionType::Nothing,
+                    faction: "Evil".to_string(),
+                    faction_id: chunk.id,
+                    current_action: ActionType::Idle,
+                    task_type: TaskType::Nothing,
+                    backpack_item: ItemType::Nothing,
+                    wearable_item: ItemType::Nothing,
+                    wielding_item: ItemType::Nothing,
+                    backpack_amount: 0,
+                    time: 0,
+                },
+            );
+        }
     }
     // relations
-    let factions = HashMap::new();
+    let mut factions = HashMap::new();
     for row in world_chunks.iter() {
         for chunk in row.iter() {
-            if factions.contains_key(&chunk.name) {
-                factions.insert(chunk.name)
+            if !factions.contains_key(&chunk.name) {
+                let relations = HashMap::new();
+                factions.insert(
+                    chunk.name.clone(),
+                    Faction {
+                        name: chunk.name.clone(),
+                        relations,
+                    },
+                );
             }
         }
     }
@@ -946,6 +989,7 @@ pub fn generate(
         players: Vec::new(),
         colliders: Vec::new(),
         props: Vec::new(),
+        factions: factions,
         v_x: 0,
         v_y: 0,
         v_w: 3,

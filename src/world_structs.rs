@@ -11,11 +11,13 @@ use std::fmt;
 const TARGET_SIZE: f32 = 8.0;
 const PROP_SIZE: i32 = 16;
 const VICINITY_SIZE: f32 = 96.0;
+const VICINITY_SIZE_SHORT: f32 = 32.0;
 const INTERACTION_SIZE: f32 = 8.0;
 const CHUNKRANGE: usize = 2;
 const REPRODUCE_CHANCE: usize = 1024;
 const BACKPACKSIZE: u8 = 64;
 const INTERACTION_COOLDOWN: u128 = 10;
+const IDLE_SPEED: f32 = 1.0;
 pub const HATCH_TIME: u128 = 10000;
 pub const LETHAL_RANGE: f32 = 32.0;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -83,6 +85,7 @@ pub enum CategoryType {
     Tree,
     Vegetation,
     Animal,
+    Monster,
     Furniture,
 }
 #[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
@@ -149,6 +152,7 @@ pub enum EntityType {
     AntEgg,
     HolyMonument,
     HolyObject,
+    FungusMonster,
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(tag = "RequestType")]
@@ -157,10 +161,10 @@ pub enum RequestType {
     Data,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Eq, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Faction {
     pub name: String,
-    pub relations: HashMap<Faction, i32>,
+    pub relations: HashMap<String, i32>,
 }
 
 pub fn get_descriptions_for_tiles() -> HashMap<TileType, String> {
@@ -223,8 +227,8 @@ impl Entity {
     pub fn idle_mov(&mut self) {
         if !self.stopped {
             let mut rng = rand::thread_rng();
-            self.x += self.dir.cos() * self.speed;
-            self.y += self.dir.sin() * self.speed;
+            self.x += self.dir.cos() * IDLE_SPEED;
+            self.y += self.dir.sin() * IDLE_SPEED;
             self.dir = rng.gen_range(0.0..3.14 * 2.0);
         }
     }
@@ -258,10 +262,10 @@ impl Entity {
         self.target_x = 0.0;
         self.target_y = 0.0;
     }
-    pub fn wander(&mut self) {
+    pub fn wander(&mut self, range: f32) {
         let mut rng = rand::thread_rng();
-        self.target_x = self.x + rng.gen_range(-128.0..128.0);
-        self.target_y = self.y + rng.gen_range(-128.0..128.0);
+        self.target_x = self.x + rng.gen_range(-range..range);
+        self.target_y = self.y + rng.gen_range(-range..range);
     }
     pub fn tick(&mut self) {
         self.time += 10;
@@ -406,7 +410,7 @@ pub struct World {
     pub world_data: WorldData,
     pub players: Vec<Player>,
     pub colliders: Vec<Collider>,
-    pub Factions: HashMap<String, Faction>,
+    pub factions: HashMap<String, Faction>,
     pub props: Vec<Prop>,
     pub v_x: i32, // slice dimensions for formatting
     pub v_y: i32,
@@ -464,9 +468,10 @@ impl World {
             }
         }
         format!(
-            "{{\"chunks\": {}, \"world_data\": {}, \"players\": {}, \"colliders\": {}, \"props\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
+            "{{\"chunks\": {}, \"world_data\": {},\"factions\":{}, \"players\": {}, \"colliders\": {}, \"props\": {}, \"v_x\": {}, \"v_y\": {}, \"v_w\": {}, \"v_h\": {}}}",
             serde_json::to_string(&selected_chunks2).unwrap(),
             serde_json::to_string(&self.world_data).unwrap(),
+            serde_json::to_string(&self.factions).unwrap(),
             serde_json::to_string(&self.players).unwrap(),
             serde_json::to_string(&self.colliders).unwrap(),
             serde_json::to_string(&self.props).unwrap(),
@@ -658,6 +663,81 @@ impl World {
                     if e.hp < 0 {
                         continue;
                     }
+                    if e.category_type == CategoryType::Monster {
+                        if e.entity_type == EntityType::FungusMonster
+                            && e.task_type == TaskType::Nothing
+                        {
+                            let random_task = rng.gen_range(0..1);
+                            if random_task == 0 {
+                                e.task_type = TaskType::Hunt;
+                            }
+                        }
+                        if e.task_type == TaskType::Hunt {
+                            if e.current_action == ActionType::Explore {
+                                for (key2, v) in chunks_entities.iter_mut() {
+                                    let dist_from_entity = ((e.x - v.x).powf(2.0)
+                                        + (e.y - v.y).powf(2.0) as f32)
+                                        .sqrt();
+                                    if dist_from_entity < VICINITY_SIZE {
+                                        if v.category_type == CategoryType::Ant {
+                                            e.target_x = v.x;
+                                            e.target_y = v.y;
+                                            e.current_action = ActionType::Attack;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if e.current_action == ActionType::Attack {
+                                for (key2, v) in chunks_entities.iter_mut() {
+                                    let dist_from_entity = ((e.x - v.x).powf(2.0)
+                                        + (e.y - v.y).powf(2.0) as f32)
+                                        .sqrt();
+                                    if v.category_type == CategoryType::Ant
+                                        && v.faction == e.faction
+                                    {
+                                        e.target_x = v.x;
+                                        e.target_y = v.y;
+                                        if dist_from_entity < INTERACTION_SIZE {
+                                            e.idle();
+                                        }
+                                    }
+                                }
+                                for p in self.players.iter() {
+                                    let dist_from_entity = ((e.x - p.x).powf(2.0)
+                                        + (e.y - p.y).powf(2.0) as f32)
+                                        .sqrt();
+                                    if dist_from_entity < VICINITY_SIZE {
+                                        e.target_x = p.x;
+                                        e.target_y = p.y;
+                                    }
+                                    if dist_from_entity < INTERACTION_SIZE {
+                                        e.idle();
+                                    }
+                                }
+                                for p in &self.players {
+                                    if p.id == e.target_id {
+                                        e.target_x = p.x;
+                                        e.target_y = p.y;
+                                    }
+                                }
+                            }
+                            if e.current_action == ActionType::Idle
+                                && e.target_x == 0.0
+                                && e.target_y == 0.0
+                            {
+                                e.wander(1024.0);
+                                e.current_action = ActionType::Explore;
+                            }
+                            if e.x > e.target_x - TARGET_SIZE
+                                && e.y > e.target_y - TARGET_SIZE
+                                && e.x < e.target_x + TARGET_SIZE
+                                && e.y < e.target_y + TARGET_SIZE
+                            {
+                                e.idle();
+                            }
+                        }
+                    }
                     if e.entity_type == EntityType::SoldierAnt {
                         if e.task_type == TaskType::TotalWar {
                             if e.current_action == ActionType::Attack {
@@ -717,11 +797,26 @@ impl World {
                             e.task_type = TaskType::Reproduce;
                         }
                     }
-                    if e.category_type == CategoryType::Ant {
+                    if e.category_type == CategoryType::Ant
+                        || e.category_type == CategoryType::Monster
+                    {
                         if e.current_action == ActionType::Idle {
                             e.idle_mov();
                         } else {
                             e.mov();
+                        }
+                    }
+                    if e.category_type == CategoryType::Ant {
+                        for (key2, v) in chunks_entities.iter_mut() {
+                            let dist_from_entity =
+                                ((e.x - v.x).powf(2.0) + (e.y - v.y).powf(2.0) as f32).sqrt();
+                            if v.category_type == CategoryType::Monster {
+                                if dist_from_entity < INTERACTION_SIZE
+                                    && e.time % INTERACTION_COOLDOWN == 0
+                                {
+                                    e.hp -= 50;
+                                }
+                            }
                         }
                     }
                     if e.entity_type == EntityType::FoodStorage {
@@ -777,7 +872,7 @@ impl World {
                         } else if e.current_action == ActionType::Idle {
                             if e.target_x == 0.0 && e.target_y == 0.0 {
                                 e.current_action = ActionType::Explore;
-                                e.wander();
+                                e.wander(256.0);
                             }
                         } else if e.current_action == ActionType::Explore {
                             if e.time % 100 == 0 {

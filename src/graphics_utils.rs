@@ -136,6 +136,25 @@ pub fn render(
     canvas.copy(texture, sprite, screen_rect)?;
     Ok(())
 }
+pub fn render_transparent(
+    canvas: &mut WindowCanvas,
+    texture: &Texture,
+    position: Point,
+    sprite: Rect,
+    zoom: f32,
+    ratio_x: f32,
+    ratio_y: f32,
+) -> Result<(), String> {
+    let (width, height) = canvas.output_size()?;
+    let screen_rect = Rect::new(
+        (position.x as f32 / ratio_x) as i32,
+        (position.y as f32 / ratio_y) as i32,
+        (sprite.width() as f32 * zoom / ratio_x) as u32,
+        (sprite.height() as f32 * zoom / ratio_y) as u32,
+    );
+    canvas.copy(texture, sprite, screen_rect)?;
+    Ok(())
+}
 
 pub fn render_tile_with_color(
     canvas: &mut WindowCanvas,
