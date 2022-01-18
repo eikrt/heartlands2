@@ -425,6 +425,7 @@ pub fn generate(
                                                 wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
+                                                swimming: false,
                                             },
                                         );
                                     }
@@ -457,6 +458,7 @@ pub fn generate(
                                                 wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
+                                                swimming: false,
                                             },
                                         );
                                     }
@@ -489,6 +491,7 @@ pub fn generate(
                                                 wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
+                                                swimming: false,
                                             },
                                         );
                                     }
@@ -560,6 +563,7 @@ pub fn generate(
                                                 wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
+                                                swimming: false,
                                             },
                                         );
                                         let id = rng.gen_range(0..999999);
@@ -590,6 +594,7 @@ pub fn generate(
                                                 wearable_item: ItemType::Nothing,
                                                 backpack_amount: 0,
                                                 time: 0,
+                                                swimming: false,
                                             },
                                         );
                                     }
@@ -770,6 +775,7 @@ pub fn generate(
                                         wielding_item: ItemType::Nothing,
                                         backpack_amount: 0,
                                         time: 0,
+                                        swimming: false,
                                     },
                                 );
                             }
@@ -840,6 +846,7 @@ pub fn generate(
                                         wielding_item: ItemType::Nothing,
                                         backpack_amount: 0,
                                         time: 0,
+                                        swimming: false,
                                     },
                                 );
                             }
@@ -885,6 +892,7 @@ pub fn generate(
                 wielding_item: ItemType::Nothing,
                 backpack_amount: 0,
                 time: 0,
+                swimming: false,
             },
         );
         for i in 0..3 {
@@ -919,6 +927,7 @@ pub fn generate(
                     wielding_item: ItemType::Nothing,
                     backpack_amount: 0,
                     time: 0,
+                    swimming: false,
                 },
             );
         }
@@ -954,6 +963,7 @@ pub fn generate(
                     wielding_item: ItemType::Nothing,
                     backpack_amount: 0,
                     time: 0,
+                    swimming: false,
                 },
             );
         }
@@ -984,6 +994,8 @@ pub fn generate(
             chunk_size: chunk_size,
             tile_size: tile_size,
             is_default: false,
+            day_night_cycle_time: 0,
+            day_night_cycle_length: 60000 * 5,
         },
 
         players: Vec::new(),

@@ -109,6 +109,7 @@ pub fn serve(world: World) {
                 for id in ids.iter() {
                     let sink = conn.remove(id).unwrap();
 
+                    world_inner.write().unwrap().world_data.day_night_cycle_time += 10;
                     let world = world_inner.read().unwrap();
                     let client_states = client_states_inner.clone();
                     let mut x = 0.0;

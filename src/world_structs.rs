@@ -121,6 +121,7 @@ pub enum TileType {
     ColdLand,
     Water,
     Ice,
+    Plasma,
     PermaFrost,
     CoarseLand,
     SavannahLand,
@@ -222,6 +223,7 @@ pub struct Entity {
     pub wearable_item: ItemType,
     pub backpack_amount: u8,
     pub time: u128,
+    pub swimming: bool,
 }
 impl Entity {
     pub fn idle_mov(&mut self) {
@@ -262,10 +264,23 @@ impl Entity {
         self.target_x = 0.0;
         self.target_y = 0.0;
     }
-    pub fn wander(&mut self, range: f32) {
+    pub fn wander(&mut self, range: f32, points: &Vec<Vec<Point>>) {
         let mut rng = rand::thread_rng();
         self.target_x = self.x + rng.gen_range(-range..range);
         self.target_y = self.y + rng.gen_range(-range..range);
+        for row in points.iter() {
+            for p in row.iter() {
+                if self.target_x > p.x
+                    && self.target_x < p.x + 16.0
+                    && self.target_y > p.y
+                    && self.target_y < p.y + 16.0
+                {
+                    if p.tile_type == TileType::Water || p.tile_type == TileType::Plasma {
+                        self.wander(range, points);
+                    }
+                }
+            }
+        }
     }
     pub fn tick(&mut self) {
         self.time += 10;
@@ -296,6 +311,7 @@ impl Default for Entity {
             backpack_amount: 0,
             backpack_item: ItemType::Nothing,
             time: 0,
+            swimming: false,
         }
     }
 }
@@ -389,6 +405,8 @@ pub struct WorldData {
     pub chunk_size: usize,
     pub tile_size: i32,
     pub is_default: bool,
+    pub day_night_cycle_time: u128,
+    pub day_night_cycle_length: u128,
 }
 impl Default for WorldData {
     fn default() -> WorldData {
@@ -400,6 +418,8 @@ impl Default for WorldData {
             chunk_size: 1,
             tile_size: 1,
             is_default: true,
+            day_night_cycle_length: 600000,
+            day_night_cycle_time: 0,
         }
     }
 }
@@ -659,6 +679,17 @@ impl World {
                 }
 
                 for (key, e) in self.chunks[i][j].entities.iter_mut() {
+                    for row in chunk_clone.points.iter() {
+                        for p in row.iter() {
+                            if e.target_x > p.x
+                                && e.target_x < p.x + 16.0
+                                && e.target_y > p.y
+                                && e.target_y < p.y + 16.0
+                            {
+                                e.swimming = true;
+                            }
+                        }
+                    }
                     e.tick();
                     if e.hp < 0 {
                         continue;
@@ -726,7 +757,7 @@ impl World {
                                 && e.target_x == 0.0
                                 && e.target_y == 0.0
                             {
-                                e.wander(1024.0);
+                                e.wander(1024.0, &chunk_clone.points);
                                 e.current_action = ActionType::Explore;
                             }
                             if e.x > e.target_x - TARGET_SIZE
@@ -778,6 +809,7 @@ impl World {
                                 wearable_item: ItemType::Nothing,
                                 backpack_amount: 0,
                                 time: 0,
+                                swimming: false,
                             },
                         );
                     }
@@ -872,7 +904,7 @@ impl World {
                         } else if e.current_action == ActionType::Idle {
                             if e.target_x == 0.0 && e.target_y == 0.0 {
                                 e.current_action = ActionType::Explore;
-                                e.wander(256.0);
+                                e.wander(256.0, &chunk_clone.points);
                             }
                         } else if e.current_action == ActionType::Explore {
                             if e.time % 100 == 0 {
@@ -973,6 +1005,7 @@ impl World {
                                                     wielding_item: ItemType::Nothing,
                                                     backpack_amount: 0,
                                                     time: 0,
+                                                    swimming: false,
                                                 },
                                             );
                                         }

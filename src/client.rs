@@ -57,6 +57,7 @@ const HUD_LOC: u32 = 336;
 const MAP_UI_LOC: u32 = 336;
 
 const TILE_SIZE: f32 = 16.0;
+const FUNGUS_MONSTER_ANIMATION_SPEED: u128 = 55;
 const WORKER_ANIMATION_SPEED: u128 = 25;
 const DRONE_ANIMATION_SPEED: u128 = 25;
 const QUEEN_ANIMATION_SPEED: u128 = 25;
@@ -230,7 +231,6 @@ fn main_loop() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let mut compare_time = SystemTime::now();
     let mut day_night_cycle_time = 0;
-    let mut day_night_cycle_length = 600000;
     let mut client_time: u128 = 0;
     let mut update_data = true;
     let mut world_data: WorldData = WorldData {
@@ -527,6 +527,7 @@ fn main_loop() -> Result<(), String> {
     let ant_queen_texture_1 = texture_creator.load_texture("res/ant_queen.png")?;
     let ant_queen_texture_2 = texture_creator.load_texture("res/ant_queen.png")?;
     let fungus_monster_texture = texture_creator.load_texture("res/fungus_monster.png")?;
+    let fungus_monster_texture_2 = texture_creator.load_texture("res/fungus_monster_2.png")?;
     let snail_texture = texture_creator.load_texture("res/snail.png")?;
     let food_storage_texture = texture_creator.load_texture("res/food_storage.png")?;
 
@@ -757,10 +758,6 @@ fn main_loop() -> Result<(), String> {
         if delta.as_millis() / 10 != 0 {
             //println!("FPS: {}", 100 / (delta.as_millis() / 10));
             //println!("{}", delta_as_millis);
-        }
-        day_night_cycle_time += delta_as_millis;
-        if day_night_cycle_time > day_night_cycle_length {
-            day_night_cycle_time = 0;
         }
         hurt_change += delta_as_millis;
         client_time += delta_as_millis;
@@ -2153,6 +2150,14 @@ fn main_loop() -> Result<(), String> {
                 camera: camera.clone(),
                 faction_relations: faction_relations.clone(),
             };
+            if day_night_cycle_time > 0 && day_night_cycle_time < 100 {
+                //play morning song
+            }
+            if day_night_cycle_time > 0
+                && day_night_cycle_time > world_data.day_night_cycle_length - 100
+            {
+                //play evening song
+            }
             if player.shoot_data.shooting {
                 if player_action == PlayerAction::Meteoroid {
                     meteoroid_spawn.play();
@@ -2177,6 +2182,7 @@ fn main_loop() -> Result<(), String> {
                     let world_from: World = serde_json::from_str(cut_string).unwrap();
                     chunks = world_from.chunks;
                     world_data = world_from.world_data;
+                    day_night_cycle_time = world_data.day_night_cycle_time;
                     colliders = world_from.colliders;
                     props = world_from.props;
                     players = world_from.players;
@@ -2500,7 +2506,7 @@ fn main_loop() -> Result<(), String> {
                                     &mut canvas,
                                     &holy_object_texture,
                                     position,
-                                    sprite_64,
+                                    sprite_16,
                                     camera.zoom,
                                     ratio_x,
                                     ratio_y,
@@ -2757,9 +2763,9 @@ fn main_loop() -> Result<(), String> {
                                 );
                                 let mut tex = &fungus_monster_texture;
                                 if entity.current_action != ActionType::Idle
-                                    && entity.time / (DRONE_ANIMATION_SPEED) % 2 == 0
+                                    && entity.time / (FUNGUS_MONSTER_ANIMATION_SPEED) % 2 == 0
                                 {
-                                    tex = &fungus_monster_texture;
+                                    tex = &fungus_monster_texture_2;
                                 }
                                 graphics_utils::render(
                                     &mut canvas,
@@ -2999,7 +3005,8 @@ fn main_loop() -> Result<(), String> {
                     (SCREEN_WIDTH as f32 / ratio_x) as u32,
                     (SCREEN_HEIGHT as f32 / ratio_y) as u32,
                 );
-                let cycle_scale = ((day_night_cycle_time as f32) / day_night_cycle_length as f32);
+                let cycle_scale =
+                    ((day_night_cycle_time as f32) / world_data.day_night_cycle_length as f32);
                 let color_from_gradient = cycle_gradient.at(cycle_scale as f64).rgba_u8();
                 let cycle_r = color_from_gradient.0;
                 let cycle_g = color_from_gradient.1;
