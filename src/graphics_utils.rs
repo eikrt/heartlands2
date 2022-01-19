@@ -317,7 +317,10 @@ pub fn tile_graphics() -> HashMap<TileType, TileGraphics> {
         ),
     ]);
 }
-
+pub struct SkillDesc {
+    pub title: String,
+    pub text: String,
+}
 pub struct Text<'a> {
     pub text_surface: Surface<'a>,
     pub text_texture: Texture<'a>,
@@ -423,4 +426,29 @@ pub fn get_dialogue_for_criteria(relation: i32, chunk_relations: HashMap<String,
     } else if dialogue_select == 1 {
     }
     "Klack klack...".to_string()
+}
+pub fn get_skill_descriptions() -> HashMap<String, SkillDesc> {
+    HashMap::from([
+        (
+            "meteoroid".to_string(),
+            SkillDesc {
+                title: "Plasma Drop".to_string(),
+                text: "Drop meteors".to_string(),
+            },
+        ),
+        (
+            "hibernate".to_string(),
+            SkillDesc {
+                title: "Soothe".to_string(),
+                text: "Sing a song to sleep enemies".to_string(),
+            },
+        ),
+        (
+            "slow".to_string(),
+            SkillDesc {
+                title: "Unholy grab".to_string(),
+                text: "Slow".to_string(),
+            },
+        ),
+    ])
 }

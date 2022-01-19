@@ -21,6 +21,9 @@ pub struct Player {
     pub y: f32,
     pub hp: i32,
     pub energy: i32,
+    pub xp: i32,
+    pub lp: i32,
+    pub level: i32,
     pub speed: f32,
     pub dir: f32,
     pub target_x: f32,
@@ -56,6 +59,11 @@ impl Player {
     pub fn tick(&mut self, delta: u128) {
         self.time += 10;
         self.shoot_change_1 += delta;
+        if self.xp >= 100 {
+            self.level += 1;
+            self.lp += 2;
+            self.xp = 0;
+        }
     }
     pub fn get_relative_x(&self, camera: &Camera) -> f32 {
         return self.x - camera.x;

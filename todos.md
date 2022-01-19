@@ -6,10 +6,18 @@
 - talent tree
 - spell unlock
 - xp/levels
+- swimming x
+
+
+
+## Graphics
+
+- swimming
+
 
 ## Fixes
 
-- entities dont go to water
+- entities dont go to water x
 
 ## Entities
 
@@ -26,3 +34,6 @@
 - convert
 - sleep/soothe
 - 
+
+x = done
+p = partly
