@@ -14,12 +14,12 @@ use crate::world_structs::{
     ActionType, CategoryType, Chunk, Collider, ColliderType, Entity, EntityType, ItemType, Prop,
     PropType, ReligionType, TaskType, TileType, World, WorldData, HATCH_TIME,
 };
+use colorgrad::Color as GradColor;
 use ears::{AudioController, Music, Sound};
 use lerp::Lerp;
-use rand::Rng;
-
-use colorgrad::Color as GradColor;
 use palette::{Pixel, Srgb};
+use rand::Rng;
+use rlua::{Function, Lua, MetaMethod, Result, Table, UserData, UserDataMethods, Variadic};
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, LoadSurface, LoadTexture};
 use sdl2::keyboard::Keycode;
@@ -37,6 +37,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 use std::fs;
+use std::fs::File;
 use std::future::Future;
 use std::io::stdin;
 use std::io::{Read, Write};
@@ -72,11 +73,43 @@ const CAMERA_BUFFER_LEFT: f32 = 96.0;
 const CAMERA_BUFFER_RIGHT: f32 = 96.0;
 const CAMERA_BUFFER_BOTTOM: f32 = 100.0;
 const XP_INCREMENT: i32 = 10;
-fn main_loop() -> Result<(), String> {
+fn load_script<P: AsRef<Path>>(path: P) -> String {
+    let mut f = File::open(path).unwrap();
+    let mut content: String = String::new();
+    f.read_to_string(&mut content).unwrap();
+    return content;
+}
+struct Banner {
+    pub x: i32,
+    pub y: i32,
+}
+fn main_loop() -> rlua::Result<()> {
+    // lua stuff
+    let lua = Lua::new();
+
+    let code = load_script("scripts/test.lua".to_string());
+    let mut banner = Banner { x: 0, y: 0 };
+    lua.context(|lua_ctx| {
+        let globals = lua_ctx.globals();
+        dbg!(lua_ctx.load(&code).eval::<()>()?);
+        Ok(())
+    })?;
+    lua.context(|lua_ctx| {
+        println!("dsf");
+        let globals = lua_ctx.globals();
+        let main_menu_buttons_lua = lua_ctx.load("get_buttons()").eval::<Table>()?;
+        //println!("{}", get_banner.call::<_, i32>(())?);
+        let a: i32 = main_menu_buttons_lua
+            .get::<_, Table>("main_menu")?
+            .get::<_, Table>("play_button")?
+            .get::<_, i32>("x")?;
+        banner = Banner { x: 0, y: 0 };
+        Ok(())
+    })?;
     // sdl stuff
     let url = "ws://127.0.0.1:5000";
-    let sdl_context = sdl2::init()?;
-    let video_subsystem = sdl_context.video()?;
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
     let mut window = video_subsystem
         .window("Tales of Terrant", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
@@ -181,27 +214,38 @@ fn main_loop() -> Result<(), String> {
     let mut hurt_change = 0;
     let hurt_time = 500;
     let texture_creator = canvas.texture_creator();
-    let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG)?;
+    let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG).unwrap();
     // font stuff
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string()).unwrap();
     let desc_font_size = 20;
     let main_title_font_size = 17;
     let action_icon_font_size = 12;
-    let mut action_icon_font =
-        ttf_context.load_font("fonts/PixelOperator.ttf", action_icon_font_size)?;
-    let mut main_title_font =
-        ttf_context.load_font("fonts/PixelOperator.ttf", main_title_font_size)?;
-    let mut font = ttf_context.load_font("fonts/PixelOperator.ttf", desc_font_size)?;
+    let mut action_icon_font = ttf_context
+        .load_font("fonts/PixelOperator.ttf", action_icon_font_size)
+        .unwrap();
+    let mut main_title_font = ttf_context
+        .load_font("fonts/PixelOperator.ttf", main_title_font_size)
+        .unwrap();
+    let mut font = ttf_context
+        .load_font("fonts/PixelOperator.ttf", desc_font_size)
+        .unwrap();
 
     let hp_font_size = 10;
-    let mut hp_font = ttf_context.load_font("fonts/PixelOperator.ttf", hp_font_size)?;
+    let mut hp_font = ttf_context
+        .load_font("fonts/PixelOperator.ttf", hp_font_size)
+        .unwrap();
     let wiki_text_font_size = 12;
-    let mut wiki_text_font =
-        ttf_context.load_font("fonts/PixelOperator.ttf", wiki_text_font_size)?;
+    let mut wiki_text_font = ttf_context
+        .load_font("fonts/PixelOperator.ttf", wiki_text_font_size)
+        .unwrap();
     let wiki_h1_font_size = 20;
-    let mut wiki_h1_font = ttf_context.load_font("fonts/PixelOperator.ttf", wiki_h1_font_size)?;
+    let mut wiki_h1_font = ttf_context
+        .load_font("fonts/PixelOperator.ttf", wiki_h1_font_size)
+        .unwrap();
     let wiki_h2_font_size = 16;
-    let mut wiki_h2_font = ttf_context.load_font("fonts/PixelOperator.ttf", wiki_h2_font_size)?;
+    let mut wiki_h2_font = ttf_context
+        .load_font("fonts/PixelOperator.ttf", wiki_h2_font_size)
+        .unwrap();
     let tile_gs = graphics_utils::tile_graphics();
     let mut camera = graphics_utils::Camera {
         x: rng.gen_range(256.0..1024.0),
@@ -229,7 +273,7 @@ fn main_loop() -> Result<(), String> {
     let mut zoom_button_minus = false;
     let mut plus = false;
     let mut minus = false;
-    let mut event_pump = sdl_context.event_pump()?;
+    let mut event_pump = sdl_context.event_pump().unwrap();
     let mut compare_time = SystemTime::now();
     let mut day_night_cycle_time = 0;
     let mut client_time: u128 = 0;
@@ -673,124 +717,192 @@ fn main_loop() -> Result<(), String> {
 
     // misc textures
 
-    let mut ant_shadow_texture = texture_creator.load_texture("res/ant_shadow.png")?;
+    let mut ant_shadow_texture = texture_creator.load_texture("res/ant_shadow.png").unwrap();
     ant_shadow_texture.set_alpha_mod(125);
     ant_shadow_texture.set_blend_mode(BlendMode::Blend);
     // collider textures
-    let meteoroid_texture = texture_creator.load_texture("res/meteoroid.png")?;
-    let soul_trap_texture_1 = texture_creator.load_texture("res/soul_trap.png")?;
-    let soul_trap_texture_2 = texture_creator.load_texture("res/soul_trap_3.png")?;
+    let meteoroid_texture = texture_creator.load_texture("res/meteoroid.png").unwrap();
+    let soul_trap_texture_1 = texture_creator.load_texture("res/soul_trap.png").unwrap();
+    let soul_trap_texture_2 = texture_creator.load_texture("res/soul_trap_3.png").unwrap();
     // prop textures
-    let raft_texture = texture_creator.load_texture("res/raft.png")?;
+    let raft_texture = texture_creator.load_texture("res/raft.png").unwrap();
     // entity textures
-    let holy_monument_texture = texture_creator.load_texture("res/holy_monument.png")?;
-    let holy_object_texture = texture_creator.load_texture("res/holy_object.png")?;
-    let ant_head_texture = texture_creator.load_texture("res/ant_head.png")?;
-    let oak_texture = texture_creator.load_texture("res/oak.png")?;
-    let birch_texture = texture_creator.load_texture("res/birch.png")?;
-    let appletree_texture = texture_creator.load_texture("res/appletree.png")?;
-    let pine_texture = texture_creator.load_texture("res/pine.png")?;
-    let spruce_texture = texture_creator.load_texture("res/spruce.png")?;
-    let cactus_texture = texture_creator.load_texture("res/cactus.png")?;
-    let ant_egg_texture = texture_creator.load_texture("res/ant_egg.png")?;
-    let ant_egg_texture_2 = texture_creator.load_texture("res/ant_egg_2.png")?;
-    let ant_egg_texture_3 = texture_creator.load_texture("res/ant_egg_3.png")?;
-    let ant_egg_texture_4 = texture_creator.load_texture("res/ant_egg_4.png")?;
-    let ant_worker_texture_front_1 = texture_creator.load_texture("res/ant_worker_front_1.png")?;
-    let ant_worker_texture_front_2 = texture_creator.load_texture("res/ant_worker_front_2.png")?;
-    let ant_worker_texture_back_1 = texture_creator.load_texture("res/ant_worker_back_1.png")?;
-    let ant_worker_texture_back_2 = texture_creator.load_texture("res/ant_worker_back_2.png")?;
-    let ant_worker_texture_side_1 = texture_creator.load_texture("res/ant_worker_side_1.png")?;
-    let ant_worker_texture_side_2 = texture_creator.load_texture("res/ant_worker_side_2.png")?;
-    let ant_worker_texture_side_mirror_1 =
-        texture_creator.load_texture("res/ant_worker_side_mirror_1.png")?;
-    let ant_worker_texture_side_mirror_2 =
-        texture_creator.load_texture("res/ant_worker_side_mirror_2.png")?;
-    let plasmant_texture_front_1 = texture_creator.load_texture("res/plasmant_front_1.png")?;
-    let plasmant_texture_front_2 = texture_creator.load_texture("res/plasmant_front_2.png")?;
-    let plasmant_texture_back_1 = texture_creator.load_texture("res/plasmant_back_1.png")?;
-    let plasmant_texture_back_2 = texture_creator.load_texture("res/plasmant_back_2.png")?;
-    let plasmant_texture_side_1 = texture_creator.load_texture("res/plasmant_side_1.png")?;
-    let plasmant_texture_side_2 = texture_creator.load_texture("res/plasmant_side_2.png")?;
-    let plasmant_texture_side_mirror_1 =
-        texture_creator.load_texture("res/plasmant_side_mirror_1.png")?;
-    let plasmant_texture_side_mirror_2 =
-        texture_creator.load_texture("res/plasmant_side_mirror_2.png")?;
-    let ant_soldier_texture_1 = texture_creator.load_texture("res/ant_worker_side_1.png")?;
-    let ant_soldier_texture_2 = texture_creator.load_texture("res/ant_worker_side_2.png")?;
-    let ant_drone_texture_1 = texture_creator.load_texture("res/ant_drone.png")?;
-    let ant_drone_texture_2 = texture_creator.load_texture("res/ant_drone_2.png")?;
-    let mechant_texture_1 = texture_creator.load_texture("res/mechant.png")?;
-    let mechant_texture_2 = texture_creator.load_texture("res/mechant.png")?;
-    let cultist_ant_texture_1 = texture_creator.load_texture("res/plasmant.png")?;
-    let cultist_ant_texture_2 = texture_creator.load_texture("res/plasmant_2.png")?;
-    let ant_queen_texture_1 = texture_creator.load_texture("res/ant_queen.png")?;
-    let ant_queen_texture_2 = texture_creator.load_texture("res/ant_queen.png")?;
-    let fungus_monster_texture = texture_creator.load_texture("res/fungus_monster.png")?;
-    let fungus_monster_texture_2 = texture_creator.load_texture("res/fungus_monster_2.png")?;
-    let snail_texture = texture_creator.load_texture("res/snail.png")?;
-    let food_storage_texture = texture_creator.load_texture("res/food_storage.png")?;
+    let holy_monument_texture = texture_creator
+        .load_texture("res/holy_monument.png")
+        .unwrap();
+    let holy_object_texture = texture_creator.load_texture("res/holy_object.png").unwrap();
+    let ant_head_texture = texture_creator.load_texture("res/ant_head.png").unwrap();
+    let oak_texture = texture_creator.load_texture("res/oak.png").unwrap();
+    let birch_texture = texture_creator.load_texture("res/birch.png").unwrap();
+    let appletree_texture = texture_creator.load_texture("res/appletree.png").unwrap();
+    let pine_texture = texture_creator.load_texture("res/pine.png").unwrap();
+    let spruce_texture = texture_creator.load_texture("res/spruce.png").unwrap();
+    let cactus_texture = texture_creator.load_texture("res/cactus.png").unwrap();
+    let ant_egg_texture = texture_creator.load_texture("res/ant_egg.png").unwrap();
+    let ant_egg_texture_2 = texture_creator.load_texture("res/ant_egg_2.png").unwrap();
+    let ant_egg_texture_3 = texture_creator.load_texture("res/ant_egg_3.png").unwrap();
+    let ant_egg_texture_4 = texture_creator.load_texture("res/ant_egg_4.png").unwrap();
+    let ant_worker_texture_front_1 = texture_creator
+        .load_texture("res/ant_worker_front_1.png")
+        .unwrap();
+    let ant_worker_texture_front_2 = texture_creator
+        .load_texture("res/ant_worker_front_2.png")
+        .unwrap();
+    let ant_worker_texture_back_1 = texture_creator
+        .load_texture("res/ant_worker_back_1.png")
+        .unwrap();
+    let ant_worker_texture_back_2 = texture_creator
+        .load_texture("res/ant_worker_back_2.png")
+        .unwrap();
+    let ant_worker_texture_side_1 = texture_creator
+        .load_texture("res/ant_worker_side_1.png")
+        .unwrap();
+    let ant_worker_texture_side_2 = texture_creator
+        .load_texture("res/ant_worker_side_2.png")
+        .unwrap();
+    let ant_worker_texture_side_mirror_1 = texture_creator
+        .load_texture("res/ant_worker_side_mirror_1.png")
+        .unwrap();
+    let ant_worker_texture_side_mirror_2 = texture_creator
+        .load_texture("res/ant_worker_side_mirror_2.png")
+        .unwrap();
+    let plasmant_texture_front_1 = texture_creator
+        .load_texture("res/plasmant_front_1.png")
+        .unwrap();
+    let plasmant_texture_front_2 = texture_creator
+        .load_texture("res/plasmant_front_2.png")
+        .unwrap();
+    let plasmant_texture_back_1 = texture_creator
+        .load_texture("res/plasmant_back_1.png")
+        .unwrap();
+    let plasmant_texture_back_2 = texture_creator
+        .load_texture("res/plasmant_back_2.png")
+        .unwrap();
+    let plasmant_texture_side_1 = texture_creator
+        .load_texture("res/plasmant_side_1.png")
+        .unwrap();
+    let plasmant_texture_side_2 = texture_creator
+        .load_texture("res/plasmant_side_2.png")
+        .unwrap();
+    let plasmant_texture_side_mirror_1 = texture_creator
+        .load_texture("res/plasmant_side_mirror_1.png")
+        .unwrap();
+    let plasmant_texture_side_mirror_2 = texture_creator
+        .load_texture("res/plasmant_side_mirror_2.png")
+        .unwrap();
+    let ant_soldier_texture_1 = texture_creator
+        .load_texture("res/ant_worker_side_1.png")
+        .unwrap();
+    let ant_soldier_texture_2 = texture_creator
+        .load_texture("res/ant_worker_side_2.png")
+        .unwrap();
+    let ant_drone_texture_1 = texture_creator.load_texture("res/ant_drone.png").unwrap();
+    let ant_drone_texture_2 = texture_creator.load_texture("res/ant_drone_2.png").unwrap();
+    let mechant_texture_1 = texture_creator.load_texture("res/mechant.png").unwrap();
+    let mechant_texture_2 = texture_creator.load_texture("res/mechant.png").unwrap();
+    let cultist_ant_texture_1 = texture_creator.load_texture("res/plasmant.png").unwrap();
+    let cultist_ant_texture_2 = texture_creator.load_texture("res/plasmant_2.png").unwrap();
+    let ant_queen_texture_1 = texture_creator.load_texture("res/ant_queen.png").unwrap();
+    let ant_queen_texture_2 = texture_creator.load_texture("res/ant_queen.png").unwrap();
+    let fungus_monster_texture = texture_creator
+        .load_texture("res/fungus_monster.png")
+        .unwrap();
+    let fungus_monster_texture_2 = texture_creator
+        .load_texture("res/fungus_monster_2.png")
+        .unwrap();
+    let snail_texture = texture_creator.load_texture("res/snail.png").unwrap();
+    let food_storage_texture = texture_creator
+        .load_texture("res/food_storage.png")
+        .unwrap();
 
     // item textures
-    let fruit_texture = texture_creator.load_texture("res/fruit.png")?;
-    let wooden_spear_texture = texture_creator.load_texture("res/wooden_spear.png")?;
-    let wooden_shovel_texture = texture_creator.load_texture("res/wooden_shovel.png")?;
+    let fruit_texture = texture_creator.load_texture("res/fruit.png").unwrap();
+    let wooden_spear_texture = texture_creator
+        .load_texture("res/wooden_spear.png")
+        .unwrap();
+    let wooden_shovel_texture = texture_creator
+        .load_texture("res/wooden_shovel.png")
+        .unwrap();
     // tile textures
-    let mut grass_texture = texture_creator.load_texture("res/grass.png")?;
-    let mut water_texture = texture_creator.load_texture("res/water.png")?;
-    let mut water_texture_2 = texture_creator.load_texture("res/water_2.png")?;
-    let mut ice_texture = texture_creator.load_texture("res/ice.png")?;
-    let mut sand_texture = texture_creator.load_texture("res/sand.png")?;
+    let mut grass_texture = texture_creator.load_texture("res/grass.png").unwrap();
+    let mut water_texture = texture_creator.load_texture("res/water.png").unwrap();
+    let mut water_texture_2 = texture_creator.load_texture("res/water_2.png").unwrap();
+    let mut ice_texture = texture_creator.load_texture("res/ice.png").unwrap();
+    let mut sand_texture = texture_creator.load_texture("res/sand.png").unwrap();
     // menu textures
-    let mut menu_button_texture = texture_creator.load_texture("res/menu_button.png")?;
-    let mut menu_button_hovered_texture =
-        texture_creator.load_texture("res/menu_button_hovered.png")?;
-    let mut menu_button_pressed_texture =
-        texture_creator.load_texture("res/menu_button_pressed.png")?;
-    let mut menu_background = texture_creator.load_texture("res/background_image_1.png")?;
-    let mut wiki_text_background = texture_creator.load_texture("res/wiki_text_background.png")?;
+    let mut menu_button_texture = texture_creator.load_texture("res/menu_button.png").unwrap();
+    let mut menu_button_hovered_texture = texture_creator
+        .load_texture("res/menu_button_hovered.png")
+        .unwrap();
+    let mut menu_button_pressed_texture = texture_creator
+        .load_texture("res/menu_button_pressed.png")
+        .unwrap();
+    let mut menu_background = texture_creator
+        .load_texture("res/background_image_1.png")
+        .unwrap();
+    let mut wiki_text_background = texture_creator
+        .load_texture("res/wiki_text_background.png")
+        .unwrap();
 
     // ui textures
 
-    let mut ui_button_texture = texture_creator.load_texture("res/ui_button.png")?;
-    let mut ui_button_hovered_texture =
-        texture_creator.load_texture("res/ui_button_hovered.png")?;
-    let mut ui_button_pressed_texture =
-        texture_creator.load_texture("res/ui_button_pressed.png")?;
+    let mut ui_button_texture = texture_creator.load_texture("res/ui_button.png").unwrap();
+    let mut ui_button_hovered_texture = texture_creator
+        .load_texture("res/ui_button_hovered.png")
+        .unwrap();
+    let mut ui_button_pressed_texture = texture_creator
+        .load_texture("res/ui_button_pressed.png")
+        .unwrap();
 
-    let mut action_icon_button_texture =
-        texture_creator.load_texture("res/action_icon_button.png")?;
-    let mut action_icon_button_hovered_texture =
-        texture_creator.load_texture("res/action_icon_button_hovered.png")?;
-    let mut action_icon_button_pressed_texture =
-        texture_creator.load_texture("res/action_icon_button_pressed.png")?;
-    let mut action_icon_button_locked_texture =
-        texture_creator.load_texture("res/action_icon_button_locked.png")?;
-    let mut status_icon_texture = texture_creator.load_texture("res/status_icon.png")?;
-    let mut raft_icon_texture = texture_creator.load_texture("res/raft_icon.png")?;
-    let mut meteoroid_icon_texture = texture_creator.load_texture("res/meteoroid_icon.png")?;
-    let mut siphon_icon_texture = texture_creator.load_texture("res/siphon_icon.png")?;
-    let mut slow_icon_texture = texture_creator.load_texture("res/slow_icon.png")?;
-    let mut soothe_icon_texture = texture_creator.load_texture("res/soothe_icon.png")?;
-    let mut heal_icon_texture = texture_creator.load_texture("res/heal_icon.png")?;
-    let mut persuade_icon_texture = texture_creator.load_texture("res/persuade_icon.png")?;
-    let mut convert_icon_texture = texture_creator.load_texture("res/convert_icon.png")?;
-    let mut blink_icon_texture = texture_creator.load_texture("res/blink_icon.png")?;
+    let mut action_icon_button_texture = texture_creator
+        .load_texture("res/action_icon_button.png")
+        .unwrap();
+    let mut action_icon_button_hovered_texture = texture_creator
+        .load_texture("res/action_icon_button_hovered.png")
+        .unwrap();
+    let mut action_icon_button_pressed_texture = texture_creator
+        .load_texture("res/action_icon_button_pressed.png")
+        .unwrap();
+    let mut action_icon_button_locked_texture = texture_creator
+        .load_texture("res/action_icon_button_locked.png")
+        .unwrap();
+    let mut status_icon_texture = texture_creator.load_texture("res/status_icon.png").unwrap();
+    let mut raft_icon_texture = texture_creator.load_texture("res/raft_icon.png").unwrap();
+    let mut meteoroid_icon_texture = texture_creator
+        .load_texture("res/meteoroid_icon.png")
+        .unwrap();
+    let mut siphon_icon_texture = texture_creator.load_texture("res/siphon_icon.png").unwrap();
+    let mut slow_icon_texture = texture_creator.load_texture("res/slow_icon.png").unwrap();
+    let mut soothe_icon_texture = texture_creator.load_texture("res/soothe_icon.png").unwrap();
+    let mut heal_icon_texture = texture_creator.load_texture("res/heal_icon.png").unwrap();
+    let mut persuade_icon_texture = texture_creator
+        .load_texture("res/persuade_icon.png")
+        .unwrap();
+    let mut convert_icon_texture = texture_creator
+        .load_texture("res/convert_icon.png")
+        .unwrap();
+    let mut blink_icon_texture = texture_creator.load_texture("res/blink_icon.png").unwrap();
 
     // hud textures
-    let mut hud_texture = texture_creator.load_texture("res/hud.png")?;
-    let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png")?;
-    let mut stats_page_texture = texture_creator.load_texture("res/stats_page.png")?;
+    let mut hud_texture = texture_creator.load_texture("res/hud.png").unwrap();
+    let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png").unwrap();
+    let mut stats_page_texture = texture_creator.load_texture("res/stats_page.png").unwrap();
     let mut skill_tree_textures = vec![
-        texture_creator.load_texture("res/skill_tree_0.png")?,
-        texture_creator.load_texture("res/skill_tree_1.png")?,
-        texture_creator.load_texture("res/skill_tree_2.png")?,
+        texture_creator
+            .load_texture("res/skill_tree_0.png")
+            .unwrap(),
+        texture_creator
+            .load_texture("res/skill_tree_1.png")
+            .unwrap(),
+        texture_creator
+            .load_texture("res/skill_tree_2.png")
+            .unwrap(),
     ];
-    let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png")?;
+    let mut map_ui_texture = texture_creator.load_texture("res/map_ui.png").unwrap();
     // other texture stuff
-    let mut banner_texture = texture_creator.load_texture("res/banner.png")?;
+    let mut banner_texture = texture_creator.load_texture("res/banner.png").unwrap();
     // effects
-    let mut green_flash_texture = texture_creator.load_texture("res/green_flash.png")?;
+    let mut green_flash_texture = texture_creator.load_texture("res/green_flash.png").unwrap();
     // description stuff
     let descriptions_for_entities = graphics_utils::get_descriptions_for_entities();
     let descriptions_for_tiles = graphics_utils::get_descriptions_for_tiles();
