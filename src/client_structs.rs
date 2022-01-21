@@ -65,6 +65,9 @@ impl Player {
             self.xp = 0;
         }
     }
+    pub fn learn(&mut self, skill: PlayerAction) {
+        self.lp -= 2;
+    }
     pub fn get_relative_x(&self, camera: &Camera) -> f32 {
         return self.x - camera.x;
     }
@@ -104,5 +107,11 @@ pub enum PlayerAction {
     Meteoroid,
     Raft,
     Siphon,
+    Persuade,
+    Convert,
+    Heal,
+    Slow,
+    Soothe,
+    Blink,
     Nothing,
 }

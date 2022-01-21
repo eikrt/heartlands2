@@ -65,6 +65,7 @@ impl Camera {
 pub struct Button {
     pub status: ButtonStatus,
     pub previous_status: ButtonStatus,
+    pub locked: bool,
     pub x: f32,
     pub y: f32,
     pub width: f32,
@@ -97,7 +98,7 @@ impl Button {
         }
     }
     pub fn check_if_pressed(&mut self, _m_x: f32, _m_y: f32, pressed: bool) {
-        if pressed && self.status == ButtonStatus::Hovered {
+        if !self.locked && pressed && self.status == ButtonStatus::Hovered {
             self.press();
         } else if !pressed && self.previous_status == ButtonStatus::Pressed {
             self.release();

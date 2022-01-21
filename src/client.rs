@@ -266,6 +266,7 @@ fn main_loop() -> Result<(), String> {
     let mut settings_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
+        locked: false,
         x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
         y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
         width: 128.0,
@@ -275,6 +276,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 16.0,
             y: 16.0,
             width: 128.0,
@@ -283,6 +285,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 16.0,
             y: 60.0,
             width: 128.0,
@@ -292,6 +295,7 @@ fn main_loop() -> Result<(), String> {
     let mut manual_buttons = vec![Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
+        locked: false,
         x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
         y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
         width: 128.0,
@@ -301,6 +305,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 24.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -309,6 +314,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 64.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -321,6 +327,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
             y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
             width: 128.0,
@@ -332,6 +339,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
             y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
             width: 128.0,
@@ -342,6 +350,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 24.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -350,6 +359,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 64.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -362,6 +372,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
             y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
             width: 128.0,
@@ -373,6 +384,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 24.0,
             y: 62.0,
             width: 128.0,
@@ -381,6 +393,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // settings button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 24.0,
             y: 62.0 + 32.0 + 8.0,
             width: 128.0,
@@ -389,6 +402,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, //  manual button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 24.0,
             y: 62.0 + 64.0 + 16.0,
             width: 128.0,
@@ -397,6 +411,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // exit
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 24.0,
             y: 62.0 + 96.0 + 24.0,
             width: 128.0,
@@ -408,6 +423,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
             y: 62.0,
             width: 128.0,
@@ -416,6 +432,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // settings button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
             y: 62.0 + 32.0 + 8.0,
             width: 128.0,
@@ -424,6 +441,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, //  manual button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
             y: 62.0 + 64.0 + 16.0,
             width: 128.0,
@@ -432,6 +450,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // exit
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
             y: 62.0 + 96.0 + 24.0,
             width: 128.0,
@@ -443,6 +462,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 32.0,
                 y: 52.0,
                 width: 11.0,
@@ -451,6 +471,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 84.0,
                 y: 52.0,
                 width: 11.0,
@@ -459,6 +480,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 132.0,
                 y: 52.0,
                 width: 11.0,
@@ -469,6 +491,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 32.0,
                 y: 52.0,
                 width: 11.0,
@@ -477,6 +500,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 84.0,
                 y: 52.0,
                 width: 11.0,
@@ -485,6 +509,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 132.0,
                 y: 52.0,
                 width: 11.0,
@@ -495,6 +520,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 32.0,
                 y: 52.0,
                 width: 11.0,
@@ -503,6 +529,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 84.0,
                 y: 52.0,
                 width: 11.0,
@@ -511,6 +538,7 @@ fn main_loop() -> Result<(), String> {
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
+                locked: false,
                 x: 132.0,
                 y: 52.0,
                 width: 11.0,
@@ -522,6 +550,7 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, //
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 4.0,
             y: SCREEN_HEIGHT as f32 - 16.0,
             width: 11.0,
@@ -530,23 +559,80 @@ fn main_loop() -> Result<(), String> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, //
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: false,
             x: 4.0,
             y: SCREEN_HEIGHT as f32 - 44.0,
             width: 11.0,
             height: 11.0,
         },
         Button {
-            status: graphics_utils::ButtonStatus::Hovered, // play button
+            status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
             x: 4.0,
             y: SCREEN_HEIGHT as f32 - 30.0,
             width: 11.0,
             height: 11.0,
         },
         Button {
-            status: graphics_utils::ButtonStatus::Hovered, // play button
+            status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
             x: 20.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered,
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
+            x: 20.0 + 16.0 * 1.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered,
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
+            x: 20.0 + 16.0 * 2.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered,
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
+            x: 20.0 + 16.0 * 3.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered,
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
+            x: 20.0 + 16.0 * 4.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered,
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
+            x: 20.0 + 16.0 * 5.0,
+            y: SCREEN_HEIGHT as f32 - 44.0,
+            width: 11.0,
+            height: 11.0,
+        },
+        Button {
+            status: graphics_utils::ButtonStatus::Hovered,
+            previous_status: graphics_utils::ButtonStatus::Hovered,
+            locked: true,
+            x: 20.0 + 16.0 * 6.0,
             y: SCREEN_HEIGHT as f32 - 44.0,
             width: 11.0,
             height: 11.0,
@@ -559,6 +645,7 @@ fn main_loop() -> Result<(), String> {
     let mut normal_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
+        locked: false,
         x: 4 as f32,
         y: (SCREEN_HEIGHT - 93) as f32,
         width: 12.0,
@@ -567,6 +654,7 @@ fn main_loop() -> Result<(), String> {
     let mut political_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
+        locked: false,
         x: 4.0,
         y: (SCREEN_HEIGHT - 78) as f32,
         width: 12.0,
@@ -576,6 +664,7 @@ fn main_loop() -> Result<(), String> {
     let mut religion_button = graphics_utils::Button {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
+        locked: false,
         x: 4.0,
         y: (SCREEN_HEIGHT - 64) as f32,
         width: 12.0,
@@ -675,6 +764,8 @@ fn main_loop() -> Result<(), String> {
         texture_creator.load_texture("res/action_icon_button_hovered.png")?;
     let mut action_icon_button_pressed_texture =
         texture_creator.load_texture("res/action_icon_button_pressed.png")?;
+    let mut action_icon_button_locked_texture =
+        texture_creator.load_texture("res/action_icon_button_locked.png")?;
     let mut status_icon_texture = texture_creator.load_texture("res/status_icon.png")?;
     let mut raft_icon_texture = texture_creator.load_texture("res/raft_icon.png")?;
     let mut meteoroid_icon_texture = texture_creator.load_texture("res/meteoroid_icon.png")?;
@@ -2812,6 +2903,31 @@ fn main_loop() -> Result<(), String> {
             } else {
                 selected_skill_description = "".to_string();
             }
+            if skill_tree_action_buttons[0][0].status == ButtonStatus::Released {
+                player.learn(PlayerAction::Persuade);
+                action_icon_buttons[2].locked = false;
+            } else if skill_tree_action_buttons[0][1].status == ButtonStatus::Released {
+                action_icon_buttons[3].locked = false;
+                player.learn(PlayerAction::Convert);
+            } else if skill_tree_action_buttons[0][2].status == ButtonStatus::Released {
+                action_icon_buttons[4].locked = false;
+                player.learn(PlayerAction::Heal);
+            } else if skill_tree_action_buttons[1][0].status == ButtonStatus::Released {
+                action_icon_buttons[5].locked = false;
+                player.learn(PlayerAction::Slow);
+            } else if skill_tree_action_buttons[1][1].status == ButtonStatus::Released {
+                action_icon_buttons[6].locked = false;
+                player.learn(PlayerAction::Soothe);
+            } else if skill_tree_action_buttons[1][2].status == ButtonStatus::Released {
+                action_icon_buttons[3].locked = false;
+                player.learn(PlayerAction::Meteoroid);
+            } else if skill_tree_action_buttons[2][0].status == ButtonStatus::Released {
+                action_icon_buttons[7].locked = false;
+                player.learn(PlayerAction::Blink);
+            } else if skill_tree_action_buttons[2][1].status == ButtonStatus::Released {
+                action_icon_buttons[8].locked = false;
+                player.learn(PlayerAction::Raft);
+            }
             if skill_tree_f_buttons[0].status == ButtonStatus::Released {
                 if skill_tree_index > 0 {
                     skill_tree_index -= 1;
@@ -4194,7 +4310,17 @@ fn main_loop() -> Result<(), String> {
                             ratio_y,
                         );
                         button.check_if_pressed(mouse_x, mouse_y, mouse_state.left());
-                        if button.status == graphics_utils::ButtonStatus::Hovered {
+                        if button.locked {
+                            graphics_utils::render(
+                                &mut canvas,
+                                &action_icon_button_locked_texture,
+                                position,
+                                sprite_12,
+                                1.0,
+                                ratio_x,
+                                ratio_y,
+                            );
+                        } else if button.status == graphics_utils::ButtonStatus::Hovered {
                             graphics_utils::render(
                                 &mut canvas,
                                 &action_icon_button_hovered_texture,
@@ -4237,7 +4363,21 @@ fn main_loop() -> Result<(), String> {
                     } else if action_icon_buttons[3].status == ButtonStatus::Released {
                         player_action = PlayerAction::Meteoroid;
                     } else if action_icon_buttons[2].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Persuade;
+                    } else if action_icon_buttons[3].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Convert;
+                    } else if action_icon_buttons[4].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Heal;
+                    } else if action_icon_buttons[5].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Slow;
+                    } else if action_icon_buttons[6].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Soothe;
+                    } else if action_icon_buttons[7].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Blink;
+                    } else if action_icon_buttons[8].status == ButtonStatus::Released {
                         player_action = PlayerAction::Raft;
+                    } else if action_icon_buttons[9].status == ButtonStatus::Released {
+                        player_action = PlayerAction::Nothing;
                     }
                     let position = Point::new(
                         action_icon_buttons[0].x as i32 + 2,
@@ -4288,6 +4428,84 @@ fn main_loop() -> Result<(), String> {
                     graphics_utils::render(
                         &mut canvas,
                         &raft_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[4].x as i32 + 2,
+                        action_icon_buttons[4].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &persuade_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[5].x as i32 + 2,
+                        action_icon_buttons[5].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &convert_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[6].x as i32 + 2,
+                        action_icon_buttons[6].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &heal_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[7].x as i32 + 2,
+                        action_icon_buttons[7].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &slow_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[8].x as i32 + 2,
+                        action_icon_buttons[8].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &soothe_icon_texture,
+                        position,
+                        sprite_8,
+                        1.0,
+                        ratio_x,
+                        ratio_y,
+                    );
+                    let position = Point::new(
+                        action_icon_buttons[9].x as i32 + 2,
+                        action_icon_buttons[9].y as i32 + 2,
+                    );
+                    graphics_utils::render(
+                        &mut canvas,
+                        &blink_icon_texture,
                         position,
                         sprite_8,
                         1.0,
