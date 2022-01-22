@@ -19,6 +19,7 @@ use ears::{AudioController, Music, Sound};
 use lerp::Lerp;
 use palette::{Pixel, Srgb};
 use rand::Rng;
+use rlua::prelude::LuaTable;
 use rlua::{Function, Lua, MetaMethod, Result, Table, UserData, UserDataMethods, Variadic};
 use sdl2::event::Event;
 use sdl2::image::{InitFlag, LoadSurface, LoadTexture};
@@ -87,23 +88,27 @@ fn main_loop() -> rlua::Result<()> {
     // lua stuff
     let lua = Lua::new();
 
-    let code = load_script("scripts/test.lua".to_string());
-    let mut banner = Banner { x: 0, y: 0 };
+    let code = load_script("scripts/menus.lua".to_string());
     lua.context(|lua_ctx| {
         let globals = lua_ctx.globals();
         dbg!(lua_ctx.load(&code).eval::<()>()?);
         Ok(())
     })?;
     lua.context(|lua_ctx| {
-        println!("dsf");
         let globals = lua_ctx.globals();
-        let main_menu_buttons_lua = lua_ctx.load("get_buttons()").eval::<Table>()?;
+        let menus = lua_ctx
+            .load(&format!("get_menus({},{})", SCREEN_WIDTH, SCREEN_HEIGHT))
+            .eval::<Table>()?;
         //println!("{}", get_banner.call::<_, i32>(())?);
-        let a: i32 = main_menu_buttons_lua
+        /*let x: i32 = main_menu_buttons_lua
             .get::<_, Table>("main_menu")?
             .get::<_, Table>("play_button")?
             .get::<_, i32>("x")?;
-        banner = Banner { x: 0, y: 0 };
+        let y: i32 = main_menu_buttons_lua
+            .get::<_, Table>("main_menu")?
+            .get::<_, Table>("play_button")?
+            .get::<_, i32>("y")?;*/
+        globals.set("all_menus", menus);
         Ok(())
     })?;
     // sdl stuff
@@ -311,6 +316,7 @@ fn main_loop() -> rlua::Result<()> {
         status: graphics_utils::ButtonStatus::Hovered, // play button
         previous_status: graphics_utils::ButtonStatus::Hovered,
         locked: false,
+        text: "".to_string(),
         x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
         y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
         width: 128.0,
@@ -321,6 +327,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 16.0,
             y: 16.0,
             width: 128.0,
@@ -330,6 +337,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 16.0,
             y: 60.0,
             width: 128.0,
@@ -340,6 +348,7 @@ fn main_loop() -> rlua::Result<()> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         locked: false,
+        text: "".to_string(),
         x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
         y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
         width: 128.0,
@@ -350,6 +359,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 24.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -359,6 +369,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 64.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -372,6 +383,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
             y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
             width: 128.0,
@@ -384,6 +396,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
             y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
             width: 128.0,
@@ -395,6 +408,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 24.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -404,6 +418,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered,
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 64.0,
             y: (SCREEN_HEIGHT as f32 - 48.0) as f32,
             width: 32.0,
@@ -417,6 +432,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: SCREEN_WIDTH as f32 - 148.0 - 8.0,
             y: (SCREEN_HEIGHT as f32 - 42.0 - 8.0) as f32,
             width: 128.0,
@@ -429,6 +445,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered, // play button
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 24.0,
             y: 62.0,
             width: 128.0,
@@ -437,6 +454,7 @@ fn main_loop() -> rlua::Result<()> {
         Button {
             status: graphics_utils::ButtonStatus::Hovered, // settings button
             previous_status: graphics_utils::ButtonStatus::Hovered,
+            text: "".to_string(),
             locked: false,
             x: 24.0,
             y: 62.0 + 32.0 + 8.0,
@@ -447,6 +465,7 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered, //  manual button
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 24.0,
             y: 62.0 + 64.0 + 16.0,
             width: 128.0,
@@ -456,53 +475,37 @@ fn main_loop() -> rlua::Result<()> {
             status: graphics_utils::ButtonStatus::Hovered, // exit
             previous_status: graphics_utils::ButtonStatus::Hovered,
             locked: false,
+            text: "".to_string(),
             x: 24.0,
             y: 62.0 + 96.0 + 24.0,
             width: 128.0,
             height: 32.0,
         },
     ];
-    let mut menu_buttons: Vec<Button> = vec![
-        // menu buttons
-        Button {
-            status: graphics_utils::ButtonStatus::Hovered, // play button
-            previous_status: graphics_utils::ButtonStatus::Hovered,
-            locked: false,
-            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-            y: 62.0,
-            width: 128.0,
-            height: 32.0,
-        },
-        Button {
-            status: graphics_utils::ButtonStatus::Hovered, // settings button
-            previous_status: graphics_utils::ButtonStatus::Hovered,
-            locked: false,
-            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-            y: 62.0 + 32.0 + 8.0,
-            width: 128.0,
-            height: 32.0,
-        },
-        Button {
-            status: graphics_utils::ButtonStatus::Hovered, //  manual button
-            previous_status: graphics_utils::ButtonStatus::Hovered,
-            locked: false,
-            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-            y: 62.0 + 64.0 + 16.0,
-            width: 128.0,
-            height: 32.0,
-        },
-        Button {
-            status: graphics_utils::ButtonStatus::Hovered, // exit
-            previous_status: graphics_utils::ButtonStatus::Hovered,
-            locked: false,
-            x: SCREEN_WIDTH as f32 / 2.0 - 64.0,
-            y: 62.0 + 96.0 + 24.0,
-            width: 128.0,
-            height: 32.0,
-        },
-    ];
-    let mut skill_tree_action_buttons: Vec<Vec<Button>> = vec![
-        vec![
+    let mut menu_buttons: Vec<Button> = vec![];
+    lua.context(|lua_ctx| {
+        let globals = lua_ctx.globals();
+        globals
+            .get::<&str, Table>("all_menus")
+            .unwrap()
+            .get::<&str, Table>("main_menu")
+            .unwrap()
+            .pairs()
+            .for_each(|b: Result<(String, Table)>| {
+                let button = b.unwrap().1;
+                menu_buttons.push(Button {
+                    status: graphics_utils::ButtonStatus::Neutral,
+                    previous_status: graphics_utils::ButtonStatus::Neutral,
+                    locked: button.get::<_, bool>("locked").unwrap(),
+                    text: button.get::<_, String>("text").unwrap(),
+                    x: button.get::<_, f32>("x").unwrap(),
+                    y: button.get::<_, f32>("y").unwrap(),
+                    width: button.get::<_, f32>("width").unwrap(),
+                    height: button.get::<_, f32>("height").unwrap(),
+                });
+            });
+    });
+    let mut skill_tree_action_buttons: Vec<Vec<Button>> = vec![vec![/*
             Button {
                 status: graphics_utils::ButtonStatus::Neutral, //
                 previous_status: graphics_utils::ButtonStatus::Neutral,
@@ -588,9 +591,10 @@ fn main_loop() -> rlua::Result<()> {
                 width: 11.0,
                 height: 11.0,
             },
-        ],
-    ];
-    let mut action_icon_buttons: Vec<Button> = vec![
+        ],*/
+
+    ]];
+    let mut action_icon_buttons: Vec<Button> = vec![/*
         Button {
             status: graphics_utils::ButtonStatus::Hovered, //
             previous_status: graphics_utils::ButtonStatus::Hovered,
@@ -680,7 +684,7 @@ fn main_loop() -> rlua::Result<()> {
             y: SCREEN_HEIGHT as f32 - 44.0,
             width: 11.0,
             height: 11.0,
-        },
+        },*/
     ];
     // universal menu buttons
     // settings menu buttons
@@ -690,6 +694,7 @@ fn main_loop() -> rlua::Result<()> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         locked: false,
+        text: "".to_string(),
         x: 4 as f32,
         y: (SCREEN_HEIGHT - 93) as f32,
         width: 12.0,
@@ -699,6 +704,7 @@ fn main_loop() -> rlua::Result<()> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         locked: false,
+        text: "".to_string(),
         x: 4.0,
         y: (SCREEN_HEIGHT - 78) as f32,
         width: 12.0,
@@ -709,6 +715,7 @@ fn main_loop() -> rlua::Result<()> {
         status: graphics_utils::ButtonStatus::Hovered,
         previous_status: graphics_utils::ButtonStatus::Hovered,
         locked: false,
+        text: "".to_string(),
         x: 4.0,
         y: (SCREEN_HEIGHT - 64) as f32,
         width: 12.0,
@@ -1495,122 +1502,23 @@ fn main_loop() -> rlua::Result<()> {
                 ratio_y,
             );
 
-            let settings_text = graphics_utils::get_text(
-                "Settings".to_string(),
-                Color::RGBA(255, 255, 255, 255),
-                desc_font_size,
-                &font,
-                &texture_creator,
-            )
-            .unwrap();
-            let position = Point::new(
-                menu_buttons[1].x as i32 + text_margin,
-                menu_buttons[1].y as i32 + text_margin,
-            );
-            graphics_utils::render_text(
-                &mut canvas,
-                &settings_text.text_texture,
-                position,
-                settings_text.text_sprite,
-                ratio_x,
-                ratio_y,
-            );
-            let position = Point::new((SCREEN_WIDTH / 2 - 120) as i32, 16 as i32);
-            let play_text = graphics_utils::get_text(
-                "Play".to_string(),
-                Color::RGBA(255, 255, 255, 255),
-                desc_font_size,
-                &font,
-                &texture_creator,
-            )
-            .unwrap();
-            let position = Point::new(
-                menu_buttons[0].x as i32 + text_margin,
-                menu_buttons[0].y as i32 + text_margin,
-            );
-            graphics_utils::render_text(
-                &mut canvas,
-                &play_text.text_texture,
-                position,
-                play_text.text_sprite,
-                ratio_x,
-                ratio_y,
-            );
-            let position = Point::new(
-                menu_buttons[1].x as i32 + text_margin,
-                menu_buttons[1].y as i32 + text_margin,
-            );
-            let manual_text = graphics_utils::get_text(
-                "Manual".to_string(),
-                Color::RGBA(255, 255, 255, 255),
-                desc_font_size,
-                &font,
-                &texture_creator,
-            )
-            .unwrap();
-            let position = Point::new(
-                menu_buttons[2].x as i32 + text_margin,
-                menu_buttons[2].y as i32 + text_margin,
-            );
-            let text_margin = 4;
-            graphics_utils::render_text(
-                &mut canvas,
-                &manual_text.text_texture,
-                position,
-                manual_text.text_sprite,
-                ratio_x,
-                ratio_y,
-            );
-
-            let exit_text = graphics_utils::get_text(
-                "Exit".to_string(),
-                Color::RGBA(255, 255, 255, 255),
-                desc_font_size,
-                &font,
-                &texture_creator,
-            )
-            .unwrap();
-            let position = Point::new(
-                menu_buttons[3].x as i32 + text_margin,
-                menu_buttons[3].y as i32 + text_margin,
-            );
-            graphics_utils::render_text(
-                &mut canvas,
-                &exit_text.text_texture,
-                position,
-                exit_text.text_sprite,
-                ratio_x,
-                ratio_y,
-            );
-            let position = Point::new(
-                menu_buttons[3].x as i32 + text_margin,
-                menu_buttons[3].y as i32 + text_margin,
-            );
-            graphics_utils::render_text(
-                &mut canvas,
-                &exit_text.text_texture,
-                position,
-                exit_text.text_sprite,
-                ratio_x,
-                ratio_y,
-            );
-
-            if menu_buttons[0].status == ButtonStatus::Released {
-                main_menu_on = false;
-            } else if menu_buttons[1].status == ButtonStatus::Released {
-                main_menu_on = false;
-                settings_menu_on = true;
-            }
-            if menu_buttons[1].status == ButtonStatus::Released {
-            } else if menu_buttons[1].status == ButtonStatus::Released {
-                main_menu_on = false;
-                settings_menu_on = true;
-            } else if menu_buttons[2].status == ButtonStatus::Released {
-                main_menu_on = false;
-                manual_menu_on = true;
-            } else if menu_buttons[3].status == ButtonStatus::Released {
-                running = false;
-            }
+        /*
+        if menu_buttons[0].status == ButtonStatus::Released {
+            main_menu_on = false;
+        } else if menu_buttons[1].status == ButtonStatus::Released {
+            main_menu_on = false;
+            settings_menu_on = true;
+        }
+        if menu_buttons[1].status == ButtonStatus::Released {
+        } else if menu_buttons[1].status == ButtonStatus::Released {
+            main_menu_on = false;
+            settings_menu_on = true;
+        } else if menu_buttons[2].status == ButtonStatus::Released {
+            main_menu_on = false;
+            manual_menu_on = true;
+        } else if menu_buttons[3].status == ButtonStatus::Released {
+            running = false;
+        }*/
         } else if settings_menu_on {
             graphics_utils::render(
                 &mut canvas,

@@ -66,6 +66,7 @@ pub struct Button {
     pub status: ButtonStatus,
     pub previous_status: ButtonStatus,
     pub locked: bool,
+    pub text: String,
     pub x: f32,
     pub y: f32,
     pub width: f32,
